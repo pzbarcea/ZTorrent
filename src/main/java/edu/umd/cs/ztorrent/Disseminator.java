@@ -9,7 +9,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import edu.umd.cs.ztorrent.ManagedConnection.ConnectionState;
+import edu.umd.cs.ztorrent.protocol.ManagedConnection;
+import edu.umd.cs.ztorrent.protocol.ManagedConnection.ConnectionState;
 import edu.umd.cs.ztorrent.MessageParser.Request;
 import edu.umd.cs.ztorrent.MessageParser.Response;
 

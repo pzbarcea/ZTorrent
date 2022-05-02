@@ -1,13 +1,16 @@
-package edu.umd.cs.ztorrent;
+package edu.umd.cs.ztorrent.protocol;
+
+import edu.umd.cs.ztorrent.Torrent;
 
 import java.net.UnknownHostException;
 
 /**
- * Generic tracker class.
+ * Abstract torrent Tracker. Represents a tracker connection for a torrent.
+ *
  * 3 types of trackers:
- * UDP
- * DHT
- * HTTP
+ * 	UDP
+ * 	DHT
+ * 	HTTP
  * 
  * @author wiselion
  */

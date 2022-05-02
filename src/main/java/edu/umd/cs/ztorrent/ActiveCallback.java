@@ -1,5 +1,7 @@
 package edu.umd.cs.ztorrent;
 
+import edu.umd.cs.ztorrent.protocol.ManagedConnection;
+
 /***
  * This interface provides the a function
  * to be run at the end of the doWork()

@@ -1,4 +1,6 @@
 package edu.umd.cs.ztorrent;
+import edu.umd.cs.ztorrent.protocol.Tracker;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;

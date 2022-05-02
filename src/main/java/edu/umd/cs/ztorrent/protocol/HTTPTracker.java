@@ -1,4 +1,4 @@
-package edu.umd.cs.ztorrent;
+package edu.umd.cs.ztorrent.protocol;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -8,10 +8,14 @@ import java.net.Socket;
 import java.net.URL;
 import java.util.List;
 
+import edu.umd.cs.ztorrent.Bencoding;
 import edu.umd.cs.ztorrent.Bencoding.Type;
+import edu.umd.cs.ztorrent.HttpResponse;
 import edu.umd.cs.ztorrent.HttpResponse.HeaderType;
+import edu.umd.cs.ztorrent.Torrent;
+import edu.umd.cs.ztorrent.TorrentParser;
 
-public class HTTPTracker extends Tracker{
+public class HTTPTracker extends Tracker {
 	public static enum Event{started,stopped,completed,regular};
 	
 	URL url;

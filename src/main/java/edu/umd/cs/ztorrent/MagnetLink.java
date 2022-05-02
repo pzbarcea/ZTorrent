@@ -14,7 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import edu.umd.cs.ztorrent.ManagedConnection.ConnectionState;
+import edu.umd.cs.ztorrent.protocol.ManagedConnection.ConnectionState;
+import edu.umd.cs.ztorrent.protocol.DHTTracker;
+import edu.umd.cs.ztorrent.protocol.MetaConnection;
 
 /**
  * Specail torrent class made

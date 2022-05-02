@@ -1,4 +1,4 @@
-package edu.umd.cs.ztorrent;
+package edu.umd.cs.ztorrent.protocol;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -10,9 +10,11 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
-import edu.umd.cs.ztorrent.HTTPTracker.Event;
+import edu.umd.cs.ztorrent.ByteUtils;
+import edu.umd.cs.ztorrent.Torrent;
+import edu.umd.cs.ztorrent.protocol.HTTPTracker.Event;
 
-public class UDPTracker extends Tracker{
+public class UDPTracker extends Tracker {
 	public static enum UDPAction {
 		CONNECT(0),
 		ANNOUNCE(1),

@@ -7,7 +7,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import edu.umd.cs.ztorrent.ManagedConnection.ConnectionState;
+import edu.umd.cs.ztorrent.protocol.ManagedConnection;
+import edu.umd.cs.ztorrent.protocol.ManagedConnection.ConnectionState;
 import edu.umd.cs.ztorrent.MessageParser.Request;
 import edu.umd.cs.ztorrent.BitMap.Rarity;
 

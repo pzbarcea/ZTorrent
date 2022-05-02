@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 import edu.umd.cs.ztorrent.MessageParser.HandShake;
+import edu.umd.cs.ztorrent.protocol.ManagedConnection;
 
 /***
  * While initially created for testing purposes. This class

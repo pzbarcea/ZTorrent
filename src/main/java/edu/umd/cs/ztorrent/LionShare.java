@@ -1,5 +1,8 @@
 package edu.umd.cs.ztorrent;
 
+import edu.umd.cs.ztorrent.protocol.ManagedConnection;
+import edu.umd.cs.ztorrent.protocol.Tracker;
+
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;

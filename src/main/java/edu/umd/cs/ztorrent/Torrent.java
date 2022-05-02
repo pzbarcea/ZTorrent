@@ -1,5 +1,9 @@
 package edu.umd.cs.ztorrent;
 
+import edu.umd.cs.ztorrent.protocol.DHTTracker;
+import edu.umd.cs.ztorrent.protocol.ManagedConnection;
+import edu.umd.cs.ztorrent.protocol.Tracker;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
