@@ -21,8 +21,8 @@ import Utils.TorrentParser;
  */
 public class SeedTest {
 	public static void main(String [] args) throws NoSuchAlgorithmException, IOException, InterruptedException{
-		System.out.println(new File("").getAbsolutePath().toString()+"\\test\\ubuntu.torrent");
-		Torrent t = TorrentParser.parseTorrentFile(new File("").getAbsolutePath().toString()+"\\test\\ubuntu.torrent");
+		System.out.println(new File("").getAbsolutePath().toString()+"java");
+		Torrent t = TorrentParser.parseTorrentFile(new File("").getAbsolutePath().toString()+"/src/test/resources/ubuntu-22.04-live-server-amd64.iso.torrent");
 		BasicPeerLogic bpl = new BasicPeerLogic();
 		t.addPeer(InetAddress.getByName("127.0.0.1"),6881, null);
 		while(true){
