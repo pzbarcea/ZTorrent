@@ -24,7 +24,7 @@ import javax.swing.table.AbstractTableModel;
  * 
  * @author wiselion
  */
-public class LionShare extends AbstractTableModel{
+public class LionShare extends AbstractTableModel {
 	private static final long serialVersionUID = -143709093895815620L;
 	public boolean on =true;
 	Set<Torrent> allTorrents = Collections.synchronizedSet(new HashSet<Torrent>());

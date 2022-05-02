@@ -22,6 +22,12 @@ or using `exec-maven-plugin`
 mvn exec:java
 ```
 
+# FAQ
+
+- What is the UI built in ?
+
+It is built using Java AWT with the IntelliJ UI Builder.
+
 # TODO
 
 * Refactor packaging from `Main` to `edu.umd.cs.ztorrent`
@@ -48,16 +54,6 @@ ztorrent on  main [✘!] is 📦 v1.0-SNAPSHOT via ☕ v1.8.0
 * Maybe Refactor `Trackers` to something else.
 * Refactor `Utils` to something else.
 * Fix exception. This is maybe normal behavior when a peer-to-peer connection can't be established due to security limitations:
-```log
+```
 java.net.ConnectException: Connection refused (Connection refused)
-        at java.net.PlainSocketImpl.socketConnect(Native Method)
-        at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350)
-        at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206)
-        at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188)
-        at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392)
-        at java.net.Socket.connect(Socket.java:607)
-        at java.net.Socket.connect(Socket.java:556)
-        at NetBase.ManagedConnection$1.run(ManagedConnection.java:136)
-GET /announce?info_hash=n%B0%B6F%C3%94T%2C%CA%FD%23%8D%F9%28w%A03%96%3A%F1&peer_id=aLBQqtFyFsFDmgjNErDT&uploaded=0&downloaded=0&left=0&compact=1&port=1010 HTTP/1.1
-Host: tracker.raspberrypi.org
 ```

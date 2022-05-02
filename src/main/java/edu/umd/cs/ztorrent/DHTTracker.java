@@ -22,19 +22,17 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import edu.umd.cs.ztorrent.Bencoding.Type;
 
 /***
- * Implementation of DHT tracker.
- * Hey, now we can use magnet links!
+ * DHT (Distributed Hash Table, technical explanation) is an addition to certain BitTorrent clients that allows them to work without a tracker. What this means is that your client will be able to find peers even when the tracker is down, or doesn't even exist anymore. It allows the swarm to continue as normal without a tracker. You can also host torrents without a tracker.
+ *
+ * This means, your ratio wont get updated if you enable DHT from your torrent client (ie: BitComet, uTorrent, Azureus) when downloading from xxxxxxxxxx tracker. Nowadays, most new torrent client come with DHT, so pls disable it unless you are downloading from other websites that do not implement ratio method.
+ *
+ * In most clients, you have the option to enable or disable DHT.
+ *
+ * Implementing DHT, allows us to use "Magnet Links"!
  * 
- * periodic work is done with doWork()
- * We search till either we cant find any closer
- * 
- * This class is a bit bloated. Some of my worse work. :-|
- * Just read my docs. Most of this ends up being implemented 
- * and non-tested due to lack of Upnp behind this nat.
- * 
- * @author wiselion
+ * @author pzbarcea
  */
-public class DHTTracker extends Tracker{
+public class DHTTracker extends Tracker {
 	///Sooo lame. :-/
 	private class ID{
 		public final int hash;
