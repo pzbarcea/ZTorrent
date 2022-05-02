@@ -119,4 +119,4 @@ ztorrent on  main [✘!] is 📦 v1.0-SNAPSHOT via ☕ v1.8.0
 ```
 java.net.ConnectException: Connection refused (Connection refused)
 ```
-* Review and rephrase the documentation in `ManagedConnection.java`
+* (Paul) Review and rephrase the documentation in `ManagedConnection.java`
