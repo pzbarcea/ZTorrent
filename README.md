@@ -120,3 +120,4 @@ ztorrent on  main [✘!] is 📦 v1.0-SNAPSHOT via ☕ v1.8.0
 java.net.ConnectException: Connection refused (Connection refused)
 ```
 * (Paul) Review and rephrase the documentation in `ManagedConnection.java`
+* In System.out: "INVALID response (unsupported tracker)" means that the response from Node coudn't be processed. Maybe different security constraints, maybe other cases of the protocol.

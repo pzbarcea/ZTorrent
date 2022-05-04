@@ -32,15 +32,11 @@ public class TorrentUI extends JFrame implements ActionListener {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());//get look and feel of whatever OS we're using
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                  UnsupportedLookAndFeelException ex) {
+
+            System.err.println("Error initializing zTorrentClient: " + ex);
         }
 
-
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                client.on = false;
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> client.on = false));
 
         setSize(400, 300);
         open = new JButton("Open");
@@ -68,18 +64,11 @@ public class TorrentUI extends JFrame implements ActionListener {
         torrentList.setFillsViewportHeight(true);
         torrentList.setPreferredSize(new Dimension(500, 300));
 
-
-        JPanel bottom = new JPanel() {
-//            @Override
-//            public Dimension getPreferredSize() {
-//                return new Dimension(200, 200);
-//            }
-        };
+        JPanel bottom = new JPanel();
         bottom.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 
         GridBagLayout experimentLayout = new GridBagLayout();
         this.setLayout(experimentLayout);
-
 
         GridBagConstraints c = new GridBagConstraints();
         mainPane = new JSplitPane();
@@ -89,7 +78,6 @@ public class TorrentUI extends JFrame implements ActionListener {
 
         c.fill = GridBagConstraints.HORIZONTAL;
         c.anchor = GridBagConstraints.PAGE_START;
-//        c.gridheight =1;
         c.gridx = 0;
         c.gridy = 0;
         c.weightx = 1;
@@ -98,7 +86,6 @@ public class TorrentUI extends JFrame implements ActionListener {
 
         c.fill = GridBagConstraints.BOTH;
         c.anchor = GridBagConstraints.CENTER;
-//        c.gridheight = GridBagConstraints.RELATIVE;
         c.weightx = 1;
         c.weighty = 1;
         c.gridx = 0;
@@ -169,12 +156,7 @@ public class TorrentUI extends JFrame implements ActionListener {
 
         TorrentClient client = new TorrentClient();
         final TorrentUI ex = new TorrentUI(client);
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                ex.setVisible(true);
-            }
-        });
+        SwingUtilities.invokeLater(() -> ex.setVisible(true));
 
         client.mainLoop();
     }

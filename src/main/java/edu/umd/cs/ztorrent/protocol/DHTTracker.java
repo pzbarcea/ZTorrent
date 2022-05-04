@@ -549,7 +549,7 @@ public class DHTTracker extends Tracker {
                     System.out.println("Got new node!");
                     idToNode.put(p.n.nodeId, p.n);
                 } else {
-                    System.out.println("Couldnt match to request. Dropped packet maybe?");
+                    System.out.println("INVALID response (unsupported tracker)");
                 }
                 p.n.timeSinceLastRecv = System.currentTimeMillis();
             }

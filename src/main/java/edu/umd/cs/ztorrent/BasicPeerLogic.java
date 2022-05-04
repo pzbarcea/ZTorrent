@@ -246,9 +246,8 @@ public class BasicPeerLogic extends PeerLogic {
 
         if (System.currentTimeMillis() % 10000 == 0) {
             System.out.println("Active Connections: " + activeConnections);
-            System.out.println("Average dl: KB/s" + (t.getDownloaded() / (System.currentTimeMillis() - start)));
+            System.out.println("Average dl: " + (t.getDownloaded() / (System.currentTimeMillis() - start)) + " KB/s");
         }
-
 
         if (now - lastTime > 10 * 1000) {
             t.setRecentDown(down / (now - lastTime));
@@ -260,5 +259,5 @@ public class BasicPeerLogic extends PeerLogic {
 
         t.pm.doBlockingWork(); // TODO: remove from here. set to threaded process.
     }
-    
+
 }
