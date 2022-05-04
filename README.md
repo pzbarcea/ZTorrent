@@ -60,7 +60,7 @@ Done.
 # Problem encountered
 
 * Needed to set up a `Makefile` setup equivalent for Java. For this I used `mvn` - Apache Maven
-* 
+* Wasn't clear if `<len=0013>` is a 13 (int) represented as 4 byte Integer or is 259 as 4-byte Integer. 
 
 # FAQ
 

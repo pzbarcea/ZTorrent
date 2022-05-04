@@ -1,36 +1,35 @@
 package edu.umd.cs.ztorrent;
 
+import edu.umd.cs.ztorrent.HttpResponse.HeaderType;
+import edu.umd.cs.ztorrent.MessageParser.HandShake;
+import edu.umd.cs.ztorrent.MessageParser.PeerMessage;
+import org.junit.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-
-import edu.umd.cs.ztorrent.MessageParser.HandShake;
-import edu.umd.cs.ztorrent.MessageParser.PeerMessage;
-import edu.umd.cs.ztorrent.HttpResponse.HeaderType;
-
-import org.junit.Test;
 
 public class UnitTests {
     @Test
     public void testBencoding() {
         String s = "4:spam";
-        Bencoding b0 = new Bencoding(s.getBytes(Charset.forName("UTF-8")));
+        Bencoding b0 = new Bencoding(s.getBytes(StandardCharsets.UTF_8));
         System.out.println("	Test0: " + "spam".equals(b0.getString()));
 
         String i = "i18296718e";
-        Bencoding b1 = new Bencoding(i.getBytes(Charset.forName("UTF-8")));
+        Bencoding b1 = new Bencoding(i.getBytes(StandardCharsets.UTF_8));
         System.out.println("	Test1: " + (18296718 == b1.integer));
 
         String l = "l4:spami42eli52eee";//List in list
-        Bencoding b2 = new Bencoding(l.getBytes(Charset.forName("UTF-8")));
+        Bencoding b2 = new Bencoding(l.getBytes(StandardCharsets.UTF_8));
         System.out.println("	Test2: " + ("spam".equals(b2.list.get(0).getString()) && 42 == b2.list.get(1).integer && 52 == b2.list.get(2).list.get(0).integer));
 //		
         String d = "d3:bar4:spam3:fooi42e5:listsl5:12345d3:foo3:fooeee";
-        Bencoding b3 = new Bencoding(d.getBytes(Charset.forName("UTF-8")));
+        Bencoding b3 = new Bencoding(d.getBytes(StandardCharsets.UTF_8));
         System.out.println("	Test3: " + ("spam".equals(b3.dictionary.get("bar").getString()) && 42 == b3.dictionary.get("foo").integer));
     }
 
@@ -40,12 +39,12 @@ public class UnitTests {
     // more content then content length suggests.
     public void parseHTTPResponse() throws IOException {
         String sampleHTTPResponse = "HTTP/1.0 200 OK\r\nContent-Length: 6\r\nContent-Type: text/plain\r\nPragma: no-cache\r\n\r\nTEAS";
-        byte[] input = sampleHTTPResponse.getBytes("UTF-8");
+        byte[] input = sampleHTTPResponse.getBytes(StandardCharsets.UTF_8);
         InputStream in = new ByteArrayInputStream(input);
         HttpResponse phr = new HttpResponse(in);
         System.out.println("	Test ContentSize: " + (phr.headerMap.get(HeaderType.ContentLength).equals("6")));
         System.out.println("	Test ContentActualSize: " + (phr.body.length == 4));
-        System.out.println("	Test Out: " + new String(phr.body, 0, phr.body.length, "UTF-8").equals("TEAS"));
+        System.out.println("	Test Out: " + new String(phr.body, 0, phr.body.length, StandardCharsets.UTF_8).equals("TEAS"));
     }
 
 

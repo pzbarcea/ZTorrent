@@ -10,12 +10,12 @@ import edu.umd.cs.ztorrent.protocol.ManagedConnection;
  * @author wiselion
  */
 public interface ActiveCallback {
-	/**
-	 * Run at the end of the do work cycle.
-	 * Gets passed a reference from the connection that it's
-	 * being run from.
-	 * 
-	 * This also guarantees that the connection is connected.
-	 */
-	public void run(ManagedConnection mc);
+    /**
+     * Run at the end of the do work cycle.
+     * Gets passed a reference from the connection that it's
+     * being run from.
+     * <p>
+     * This also guarantees that the connection is connected.
+     */
+    void run(ManagedConnection mc);
 }

@@ -40,6 +40,7 @@ public class DHTTracker extends Tracker {
     private final List<String> packetCleaner = new ArrayList<String>(0);
     private List<MetaConnection> potentialPeers = new ArrayList<MetaConnection>();
     private final long startTime = System.currentTimeMillis();
+
     public DHTTracker(byte[] infoHash, byte[] PeerID) throws SocketException {
         this.infoHash = infoHash;
         clientSocket = new DatagramSocket();
