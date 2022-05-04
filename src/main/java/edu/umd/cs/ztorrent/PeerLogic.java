@@ -21,6 +21,4 @@ public abstract class PeerLogic {
      * @param input torrent
      */
     public abstract void doWork(Torrent t) throws IOException;
-
-    public abstract String getName();
 }

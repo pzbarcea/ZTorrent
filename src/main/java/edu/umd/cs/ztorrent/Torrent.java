@@ -140,7 +140,7 @@ public class Torrent extends MetaTorrent {
         downloaded += bytes;
     }
 
-    public long getLeft() {
+    public long getLeftToDownload() {
         left = (totalBytes - pm.getCompletedBytes());
         left = left > 0 ? left : 0;
         return left;

@@ -41,7 +41,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>edu.umd.cs.ztorrent.LionShare</mainClass>
+                            <mainClass>edu.umd.cs.ztorrent.ui.TorrentUI</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -53,7 +53,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>${maven.exec-maven-plugin.version}</version>
                 <configuration>
-                    <mainClass>edu.umd.cs.ztorrent.LionShare</mainClass>
+                    <mainClass>edu.umd.cs.ztorrent.ui.TorrentUI</mainClass>
                 </configuration>
             </plugin>
 

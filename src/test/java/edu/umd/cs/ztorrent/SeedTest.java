@@ -15,9 +15,12 @@ import java.security.NoSuchAlgorithmException;
  * @author wiselion
  */
 public class SeedTest {
-    public static void main(String[] args) throws NoSuchAlgorithmException, IOException, InterruptedException {
-        System.out.println(new File("").getAbsolutePath() + "java");
-        Torrent t = TorrentParser.parseTorrentFile(new File("").getAbsolutePath() + "/src/test/resources/ubuntu-22.04-live-server-amd64.iso.torrent");
+    // @Test
+    public void testBasicPeerLogic() throws NoSuchAlgorithmException, IOException, InterruptedException {
+        String working_directory = new File("").getAbsolutePath();
+        System.out.println(working_directory);
+
+        Torrent t = TorrentParser.parseTorrentFile(working_directory + "/src/test/resources/ubuntu-22.04-live-server-amd64.iso.torrent");
         BasicPeerLogic bpl = new BasicPeerLogic();
         t.addPeer(InetAddress.getByName("127.0.0.1"), 6881, null);
         while (true) {

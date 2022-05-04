@@ -1,9 +1,7 @@
 package edu.umd.cs.ztorrent;
 
 import edu.umd.cs.ztorrent.protocol.ManagedConnection;
-import edu.umd.cs.ztorrent.protocol.Tracker;
 
-import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -13,24 +11,24 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /***
- * Manages connection between UI, and torrent states.
+ * Manages connection between torrent states.
  * TODO: On initialization looks for user data.
  *
  * @author wiselion
  */
-public class LionShare extends AbstractTableModel {
+public class TorrentClient extends AbstractTableModel {
     private static final long serialVersionUID = -143709093895815620L;
     public boolean on = true;
-    Set<Torrent> allTorrents = Collections.synchronizedSet(new HashSet<Torrent>());
-    Map<Torrent, TorrentTransmitter> activeTorrents = new ConcurrentHashMap<Torrent, TorrentTransmitter>();//Seeding or leeching states
-    Set<MagnetLink> preparingTorrents = Collections.synchronizedSet(new HashSet<MagnetLink>()); //Fetching peers, downloading .torrent, searching DHT
-    Set<Torrent> inactiveTorrents = Collections.synchronizedSet(new HashSet<Torrent>());//Completed or inactive
-    Queue<MagnetLink> links = new ConcurrentLinkedQueue<MagnetLink>();
-    Queue<Torrent> newTorrents = new ConcurrentLinkedQueue<Torrent>();
-    private final List<MagnetLink> cleaner = new ArrayList<MagnetLink>();
+
+    final Set<Torrent> allTorrents = Collections.synchronizedSet(new HashSet<Torrent>());
+    final Map<Torrent, TorrentTransmitter> activeTorrents = new ConcurrentHashMap<Torrent, TorrentTransmitter>();//Seeding or leeching states
+    final Set<Torrent> inactiveTorrents = Collections.synchronizedSet(new HashSet<Torrent>());//Completed or inactive
+    Queue<MagnetLinkClient> links = new ConcurrentLinkedQueue<MagnetLinkClient>();
+    final Queue<Torrent> newTorrents = new ConcurrentLinkedQueue<Torrent>();
+    private final List<MagnetLinkClient> cleaner = new ArrayList<MagnetLinkClient>();
     TorrentServerSocket tss;
 
-    public LionShare() {
+    public TorrentClient() {
         try {
             tss = new TorrentServerSocket(6881);
         } catch (IOException e) {
@@ -38,7 +36,7 @@ public class LionShare extends AbstractTableModel {
         }
     }
 
-    public void mainLoop(UI ex) throws IOException, InterruptedException {
+    public void mainLoop() throws IOException, InterruptedException {
         while (on) {
             for (TorrentTransmitter tt : activeTorrents.values()) {
                 tt.work();
@@ -48,13 +46,6 @@ public class LionShare extends AbstractTableModel {
                 Torrent t = newTorrents.poll();
                 boolean has = false;
                 for (Torrent a : allTorrents) {
-                    if (Arrays.equals(t.hashInfo, a.hashInfo)) {
-                        has = true;
-                        break;
-                    }
-                }
-
-                for (MagnetLink a : preparingTorrents) {
                     if (Arrays.equals(t.hashInfo, a.hashInfo)) {
                         has = true;
                         break;
@@ -91,21 +82,18 @@ public class LionShare extends AbstractTableModel {
 
     }
 
-    public void addMagnetLink(MagnetLink ml) {
-
-    }
-
     public void addTorrent(Torrent t) {
         newTorrents.add(t);
     }
 
     //--------------------------------
-    public void setTorrentDeactive(Torrent t) throws IOException {
+    public void setTorrentInactive(Torrent t) throws IOException {
         activeTorrents.remove(t);
         inactiveTorrents.add(t);
 
         //Drop connections
         t.shutdown();
+
         // close files
         for (DownloadFile f : t.files) {
             f.close();
@@ -114,7 +102,7 @@ public class LionShare extends AbstractTableModel {
 
     public void deleteTorrentData(Torrent t) {
         try {
-            setTorrentDeactive(t);
+            setTorrentInactive(t);
             inactiveTorrents.remove(t);
             allTorrents.remove(t);
             for (DownloadFile f : t.files) {
@@ -126,8 +114,8 @@ public class LionShare extends AbstractTableModel {
     }
 
     public void deleteTorrent(Torrent t) throws IOException {
-        setTorrentDeactive(t);
-        t.getFile().delete();
+        setTorrentInactive(t);
+        t.getFile().delete(); // we presume the .delete() is always successful
     }
 
     public void deleteTorrentAndData(Torrent t) throws IOException {
@@ -145,8 +133,6 @@ public class LionShare extends AbstractTableModel {
         }
     }
 
-
-    /////////////////////////UI COLUMNS//////////////////////////////////////////////
     @Override
     public String getColumnName(int column) {
         String name = "??";
@@ -184,40 +170,48 @@ public class LionShare extends AbstractTableModel {
         return allTorrents.size();
     }
 
-    private final DecimalFormat dg;
-
+    private static final DecimalFormat dg = new DecimalFormat();
     {
-        dg = new DecimalFormat();
         dg.setMaximumFractionDigits(3);
+    }
+
+    /**
+     * based on apache.commons.io
+     *   more: https://commons.apache.org/proper/commons-io/javadocs/api-2.5/org/apache/commons/io/FileUtils.html#byteCountToDisplaySize(long)
+     *
+     * @param size
+     * @return
+     */
+    private static String byteCountToDisplaySize(long size) {
+        if (size / 1024 < 999) {
+            return "" + dg.format(size / 1024.0) + " KB";
+        } else if (size / (1024 * 1024) < 999) {
+            return "" + dg.format(size / (1024.0 * 1024.0)) + " MB";
+        } else {
+            return "" + dg.format(size / (1024.0 * 1024.0 * 1024.0)) + " GB";
+        }
+    }
+
+    private static String ratioPercentageToDisplay(long size, long progress) {
+        float f = 1.0f - (((float) progress) / size);
+        return dg.format(f * 100.0) + "%";
     }
 
     @Override
     public Object getValueAt(int arg0, int arg1) {
         //return percent dl
-        Torrent t = allTorrents.toArray(new Torrent[0])[arg0];//slow
+        Torrent t = allTorrents.toArray(new Torrent[0])[arg0];// slow
         switch (arg1) {
             case 0:
                 return t.name;
             case 1:
-                String s = null;
-                if (t.totalBytes / 1024 < 999) {
-                    s = "" + dg.format(t.totalBytes / 1024.0) + " KB";
-                } else if (t.totalBytes / (1024 * 1024) < 999) {
-                    s = "" + dg.format(t.totalBytes / (1024.0 * 1024.0)) + " MB";
-                } else {
-                    s = "" + dg.format(t.totalBytes / (1024.0 * 1024.0 * 1024.0)) + " GB";
-                }
-                return s;
+                return byteCountToDisplaySize(t.totalBytes);
             case 2:
-                String st;
-                float f = 1.0f - (((float) t.getLeft()) / t.totalBytes);
+                String progress = ratioPercentageToDisplay(t.totalBytes, t.getLeftToDownload());
                 if (t.getStatus().equals("Checking files")) {
-                    st = ("Checking files " + dg.format(f * 100.0) + "%");
-                } else {
-                    st = (dg.format(f * 100.0) + "%");
-
+                    progress = "Checking files " + progress;
                 }
-                return st;
+                return progress;
             case 3:
                 return t.getRecentDownRate();// (bytes/ms)=kb/s
             case 4:
@@ -229,21 +223,11 @@ public class LionShare extends AbstractTableModel {
     }
 
     public Torrent getTorrent(int i) {
-        return allTorrents.toArray(new Torrent[0])[i];
+        if (i < allTorrents.size()) {
+            System.out.println("get: " + i + " from all: " + allTorrents.size());
+            return allTorrents.toArray(new Torrent[0])[i];
+        }
+
+        return null;
     }
-
-    public static void main(String[] args) throws NoSuchAlgorithmException, IOException, InterruptedException {
-        LionShare ls = new LionShare();
-        final UI ex = new UI(ls);
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-
-                ex.setVisible(true);
-            }
-        });
-        ls.mainLoop(ex);
-    }
-
-
 }

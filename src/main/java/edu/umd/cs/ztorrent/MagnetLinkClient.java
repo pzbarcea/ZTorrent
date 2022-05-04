@@ -24,7 +24,7 @@ import java.util.*;
  *
  * @author wiselion
  */
-public class MagnetLink extends MetaTorrent {
+public class MagnetLinkClient extends MetaTorrent {
     /**
      * Pulled from a stack over flow.. dont remember which
      *
@@ -47,7 +47,7 @@ public class MagnetLink extends MetaTorrent {
      * <p>
      * AND then promptly edited.
      *
-     * @param url
+     * @param s
      * @return
      * @throws UnsupportedEncodingException
      */
@@ -71,7 +71,7 @@ public class MagnetLink extends MetaTorrent {
 
     public Set<MetaConnection> connections; //We looking for our .torrent, gatta talk to someone!
 
-    private MagnetLink(byte[] info, byte[] p, String name, String u, String http) throws SocketException {
+    private MagnetLinkClient(byte[] info, byte[] p, String name, String u, String http) throws SocketException {
         super(info, p, new MetaData());
         this.name = name;
         DHTtracker = new DHTTracker(hashInfo, peerID);//binds to a socket.
@@ -87,7 +87,7 @@ public class MagnetLink extends MetaTorrent {
      * @throws UnsupportedEncodingException
      * @throws SocketException
      */
-    public static MagnetLink createFromURI(String uri) throws MalformedURLException, UnsupportedEncodingException, SocketException {
+    public static MagnetLinkClient createFromURI(String uri) throws MalformedURLException, UnsupportedEncodingException, SocketException {
 
         byte[] hashInfo;
         byte[] peerID;
@@ -144,7 +144,7 @@ public class MagnetLink extends MetaTorrent {
 
         peerID = Torrent.generateSessionKey(20).getBytes(StandardCharsets.UTF_8);
 
-        return new MagnetLink(hashInfo, peerID, name, udpTracker, httpTracker);
+        return new MagnetLinkClient(hashInfo, peerID, name, udpTracker, httpTracker);
     }
 
     /***
@@ -227,7 +227,7 @@ public class MagnetLink extends MetaTorrent {
     public static void main(String[] args) throws IOException, InterruptedException, NoSuchAlgorithmException {
         Torrent t = TorrentParser.parseTorrentFile("ubuntu.torrent");
         BigInteger big = new BigInteger(1, t.hashInfo);
-        MagnetLink ml = createFromURI(String.format("%0" + (t.hashInfo.length << 1) + "X", big));
+        MagnetLinkClient ml = createFromURI(String.format("%0" + (t.hashInfo.length << 1) + "X", big));
 //		HTTPTracker ht = new HTTPTracker(t.tracker);
 
         while (!ml.isComplete()) {

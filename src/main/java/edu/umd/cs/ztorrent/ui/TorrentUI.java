@@ -1,4 +1,8 @@
-package edu.umd.cs.ztorrent;
+package edu.umd.cs.ztorrent.ui;
+
+import edu.umd.cs.ztorrent.Torrent;
+import edu.umd.cs.ztorrent.TorrentClient;
+import edu.umd.cs.ztorrent.TorrentParser;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,42 +14,20 @@ import java.security.NoSuchAlgorithmException;
 
 
 /***
- * UI from Lion's Share
- * @author wiselion
- *
+ * zTorrent UI
  */
-public class UI extends JFrame implements ActionListener {
+public class TorrentUI extends JFrame implements ActionListener {
     //TODO: damn download bar!!
-//	private class DownloadBar extends JProgressBar implements TableCellRenderer{
-//		DecimalFormat df = new DecimalFormat();
-//		public DownloadBar(){
-//			super(0,100);
-//			df.setMaximumFractionDigits(3);
-//		}
-//		
-//		@Override
-//		public Component getTableCellRendererComponent(JTable arg0,Object value, boolean arg2, boolean arg3, int arg4, int arg5) {
-//			Torrent t = (Torrent)value;
-//			float f = 1.0f-(((float)t.getLeft())/t.totalBytes);
-//			if(t.getStatus().equals("Checking files")){
-//				this.setName("Checking files "+df.format((float)value*100.0));
-//			}
-//			this.setName(df.format((float)f*100.0));
-//			this.setValue((int)f*100);
-//            return this;
-//		}
-//		
-//	}
 
     private static final long serialVersionUID = 1L;
     final JFileChooser fileChooser;
-    final JButton play, magnet, stop, open, delete;
+    final JButton start, stop, open, delete;
     final JSplitPane mainPane;
     public final JTable torrentList;
-    final LionShare ls;
+    final TorrentClient client;
 
-    public UI(LionShare atm) {
-        this.ls = atm;
+    public TorrentUI(TorrentClient client) {
+        this.client = client;
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());//get look and feel of whatever OS we're using
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
@@ -56,33 +38,26 @@ public class UI extends JFrame implements ActionListener {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                ls.on = false;
+                client.on = false;
             }
         });
 
-
         setSize(400, 300);
-        play = new JButton("Play");
-        magnet = new JButton("Magnet Link");
-        stop = new JButton("Stop");
         open = new JButton("Open");
+        start = new JButton("Start");
+        stop = new JButton("Stop");
         delete = new JButton("Delete");
+
         JPanel topPanel = new JPanel(new GridLayout(1, 5));
         topPanel.add(open);
         topPanel.add(delete);
-        topPanel.add(play);
-        topPanel.add(magnet);
+        topPanel.add(start);
         topPanel.add(stop);
 
         //Name,size, progress bar, dl down, dl up
-        torrentList = new JTable(atm);
+        torrentList = new JTable(client);
         JScrollPane scrollPane = new JScrollPane(torrentList);
-//        DownloadBar progressBar=new DownloadBar();
-//        progressBar.setStringPainted(true);
-//        progressBar.setBackground(Color.GRAY);
-//        progressBar.setForeground(Color.GREEN);
-////        progressBar.setIndeterminate(true);
-//        torrentList.getColumn("Status").setCellRenderer(progressBar);
+
         torrentList.setFillsViewportHeight(true);
         scrollPane.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 
@@ -131,14 +106,13 @@ public class UI extends JFrame implements ActionListener {
         this.add(mainPane, c);
         open.addActionListener(this);
         stop.addActionListener(this);
-        magnet.addActionListener(this);
         delete.addActionListener(this);
-        play.addActionListener(this);
+        start.addActionListener(this);
 
         fileChooser = new JFileChooser();
         mainPane.setDividerLocation(265);
         this.pack();
-        setTitle("Lion's Share");
+        setTitle("zTorrent Client");
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
@@ -147,7 +121,7 @@ public class UI extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         if (e.getSource() == open) {
-            int returnVal = fileChooser.showOpenDialog(UI.this);
+            int returnVal = fileChooser.showOpenDialog(TorrentUI.this);
 
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File file = fileChooser.getSelectedFile();
@@ -155,37 +129,33 @@ public class UI extends JFrame implements ActionListener {
                 System.out.println("Opening: " + file.getName());
                 try {
                     Torrent t = TorrentParser.parseTorrentFile(file.getAbsolutePath());
-                    ls.addTorrent(t);
+                    client.addTorrent(t);
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(mainPane, "Invalid torrent file");
                 }
             } else {
                 System.out.println("Open command cancelled by user.");
             }
-        } else if (e.getSource() == magnet) {
-            System.out.println("Clicked magent");
-            String ans = JOptionPane.showInputDialog(null, "Magnet Link:");
-            System.out.println("Go fetch: " + ans);
         } else if (e.getSource() == delete) {
             System.out.println("delete ");
             System.out.println("Delete " + torrentList.getSelectedRow());
-            ls.deleteTorrentData(ls.getTorrent(torrentList.getSelectedRow()));
+            client.deleteTorrentData(client.getTorrent(torrentList.getSelectedRow()));
 
             //TODO: Choices...
         } else if (e.getSource() == stop) {
             System.out.println("stop ");
             System.out.println("Stop " + torrentList.getSelectedRow());
             try {
-                ls.setTorrentDeactive(ls.getTorrent(torrentList.getSelectedRow()));
+                client.setTorrentInactive(client.getTorrent(torrentList.getSelectedRow()));
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
-        } else if (e.getSource() == play) {
+        } else if (e.getSource() == start) {
             System.out.println("play ");
             System.out.println("Start " + torrentList.getSelectedRow());
             //Effectively just reload torrent.
             try {
-                ls.reActivate(ls.getTorrent(torrentList.getSelectedRow()));
+                client.reActivate(client.getTorrent(torrentList.getSelectedRow()));
             } catch (IOException | NoSuchAlgorithmException e1) {
                 e1.printStackTrace();
             }
@@ -194,5 +164,18 @@ public class UI extends JFrame implements ActionListener {
         }
     }
 
+    public static void main(String[] args) throws IOException, InterruptedException {
+        // @TODO: open the client with a specific torrent
 
+        TorrentClient client = new TorrentClient();
+        final TorrentUI ex = new TorrentUI(client);
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                ex.setVisible(true);
+            }
+        });
+
+        client.mainLoop();
+    }
 }

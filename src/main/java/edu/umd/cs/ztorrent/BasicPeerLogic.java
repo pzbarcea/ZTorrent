@@ -50,6 +50,8 @@ public class BasicPeerLogic extends PeerLogic {
 
     @Override
     public void doWork(Torrent t) throws IOException {
+
+        // save time
         long now = System.currentTimeMillis();
 
         activeConnections = 0;
@@ -256,13 +258,7 @@ public class BasicPeerLogic extends PeerLogic {
         }
 
 
-        t.pm.doBlockingWork();//TODO: remove from here. set to threaded process.
+        t.pm.doBlockingWork(); // TODO: remove from here. set to threaded process.
     }
-
-    @Override
-    public String getName() {
-        return "Basic logic";
-    }
-
-
+    
 }
