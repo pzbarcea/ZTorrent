@@ -177,7 +177,7 @@ public class MetaConnection {
                     System.out.println("GOT HAND SHAKE!");
                 }
             } else {
-                mp.readMessage(sockIn);
+                mp.consumeMessage(sockIn);
                 while (mp.hasMessage()) {
                     //Input logic.
                     PeerMessage pm = mp.getNext();

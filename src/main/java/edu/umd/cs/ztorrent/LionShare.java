@@ -38,28 +38,12 @@ public class LionShare extends AbstractTableModel {
         }
     }
 
-    public void mainLoop(UI ex) throws IOException, InterruptedException, NoSuchAlgorithmException {
+    public void mainLoop(UI ex) throws IOException, InterruptedException {
         while (on) {
             for (TorrentTransmitter tt : activeTorrents.values()) {
                 tt.work();
             }
             cleaner.clear();
-//			for(MagnetLink ml : preparingTorrents){
-//				ml.doWork();
-//				if(ml.isComplete()){
-//					//TODO: user settings?
-//					Torrent t = ml.construct();
-//					activeTorrents.add(new TorrentTransmitter(new BasicPeerLogic(),t));
-//					allTorrents.add(t);
-//					cleaner.add(ml);
-//				}
-//			}
-//			
-//			for(MagnetLink ml : cleaner){
-//				preparingTorrents.remove(ml);
-//			}
-
-            ///////////////// ADD NEW TORRENTS //////////////////
             while (!newTorrents.isEmpty()) {
                 Torrent t = newTorrents.poll();
                 boolean has = false;
@@ -83,9 +67,6 @@ public class LionShare extends AbstractTableModel {
                 }
             }
 
-            ///////////////// Take a nap! //////////////////
-
-
             Thread.sleep(10);
             this.fireTableRowsUpdated(0, allTorrents.size() - 1);
             //this.fireTableRowsUpdated(0,allTorrents.size());
@@ -103,18 +84,7 @@ public class LionShare extends AbstractTableModel {
         //Shut everything down.
         System.out.println("Shutting down.");
         for (Torrent t : allTorrents) {
-            Iterator<ManagedConnection> mcs = t.getPeers().iterator();
-            while (mcs.hasNext()) {
-                try {
-                    ManagedConnection mc = mcs.next();
-                    mc.shutDown();
-                } catch (Exception e) {
-                }
-                mcs.remove();
-            }
-            for (Tracker tr : t.getTrackers()) {
-                tr.close(t);
-            }
+            t.shutdown();
         }
         tss.close();
 
@@ -133,20 +103,10 @@ public class LionShare extends AbstractTableModel {
     public void setTorrentDeactive(Torrent t) throws IOException {
         activeTorrents.remove(t);
         inactiveTorrents.add(t);
-        //Drop connections
-        Iterator<ManagedConnection> mcs = t.getPeers().iterator();
-        while (mcs.hasNext()) {
-            try {
-                ManagedConnection mc = mcs.next();
-                mc.shutDown();
-            } catch (Exception e) {
-            }
-            mcs.remove();
-        }
-        for (Tracker tr : t.getTrackers()) {
-            tr.close(t);
-        }
 
+        //Drop connections
+        t.shutdown();
+        // close files
         for (DownloadFile f : t.files) {
             f.close();
         }

@@ -183,4 +183,20 @@ public class Torrent extends MetaTorrent {
         return false;
     }
 
+    public void shutdown() {
+        Iterator<ManagedConnection> mcs = getPeers().iterator();
+        while (mcs.hasNext()) {
+            try {
+                ManagedConnection mc = mcs.next();
+                mc.shutDown();
+            } catch (Exception e) {
+            }
+            mcs.remove();
+        }
+
+        for (Tracker tr : getTrackers()) {
+            tr.close(this);
+        }
+    }
+
 }

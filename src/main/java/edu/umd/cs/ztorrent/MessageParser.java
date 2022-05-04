@@ -18,18 +18,17 @@ import java.util.Queue;
  * NOT SYNCHRONIZABLE!! So dont do it.
  */
 public class MessageParser {
-    byte[] sizeBuf;
+
+    private static final int UNINITIALIZED = -1;
+    private static final int KEEPALIVE = 0;
+    private static final int LENGTH_PREFIX_SIZE = 4;
+
+    byte[] sizeBuf = new byte [LENGTH_PREFIX_SIZE];
     private final Queue<PeerMessage> queue = new LinkedList<>();
-    private boolean intro;
+    private boolean intro = false;
     private byte[] buffer;
     private int off;
-    private int size;//always the first byte, always in int range.
-
-    public MessageParser() {
-        intro = false;
-        size = -1;
-        sizeBuf = new byte[4];
-    }
+    private int size = UNINITIALIZED; //always the first byte, always in int range.
 
     /***
      * Called until handShake complete
@@ -73,7 +72,7 @@ public class MessageParser {
      * To retrieve make a poll request.
      * @throws IOException
      */
-    public void readMessage(InputStream in) throws IOException {
+    public void consumeMessage(InputStream in) throws IOException {
 //		if(!intro){throw new RuntimeException("Haven't called readHandShake() till completion!?!");}
         while (in.available() > 0) {
             if (size == -1) {
@@ -96,13 +95,13 @@ public class MessageParser {
                 }
 
                 if (off == size) {
-                    if (size != 0) {//zero is just keep alive.
-                        PeerMessage pm = from(buffer);
+                    if (size != KEEPALIVE) { //zero is just keep alive.
+                        PeerMessage pm = buildFromByte(buffer);
                         if (pm != null)
                             queue.add(pm);
                     }
-                    off = 0;//reset state variables.
-                    size = -1;//reset state variables.
+                    off = 0; // reset parser state variables.
+                    size = -1;// reset parser state variables.
 
                 }
             }
@@ -142,7 +141,7 @@ public class MessageParser {
     }
 
     //Ok fine what you had before would have made this a bit quicker....
-    private PeerMessage from(byte[] buffer2) {
+    private PeerMessage buildFromByte(byte[] buffer2) {
         PeerMessage PM;
         switch (buffer2[0]) {
             case 0:
@@ -234,7 +233,7 @@ public class MessageParser {
      */
     public void keep_alive(OutputStream os) throws IOException {
         ByteBuffer b = ByteBuffer.allocate(4);
-        b.putInt(0);
+        b.putInt(KEEPALIVE);
         os.write(b.array());
     }
 
@@ -489,7 +488,6 @@ public class MessageParser {
         }
 
         public enum Type {
-            KEEP_ALIVE,
             CHOKE,
             UNCHOKE,
             INTERESTED,

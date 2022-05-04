@@ -9,7 +9,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -62,7 +61,8 @@ public class UnitTests {
      * @param args
      * @throws IOException
      */
-    private static void messageParser() throws IOException {
+    @Test
+    public void messageParser() throws IOException {
         //Ok, lets use the potentially broken thing ot test the broken thing
         //right?
 
@@ -80,44 +80,44 @@ public class UnitTests {
         os.reset();
         MP.choke(os);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.readMessage(bis);
+        MP.consumeMessage(bis);
         System.out.println("	Test 2: " + (MP.getNext().type == PeerMessage.Type.CHOKE));
 
 
         os.reset();
         MP.unchoke(os);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.readMessage(bis);
+        MP.consumeMessage(bis);
         System.out.println("	Test 3: " + (MP.getNext().type == PeerMessage.Type.UNCHOKE));
 
         os.reset();
         MP.interested(os);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.readMessage(bis);
+        MP.consumeMessage(bis);
         System.out.println("	Test 4: " + (MP.getNext().type == PeerMessage.Type.INTERESTED));
 
         os.reset();
         MP.not_interested(os);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.readMessage(bis);
+        MP.consumeMessage(bis);
         System.out.println("	Test 5: " + (MP.getNext().type == PeerMessage.Type.NOT_INTERESTED));
 
         os.reset();
         MP.bitfield(os, bitField);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.readMessage(bis);
+        MP.consumeMessage(bis);
         System.out.println("	Test 6: " + (Arrays.equals(bitField, MP.getNext().bitfield)));
 
         os.reset();
         MP.have(os, 10241139);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.readMessage(bis);
+        MP.consumeMessage(bis);
         System.out.println("	Test 7: " + (MP.getNext().piece == 10241139));
 
         os.reset();
         MP.request(os, 10199, 10211, 12311);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.readMessage(bis);
+        MP.consumeMessage(bis);
         PeerMessage p = MP.getNext();
         System.out.println("	Test 8: " + (p.begin == 10211 && p.index == 10199 && p.length == 12311 && p.type == PeerMessage.Type.REQUEST));
 
@@ -125,14 +125,14 @@ public class UnitTests {
         os.reset();
         MP.piece(os, 0, 300, block);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.readMessage(bis);
+        MP.consumeMessage(bis);
         p = MP.getNext();
         System.out.println("	Test 9: " + (Arrays.equals(block, p.block) && p.index == 0 && p.begin == 300));
 
         os.reset();
         MP.cancel(os, 10199, 10211, 12311);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.readMessage(bis);
+        MP.consumeMessage(bis);
         p = MP.getNext();
         System.out.println("	Test 10: " + (p.begin == 10211 && p.index == 10199 && p.length == 12311 && p.type == PeerMessage.Type.CANCEL));
 
