@@ -265,10 +265,7 @@ public class MessageParser {
         os.write(b.array());
     }
 
-    //I dunno change it if you want. Its just boiler
-    //////|||SENDING CODE|||/////
-
-    /**
+     /**
      * interested: <len=0001><id=2>
      * capacity: 4 + 1
      *

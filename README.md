@@ -98,26 +98,16 @@ This implies that a `TestUnit` should be created to evaluate performance.
 * Generate class diagram before submitting, also helps with documentation of the project:
 ![class diagram](/docs/images/class-diagram.png "Class diagram")
 * Clean commented code.
-* Refactor `Logic` package to something else, as doesn't mean anything.
-* Refactor all 6 main classes and decide which ones are useful (to keep) and which ones to destroy.
-```csh
-ztorrent on  main [✘!] is 📦 v1.0-SNAPSHOT via ☕ v1.8.0 
-❯ grep -nRI "void main(" --exclude-dir="target" . | grep "\.java" | grep -v "//" | awk -F':' '{print $1}' | sortrt -u
-./src/main/java/Main/LionShare.java
-./src/main/java/Main/SeedTest.java
-./src/main/java/Main/UnitTests.java
-./src/main/java/Primitives/Piece.java
-./src/main/java/TorrentData/MagnetLink.java
-./src/main/java/Trackers/DHTTracker.java
-```
-* Refactor `NetBase` package to something else
-* Refactor `Primitives` to something else
-* Refactor `TorrentData` to something else
-* Maybe Refactor `Trackers` to something else.
-* Refactor `Utils` to something else.
 * Fix exception. This is maybe normal behavior when a peer-to-peer connection can't be established due to security limitations:
 ```
 java.net.ConnectException: Connection refused (Connection refused)
 ```
 * (Paul) Review and rephrase the documentation in `ManagedConnection.java`
 * In System.out: "INVALID response (unsupported tracker)" means that the response from Node coudn't be processed. Maybe different security constraints, maybe other cases of the protocol.
+
+* which one is the port (for tracker)
+* Remove a lot of files
+* Decide to show UI or CLI.
+* Remove unused code (classes like ActiveCallback etc.)
+* TODOs you can document them as issues or things that don't yet work.
+* Unit test with Tracker and 2 Clients.

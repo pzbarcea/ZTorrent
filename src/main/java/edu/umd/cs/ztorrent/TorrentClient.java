@@ -23,9 +23,8 @@ public class TorrentClient extends AbstractTableModel {
     final Set<Torrent> allTorrents = Collections.synchronizedSet(new HashSet<Torrent>());
     final Map<Torrent, TorrentTransmitter> activeTorrents = new ConcurrentHashMap<Torrent, TorrentTransmitter>();//Seeding or leeching states
     final Set<Torrent> inactiveTorrents = Collections.synchronizedSet(new HashSet<Torrent>());//Completed or inactive
-    Queue<MagnetLinkClient> links = new ConcurrentLinkedQueue<MagnetLinkClient>();
+
     final Queue<Torrent> newTorrents = new ConcurrentLinkedQueue<Torrent>();
-    private final List<MagnetLinkClient> cleaner = new ArrayList<MagnetLinkClient>();
     TorrentServerSocket tss;
 
     public TorrentClient() {
@@ -41,7 +40,7 @@ public class TorrentClient extends AbstractTableModel {
             for (TorrentTransmitter tt : activeTorrents.values()) {
                 tt.work();
             }
-            cleaner.clear();
+
             while (!newTorrents.isEmpty()) {
                 Torrent t = newTorrents.poll();
                 boolean has = false;
@@ -78,8 +77,6 @@ public class TorrentClient extends AbstractTableModel {
             t.shutdown();
         }
         tss.close();
-
-
     }
 
     public void addTorrent(Torrent t) {

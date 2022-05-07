@@ -265,7 +265,6 @@ public class DownloadFile {
             fStart = 0;
         }
 
-
         return offX;
     }
 
