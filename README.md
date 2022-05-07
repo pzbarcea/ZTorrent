@@ -98,17 +98,13 @@ This implies that a `TestUnit` should be created to evaluate performance.
 * Generate class diagram before submitting, also helps with documentation of the project:
 ![class diagram](/docs/images/class-diagram.png "Class diagram")
 * Clean commented code.
-* Fix exception. This is maybe normal behavior when a peer-to-peer connection can't be established due to security limitations:
+* (A) show as Peer unavailable. This is maybe normal behavior when a peer-to-peer connection can't be established due to security limitations:
 ```
 java.net.ConnectException: Connection refused (Connection refused)
 ```
 * (Paul) Review and rephrase the documentation in `ManagedConnection.java`
 * In System.out: "INVALID response (unsupported tracker)" means that the response from Node coudn't be processed. Maybe different security constraints, maybe other cases of the protocol.
-
-* which one is the port (for tracker)
-* Remove a lot of files
-* Decide to show UI or CLI.
-* Remove unused code (classes like ActiveCallback etc.)
-* TODOs you can document them as issues or things that don't yet work.
-* Unit test with Tracker and 2 Clients.
-* 
+* (A) which one is the port (for tracker)
+* (A) Remove unused code (classes like ActiveCallback etc.)
+* (P) TODOs you can document them as issues or things that don't yet work.
+* (A) All main functions unused to be replaced as UnitTest.
