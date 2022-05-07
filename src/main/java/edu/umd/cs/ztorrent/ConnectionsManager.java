@@ -24,7 +24,7 @@ import java.util.*;
  *
  * @author wiselion
  */
-public class Disseminator {
+public class ConnectionsManager {
     private class ConnectionWork {
         Set<Piece> queued = new TreeSet<Piece>();
         List<Request> blockLeft = new LinkedList<Request>();//blocks queued from pieces but not yet sent.
@@ -233,7 +233,6 @@ public class Disseminator {
             if (mc.getConnectionState() == ConnectionState.connected) {
                 mc.cancelPiece(p);
             }
-
         }
     }
 

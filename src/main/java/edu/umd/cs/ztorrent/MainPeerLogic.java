@@ -20,24 +20,22 @@ import java.util.*;
  *
  * @author wiselion
  */
-public class BasicPeerLogic extends PeerLogic {
+public class MainPeerLogic extends PeerLogic {
     int recvPieces = 0;
     int activeConnections = 0;
     private static final int MAX_ENQEUED = 32;//20*1024*16 =
-    private static final int MAX_ACTIVE_PIECES = 2;//TODO: be grown like tcp
-//	private static int MAX_ACTIVE_REQUESTS = 10;
-
+    private static final int MAX_ACTIVE_PIECES = 2;
     private boolean exhausted = false;
     private long rarityTimer = System.currentTimeMillis();
     private long haveAccumulator = 0;
     private final long MIN_RARITY_TIME = 1000;
-    private final Disseminator disseminator = new Disseminator();
+    private final ConnectionsManager connectionsManager = new ConnectionsManager();
     private final List<Piece> completedLast = new ArrayList<Piece>();
     private final Set<Integer> cleaningList = new HashSet<Integer>();
     private final long start = System.currentTimeMillis();
 
     private void connectionCleanUp(ManagedConnection mc) {
-        disseminator.connectionCleanUp(mc);
+        connectionsManager.connectionCleanUp(mc);
         try {
             mc.shutDown();
         } catch (IOException e) {
@@ -61,7 +59,7 @@ public class BasicPeerLogic extends PeerLogic {
             ManagedConnection mc = itor.next();
             if (mc.getConnectionState() == ConnectionState.uninitialized) {
                 mc.initalizeConnection(t.pm.bitmap.getMapCopy(), t);
-                disseminator.initializeConnection(mc);
+                connectionsManager.initializeConnection(mc);
                 t.pm.bitmap.addPeerMap(mc.getPeerBitmap());//adds
             } else if (mc.getConnectionState() == ConnectionState.closed) {
                 //pull off anything new?
@@ -86,7 +84,7 @@ public class BasicPeerLogic extends PeerLogic {
                 if (!mc.amInterested()) {
                     mc.setAmInterested(true);
                 }
-                long l = disseminator.readFromConnection(mc, t.pm.bitmap);
+                long l = connectionsManager.readFromConnection(mc, t.pm.bitmap);
                 down += l;
                 t.addDownloaded(l);
 
@@ -122,8 +120,8 @@ public class BasicPeerLogic extends PeerLogic {
 
 
                     //write requests
-                    Iterator<Request> rlist = disseminator.getBufferedRequests(mc).iterator();
-                    if (disseminator.getBufferedRequests(mc).size() > 0) {
+                    Iterator<Request> rlist = connectionsManager.getBufferedRequests(mc).iterator();
+                    if (connectionsManager.getBufferedRequests(mc).size() > 0) {
 //						System.out.println("Something could.");
                     }
                     while (rlist.hasNext()) {
@@ -144,15 +142,15 @@ public class BasicPeerLogic extends PeerLogic {
 
 
                     //enqueue some requests if not fully filled.
-                    disseminator.enqueuePieces(MAX_ENQEUED + 3, mc);
+                    connectionsManager.enqueuePieces(MAX_ENQEUED + 3, mc);
 
                 } else {
                     //Dequeue im choked lists are dropped.
                     mc.resetHistory();
-                    Piece[] ps = disseminator.getQueuedPieces(mc);
+                    Piece[] ps = connectionsManager.getQueuedPieces(mc);
                     for (Piece p : ps) {
                         exhausted = false;
-                        disseminator.cancelPieceForConnection(mc, (int) p.pieceIndex);
+                        connectionsManager.cancelPieceForConnection(mc, (int) p.pieceIndex);
                     }
                 }
 
@@ -168,7 +166,7 @@ public class BasicPeerLogic extends PeerLogic {
                 for (Integer p : cleaningList) {
                     System.out.println("Time expired. " + p + " on " + mc);
                     mc.resetHistory();
-                    disseminator.cancelPieceForConnection(mc, p);
+                    connectionsManager.cancelPieceForConnection(mc, p);
                 }
 
                 if (cleaningList.size() > 0) {
@@ -195,7 +193,7 @@ public class BasicPeerLogic extends PeerLogic {
         }
 
         completedLast.clear();
-        List<Piece> piecesCompleted = disseminator.recentlyCompletedPieces();
+        List<Piece> piecesCompleted = connectionsManager.recentlyCompletedPieces();
         if (piecesCompleted != null) {
             for (Piece p : piecesCompleted) {
                 completedLast.add(p);
@@ -218,7 +216,7 @@ public class BasicPeerLogic extends PeerLogic {
 
         //Sets Completion queue by rarity.
         //TODO: client may leave, access to piece might disapear..
-        Set<Piece> workingQueue = disseminator.currentQueue();
+        Set<Piece> workingQueue = connectionsManager.currentQueue();
         if (workingQueue.size() == 0 && !t.pm.bitmap.isComplete() && !exhausted) {//&&!exhausted
             workingQueue.clear();
             List<Rarity> rList = t.pm.bitmap.getRarity();
@@ -229,7 +227,7 @@ public class BasicPeerLogic extends PeerLogic {
                     break;
                 }
                 //if some one has it and we don't and were not working to get it yet.
-                if (rar.getCount() > 0 && !t.pm.hasPiece(rar.index) && !disseminator.getWorkingSet().contains(rar.index)) {
+                if (rar.getCount() > 0 && !t.pm.hasPiece(rar.index) && !connectionsManager.getWorkingSet().contains(rar.index)) {
                     System.out.println("Queued " + rar.index);
                     workingQueue.add(t.pm.bitmap.createPiece(rar.index));
                     addedOnce = true;
