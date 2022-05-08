@@ -52,23 +52,16 @@ public class MetaConnection {
     /***
      * @author pzbarcea
      */
-    protected boolean extendedMessages;
     protected Map<String, Integer> extensions;
     protected Map<Integer, String> revExtensions;
     protected int metaSize = -1;
     protected String name = "Unknown";
-    protected boolean fetchMeta = false;
     protected boolean connectionSupportsMeta = false;
     protected boolean connectionSupportsMetaMeta = false;
     protected MetaData metaData;
-    protected int max_in = 100;
     protected int max_reported = -1;
-
-    //This is as minimal class. We'll just pass this alogn when the time comes.
-    private final Queue<PeerMessage> unreadMessages = new LinkedList<PeerMessage>();
     private boolean isMetaConnection = false;
     private final Set<Integer> metaMetaRequests = new HashSet<Integer>();
-    private boolean gotEXHandShake = false;
     private final boolean sentEXHandShake = false;
 
     public MetaConnection(InetAddress ip, int port) {
@@ -199,7 +192,6 @@ public class MetaConnection {
                 //handshake set mappings
                 Bencoding b = new Bencoding(msg);
                 Bencoding m = b.dictionary.get("m");
-                gotEXHandShake = true;
                 extensions = new HashMap<String, Integer>();
                 revExtensions = new HashMap<Integer, String>();
                 for (String s : m.dictionary.keySet()) {
@@ -261,26 +253,6 @@ public class MetaConnection {
         }
 
     }
-
-    protected byte[] createExtenedHandShake(int metaSize) throws UnsupportedEncodingException {
-        Bencoding m = new Bencoding();
-        m.type = Type.Dictionary;
-        m.dictionary = new HashMap<String, Bencoding>();
-        // Supported extensions:
-        m.dictionary.put("ut_metadata", new Bencoding(1));
-
-        Bencoding b = new Bencoding();
-        b.type = Type.Dictionary;
-        b.dictionary = new HashMap<String, Bencoding>();
-        b.dictionary.put("reqq", new Bencoding(100));
-        // set max...
-        b.dictionary.put("v", new Bencoding("Lions Share v.1"));
-        if (metaSize > 0) {
-            b.dictionary.put("metadata_size", new Bencoding(metaSize));
-        }
-        b.dictionary.put("m", m);
-        return b.toByteArray();
-    }
     /// EXTENSIONS- END ///
 
     protected void doDataIn(PeerMessage pm) {
@@ -302,38 +274,6 @@ public class MetaConnection {
         }
     }
 
-    public boolean supportsMetaMetaRequest() {
-        if (conState == ConnectionState.connected && connectionSupportsMeta && connectionSupportsMetaMeta && sentEXHandShake) {
-            return extensions.containsKey("ut_metadata");
-        }
-        return false;
-    }
-
-    /***
-     * Be warned. We cant go back. there is no cancel message.
-     * so dont queue to many. use get active requests to see how many
-     * currently enqueued.
-     * @param r
-     * @throws IOException
-     */
-    public void sendMetaMetaRequest(int r) {
-        try {
-            if (!metaMetaRequests.contains(r) && connectionSupportsMetaMeta) {
-                metaMetaRequests.add(r);
-                byte b = extensions.get("ut_metadata").byteValue();
-                sockOut.write(TorrentExtensions.getMetaDataPiece(b, r));
-                System.out.println("Asking for piece! " + r + ":" + b + " from " + this);
-            }
-        } catch (IOException io) {
-            io.printStackTrace();
-            conState = ConnectionState.closed;
-        }
-    }
-
-    public Integer[] getActiveRequests() {
-        return metaMetaRequests.toArray(new Integer[0]);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (o instanceof MetaConnection) {
@@ -344,7 +284,7 @@ public class MetaConnection {
     }
 
     public ManagedConnection toManagedConnection(Torrent t) {
-        //Converts connection to managedconnection.
+        // Should convert Connection to ManagedConnection.
         return null;
     }
 
@@ -413,10 +353,6 @@ public class MetaConnection {
         }
     }
 
-    public long getManagementBytes() {
-        return maintenance;
-    }
-
     public void shutDown() throws IOException {
         sock.close();
         conState = ConnectionState.closed;
@@ -437,5 +373,4 @@ public class MetaConnection {
             return (ip.toString() + ":" + port);
         }
     }
-
 }
