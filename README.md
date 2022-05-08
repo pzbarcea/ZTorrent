@@ -109,6 +109,11 @@ java.net.ConnectException: Connection refused (Connection refused)
 * (P) TODOs you can document them as issues or things that don't yet work.
 * (A) All main functions unused to be replaced as UnitTest.
 
+## Needs clarification:
+* what is byte[] b = hexStringToByteArray("00599b501d8713640be4f481433dd0848a592ef3");
+  * in DHTTracker, line 119
+* 
+
 
 ## Known Bugs/Issues (Either fix or include in final report)
 * If a running or inactive torrent is deleted manually (either through CLI with rm -f or from File Explorer) while the GUI is running, it will cause a NullPointerException when attemptign to stop or restart torrents

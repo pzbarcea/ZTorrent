@@ -14,15 +14,14 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /***
+ * Explanation from https://forum.utorrent.com/topic/75810-whats-dht/
  * DHT (Distributed "sloppy" Hash Table, technical explanation) is an addition to certain BitTorrent clients that allows them to work without a tracker. What this means is that your client will be able to find peers even when the tracker is down, or doesn't even exist anymore. It allows the swarm to continue as normal without a tracker. You can also host torrents without a tracker.
  *
  * This means, your ratio wont get updated if you enable DHT from your torrent client (ie: BitComet, uTorrent, Azureus) when downloading from xxxxxxxxxx tracker. Nowadays, most new torrent client come with DHT, so pls disable it unless you are downloading from other websites that do not implement ratio method.
  *
  * In most clients, you have the option to enable or disable DHT.
  *
- * Implementing DHT, allows us to use "Magnet Links"!
- *
- * @author pzbarcea
+ * Implementing DHT, allows us to use "Magnet Links"
  */
 public class DHTTracker extends Tracker {
     Map<ID, Node> idToNode;
@@ -83,10 +82,10 @@ public class DHTTracker extends Tracker {
                             System.out.println("Request from " + n);
                             requests.add(new Packet(b, n));
                         } else {
-                            continue;//something went wrong.
+                            continue;
                         }
 
-                        Thread.sleep(10);//Just for good measure... recv should block
+                        Thread.sleep(10);
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (RuntimeException r) {

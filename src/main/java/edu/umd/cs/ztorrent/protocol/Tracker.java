@@ -12,7 +12,6 @@ import java.net.UnknownHostException;
  * DHT
  * HTTP
  *
- * @author wiselion
  */
 public abstract class Tracker {
     //wait time

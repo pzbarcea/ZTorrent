@@ -10,7 +10,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Largely GNU-compatible command-line options parser. Has short (-v) and
+ * Largely GNU-compatible command-line options parser. Has short (-v) options
  */
 public class CmdLineParser {
 

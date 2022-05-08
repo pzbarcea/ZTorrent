@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * Provides a way to run from the command line, with additional options
+ */
 public class TorrentCli {
     private static void usage(PrintStream s) {
         s.println("usage: Client [options] <torrent>");
