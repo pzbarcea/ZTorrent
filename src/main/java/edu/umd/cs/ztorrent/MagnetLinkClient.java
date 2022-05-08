@@ -1,12 +1,11 @@
 package edu.umd.cs.ztorrent;
 
 import edu.umd.cs.ztorrent.protocol.DHTTracker;
-import edu.umd.cs.ztorrent.protocol.ManagedConnection.ConnectionState;
+import edu.umd.cs.ztorrent.protocol.PeerConnection.ConnectionState;
 import edu.umd.cs.ztorrent.protocol.MetaConnection;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URLDecoder;

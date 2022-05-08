@@ -4,7 +4,6 @@ import edu.umd.cs.ztorrent.protocol.Tracker;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.MessageDigest;
@@ -79,11 +78,11 @@ public class TorrentParser {
         String urlEncodedHash = urlEncode(byteStringHashInfo);
         long totalBytes = 0;
         int numFiles;
-        DownloadFile[] dfiles;
+        FileResource[] dfiles;
         if (info.dictionary.containsKey("files")) {//multiple files
             Bencoding files = info.dictionary.get("files");
             numFiles = files.list.size();
-            dfiles = new DownloadFile[numFiles];
+            dfiles = new FileResource[numFiles];
             int i = 0;
             for (Bencoding b : files.list) {
                 long integ = b.dictionary.get("length").integer;
@@ -92,15 +91,15 @@ public class TorrentParser {
                 for (Bencoding e : b.dictionary.get("path").list) {
                     dlFilePath += e.getString();
                 }
-                dfiles[i] = new DownloadFile(name, dlFilePath, new Long(integ), totalBytes);
+                dfiles[i] = new FileResource(name, dlFilePath, new Long(integ), totalBytes);
                 i++;
                 totalBytes += integ;
             }
         } else {
             numFiles = 1;
-            dfiles = new DownloadFile[numFiles];
+            dfiles = new FileResource[numFiles];
             totalBytes = info.dictionary.get("length").integer;
-            dfiles[0] = new DownloadFile(name, name, totalBytes, 0);
+            dfiles[0] = new FileResource(name, name, totalBytes, 0);
         }
 
         List<Tracker> trackers = new ArrayList<Tracker>();

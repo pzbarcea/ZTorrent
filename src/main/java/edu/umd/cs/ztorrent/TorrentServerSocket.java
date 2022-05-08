@@ -1,7 +1,7 @@
 package edu.umd.cs.ztorrent;
 
 import edu.umd.cs.ztorrent.MessageParser.HandShake;
-import edu.umd.cs.ztorrent.protocol.ManagedConnection;
+import edu.umd.cs.ztorrent.protocol.PeerConnection;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -22,7 +22,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author pzbarcea
  */
 public class TorrentServerSocket {
-    private List<ManagedConnection> connections;
+    private List<PeerConnection> connections;
     private final ServerSocket tcpServer;
     private final ReentrantLock clientsLock = new ReentrantLock();
     boolean alive = true;
@@ -30,7 +30,7 @@ public class TorrentServerSocket {
 
     public TorrentServerSocket(int port) throws IOException {
         tcpServer = new ServerSocket(port);
-        connections = new LinkedList<ManagedConnection>();
+        connections = new LinkedList<PeerConnection>();
         th = new Thread() {
             @Override
             public void run() {
@@ -47,7 +47,7 @@ public class TorrentServerSocket {
                 socket.setSoTimeout(1000 * 2);
                 try {
                     HandShake hs = MessageParser.readBlockingHandShake(socket.getInputStream());
-                    ManagedConnection mc = new ManagedConnection(socket, hs);
+                    PeerConnection mc = new PeerConnection(socket, hs);
                     clientsLock.lock();
                     connections.add(mc);
                     clientsLock.unlock();
@@ -67,11 +67,11 @@ public class TorrentServerSocket {
         alive = false;
     }
 
-    public List<ManagedConnection> getNewConnections() {
-        List<ManagedConnection> r;
+    public List<PeerConnection> getNewConnections() {
+        List<PeerConnection> r;
         clientsLock.lock();
         r = connections;
-        connections = new LinkedList<ManagedConnection>();
+        connections = new LinkedList<PeerConnection>();
         clientsLock.unlock();
         return r;
     }

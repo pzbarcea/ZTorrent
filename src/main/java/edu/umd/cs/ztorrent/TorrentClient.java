@@ -1,6 +1,6 @@
 package edu.umd.cs.ztorrent;
 
-import edu.umd.cs.ztorrent.protocol.ManagedConnection;
+import edu.umd.cs.ztorrent.protocol.PeerConnection;
 
 import javax.swing.table.AbstractTableModel;
 import java.io.IOException;
@@ -60,7 +60,7 @@ public class TorrentClient extends AbstractTableModel {
             Thread.sleep(10);
             this.fireTableRowsUpdated(0, allTorrents.size() - 1);
             //this.fireTableRowsUpdated(0,allTorrents.size());
-            for (ManagedConnection mc : tss.getNewConnections()) {
+            for (PeerConnection mc : tss.getNewConnections()) {
                 for (Torrent a : allTorrents) {
                     if (Arrays.equals(mc.getInfoHash(), a.hashInfo)) {
                         //add connection to torrent.
@@ -92,7 +92,7 @@ public class TorrentClient extends AbstractTableModel {
         t.shutdown();
 
         // close files
-        for (DownloadFile f : t.files) {
+        for (FileResource f : t.files) {
             f.close();
         }
     }
@@ -102,7 +102,7 @@ public class TorrentClient extends AbstractTableModel {
             setTorrentInactive(t);
             inactiveTorrents.remove(t);
             allTorrents.remove(t);
-            for (DownloadFile f : t.files) {
+            for (FileResource f : t.files) {
                 f.delete();
             }
         } catch (IOException io) {

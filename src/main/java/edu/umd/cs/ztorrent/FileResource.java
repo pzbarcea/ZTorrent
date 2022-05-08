@@ -21,7 +21,7 @@ import java.util.Random;
  * Why the extra 4 bytes?
  * What if we only partially download, thats why.
  */
-public class DownloadFile {
+public class FileResource {
 
     private final long length;
     private final long byteOffSet;//TODO: offset zero based?
@@ -34,7 +34,7 @@ public class DownloadFile {
     private final String pathAndName;
     private File f;
 
-    public DownloadFile(String topFolder, String pathAndName, long length, long byteOff) {//shit parsed from torrent file
+    public FileResource(String topFolder, String pathAndName, long length, long byteOff) {//shit parsed from torrent file
         this.length = length;
         this.byteOffSet = byteOff;
         this.topFolder = topFolder;
@@ -184,10 +184,10 @@ public class DownloadFile {
         return !isPartial;
     }
 
-    public static byte[] pieceFromFile(DownloadFile[] files, int pieceIndex, int pieceLength) throws IOException {
+    public static byte[] pieceFromFile(FileResource[] files, int pieceIndex, int pieceLength) throws IOException {
         byte[] piece = new byte[pieceLength];
         int off = 0;
-        for (DownloadFile f : files) {
+        for (FileResource f : files) {
             off += f.getPiece(pieceIndex, off, piece);
         }
         if (off != pieceLength) {

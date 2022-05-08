@@ -2,8 +2,8 @@ package edu.umd.cs.ztorrent;
 
 import edu.umd.cs.ztorrent.BitMap.Rarity;
 import edu.umd.cs.ztorrent.MessageParser.Request;
-import edu.umd.cs.ztorrent.protocol.ManagedConnection;
-import edu.umd.cs.ztorrent.protocol.ManagedConnection.ConnectionState;
+import edu.umd.cs.ztorrent.protocol.PeerConnection;
+import edu.umd.cs.ztorrent.protocol.PeerConnection.ConnectionState;
 
 import java.io.IOException;
 import java.util.*;
@@ -34,7 +34,7 @@ public class MainPeerLogic extends PeerLogic {
     private final Set<Integer> cleaningList = new HashSet<Integer>();
     private final long start = System.currentTimeMillis();
 
-    private void connectionCleanUp(ManagedConnection mc) {
+    private void connectionCleanUp(PeerConnection mc) {
         connectionsManager.connectionCleanUp(mc);
         try {
             mc.shutDown();
@@ -53,10 +53,10 @@ public class MainPeerLogic extends PeerLogic {
         long now = System.currentTimeMillis();
 
         activeConnections = 0;
-        Set<ManagedConnection> pList = t.getPeers();
-        Iterator<ManagedConnection> itor = pList.iterator();
+        Set<PeerConnection> pList = t.getPeers();
+        Iterator<PeerConnection> itor = pList.iterator();
         while (itor.hasNext()) {
-            ManagedConnection mc = itor.next();
+            PeerConnection mc = itor.next();
             if (mc.getConnectionState() == ConnectionState.uninitialized) {
                 mc.initalizeConnection(t.pm.bitmap.getMapCopy(), t);
                 connectionsManager.initializeConnection(mc);

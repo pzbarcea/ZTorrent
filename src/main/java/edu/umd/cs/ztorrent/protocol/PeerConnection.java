@@ -15,7 +15,7 @@ import java.util.*;
  * Let it handle things like communication
  * Let this be the Socket of the connection
  *
- * Put simply ManagedConnection will follow the rules of the protocol.
+ * Put simply PeerConnection will follow the rules of the protocol.
  * It will take in and attempt to push out data as is available by the rules.
  *
  * This class is very much the state of the connection.
@@ -40,7 +40,7 @@ import java.util.*;
  *  @Warning: 2MB output stream is set. If this gets fully utilized it will block.
  *  //TODO: make block safe. boolean perhaps? need to do something if buffer becomes filled.
  */
-public class ManagedConnection extends MetaConnection {
+public class PeerConnection extends MetaConnection {
     //Requests fromUs
     //Requests fromPeer
     private final Set<Request> ourRequests; // from us
@@ -54,7 +54,7 @@ public class ManagedConnection extends MetaConnection {
     private BitMap peerBitMap;
     private int max_queued = 3;
 
-    public ManagedConnection(InetAddress ip, int port) {
+    public PeerConnection(InetAddress ip, int port) {
         super(ip, port);
         download = upload = maintenance = 0;
         mp = new MessageParser();
@@ -65,7 +65,7 @@ public class ManagedConnection extends MetaConnection {
         conState = ConnectionState.uninitialized;
     }
 
-    public ManagedConnection(Socket s, HandShake hs) {
+    public PeerConnection(Socket s, HandShake hs) {
         this(s.getInetAddress(), s.getPort());
         recvHandShake = true;
         this.sock = s;
@@ -142,7 +142,7 @@ public class ManagedConnection extends MetaConnection {
 
     @Override
     public void blindInitialize(MetaData md) {
-        throw new RuntimeException("[ERROR] Not allowed blindInitialize on ManagedConnection.");
+        throw new RuntimeException("[ERROR] Not allowed blindInitialize on PeerConnection.");
     }
 
     //TODO: Consider if it might be a good idea to only pass out if connected.
@@ -386,8 +386,8 @@ public class ManagedConnection extends MetaConnection {
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof ManagedConnection) {
-            ManagedConnection m = (ManagedConnection) o;
+        if (o instanceof PeerConnection) {
+            PeerConnection m = (PeerConnection) o;
             return m.ip.equals(ip) && m.port == port;
         }
         return false;

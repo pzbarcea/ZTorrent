@@ -37,7 +37,7 @@ public class PieceManager {
     List<Integer> readsFromDisk;
     int cacheSize;
     int pieceLength;
-    DownloadFile[] files;
+    FileResource[] files;
     public final BitMap bitmap;
     private final Bencoding shaPieces;
 
@@ -49,7 +49,7 @@ public class PieceManager {
      * @param pieces
      * @throws FileNotFoundException
      */
-    public PieceManager(DownloadFile[] files, int cacheBytes, int pieceLength, long totalBytes, Bencoding b)
+    public PieceManager(FileResource[] files, int cacheBytes, int pieceLength, long totalBytes, Bencoding b)
             throws FileNotFoundException {
         this.shaPieces = b;
         this.pieceLength = pieceLength;
@@ -140,13 +140,13 @@ public class PieceManager {
         //RandomAccessFile raf = new RandomAccessFile(partialFile,"rw");
         //Awesome ^.^ -> raf.getFilePointer()
         for (Piece p : writeToDisk) {
-            for (DownloadFile d : files) {
+            for (FileResource d : files) {
                 d.writePiece(p);
             }
         }
 
         for (Integer pIndex : readsFromDisk) {
-            byte[] p = DownloadFile.pieceFromFile(files, pIndex, bitmap.getPieceLength(pIndex));
+            byte[] p = FileResource.pieceFromFile(files, pIndex, bitmap.getPieceLength(pIndex));
             Piece piece = new Piece(pIndex, p);
             indexToPiece.put(piece.pieceIndex, piece);
         }
@@ -168,7 +168,7 @@ public class PieceManager {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
             for (int i = 0; i < bitmap.getNumberOfPieces(); i++) {
                 if (bitmap.hasPiece(i)) {
-                    byte[] p = DownloadFile.pieceFromFile(files, i, bitmap.getPieceLength(i));
+                    byte[] p = FileResource.pieceFromFile(files, i, bitmap.getPieceLength(i));
                     byte[] sha = Arrays.copyOfRange(shaPieces.byteString, i * 20, i * 20 + 20);
                     byte[] b = md.digest(p);
                     if (!Arrays.equals(b, sha)) {

@@ -2,8 +2,8 @@ package edu.umd.cs.ztorrent;
 
 import edu.umd.cs.ztorrent.MessageParser.Request;
 import edu.umd.cs.ztorrent.MessageParser.Response;
-import edu.umd.cs.ztorrent.protocol.ManagedConnection;
-import edu.umd.cs.ztorrent.protocol.ManagedConnection.ConnectionState;
+import edu.umd.cs.ztorrent.protocol.PeerConnection;
+import edu.umd.cs.ztorrent.protocol.PeerConnection.ConnectionState;
 
 import java.util.*;
 
@@ -32,15 +32,15 @@ public class ConnectionsManager {
 
     //List of things disseminated
     //Managed connection.
-    private final Map<ManagedConnection, ConnectionWork> clientToPieceSet = new HashMap<ManagedConnection, ConnectionWork>();
+    private final Map<PeerConnection, ConnectionWork> clientToPieceSet = new HashMap<PeerConnection, ConnectionWork>();
     //for sake of completeness. Build it correct now so i don't have to come back
-    private final Map<Piece, List<ManagedConnection>> pieceToClients = new HashMap<Piece, List<ManagedConnection>>();
+    private final Map<Piece, List<PeerConnection>> pieceToClients = new HashMap<Piece, List<PeerConnection>>();
     private final Set<Piece> currentQueue = new TreeSet<Piece>();//Queued up pieces. But none given out.
     private final Map<Integer, Piece> disseminatedPiecesToCompete = new HashMap<Integer, Piece>();//pieces that are given to at least 1 connection
     private final Map<Integer, Piece> otherPiecesGettingComplete = new HashMap<Integer, Piece>();//(why? well we don't exactly know.)
     private List<Piece> recentlyCompleted = new ArrayList<Piece>();
 
-    public void connectionCleanUp(ManagedConnection mc) {
+    public void connectionCleanUp(PeerConnection mc) {
         Piece[] ps = clientToPieceSet.get(mc).queued.toArray(new Piece[0]);
         if (ps != null) {
             for (Piece p : ps) {
@@ -62,7 +62,7 @@ public class ConnectionsManager {
      * @param maxPieces
      * @param mc
      */
-    public void enqueuePieces(int maxPieces, ManagedConnection mc) {
+    public void enqueuePieces(int maxPieces, PeerConnection mc) {
         Iterator<Piece> itor = currentQueue.iterator();
         ConnectionWork cw = clientToPieceSet.get(mc);
         while (itor.hasNext()) {
@@ -77,9 +77,9 @@ public class ConnectionsManager {
                 if (piece == null) {
                     piece = p;
                 }
-                List<ManagedConnection> lMC = pieceToClients.get((int) piece.pieceIndex);
+                List<PeerConnection> lMC = pieceToClients.get((int) piece.pieceIndex);
                 if (lMC == null) {
-                    lMC = new ArrayList<ManagedConnection>();
+                    lMC = new ArrayList<PeerConnection>();
                 }
                 lMC.add(mc);
                 pieceToClients.put(piece, lMC);
@@ -102,7 +102,7 @@ public class ConnectionsManager {
      * Pulls all the read in blocks.
      * On completion cancels any mismatched sections.
      */
-    public long readFromConnection(ManagedConnection mc, BitMap b) {
+    public long readFromConnection(PeerConnection mc, BitMap b) {
         List<Response> rlist = mc.getPeerResponseBlocks();
         long bytes = 0;
         if (rlist != null) {
@@ -132,7 +132,7 @@ public class ConnectionsManager {
         return bytes;
     }
 
-    public void initializeConnection(ManagedConnection mc) {
+    public void initializeConnection(PeerConnection mc) {
         if (clientToPieceSet.containsKey(mc)) {
             throw new RuntimeException("Incorrect use. MC already initialized");
         }
@@ -157,9 +157,9 @@ public class ConnectionsManager {
      * @param p
      */
     public void dequeuePiece(Piece p) {
-        List<ManagedConnection> mcs = pieceToClients.get(p);
+        List<PeerConnection> mcs = pieceToClients.get(p);
         if (mcs != null) {
-            for (ManagedConnection mc : mcs) {
+            for (PeerConnection mc : mcs) {
                 ConnectionWork cw = clientToPieceSet.get(mc);
                 cw.queued.remove(p);
                 Iterator<Request> itor = cw.blockLeft.iterator();
@@ -193,11 +193,11 @@ public class ConnectionsManager {
      * @param mc
      * @return
      */
-    public List<Request> getBufferedRequests(ManagedConnection mc) {
+    public List<Request> getBufferedRequests(PeerConnection mc) {
         return clientToPieceSet.get(mc).blockLeft;
     }
 
-    public Piece[] getQueuedPieces(ManagedConnection mc) {
+    public Piece[] getQueuedPieces(PeerConnection mc) {
         ConnectionWork cw = clientToPieceSet.get(mc);
         return cw.queued.toArray(new Piece[0]);
     }
@@ -208,10 +208,10 @@ public class ConnectionsManager {
      * @param mc
      * @param piece
      */
-    public void cancelPieceForConnection(ManagedConnection mc, int piece) {
+    public void cancelPieceForConnection(PeerConnection mc, int piece) {
         Piece p = disseminatedPiecesToCompete.get(piece);
         if (p != null) {
-            List<ManagedConnection> list = pieceToClients.get(p);
+            List<PeerConnection> list = pieceToClients.get(p);
             list.remove(mc);
             if (list.size() == 0) {
                 //ok remove this from every where.

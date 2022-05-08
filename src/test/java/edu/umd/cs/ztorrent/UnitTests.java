@@ -148,8 +148,6 @@ public class UnitTests {
         parseHTTPResponse();
         System.out.println("Torrent message parsing:");
         messageParser();
-//		System.out.println("Managed Connection:");
-//		ManagedConnection.testManagedConnection();
         System.out.println("Other Tests exists @PieceManager");
 
     }

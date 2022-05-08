@@ -1,16 +1,14 @@
 package edu.umd.cs.ztorrent.protocol;
 
 import edu.umd.cs.ztorrent.*;
-import edu.umd.cs.ztorrent.Bencoding.Type;
 import edu.umd.cs.ztorrent.MessageParser.HandShake;
 import edu.umd.cs.ztorrent.MessageParser.PeerMessage;
 import edu.umd.cs.ztorrent.MessageParser.Request;
-import edu.umd.cs.ztorrent.protocol.ManagedConnection.ConnectionState;
+import edu.umd.cs.ztorrent.protocol.PeerConnection.ConnectionState;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -283,8 +281,8 @@ public class MetaConnection {
         return false;
     }
 
-    public ManagedConnection toManagedConnection(Torrent t) {
-        // Should convert Connection to ManagedConnection.
+    public PeerConnection toManagedConnection(Torrent t) {
+        // Should convert Connection to PeerConnection.
         return null;
     }
 
