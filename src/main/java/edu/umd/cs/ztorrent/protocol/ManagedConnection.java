@@ -7,9 +7,7 @@ import edu.umd.cs.ztorrent.MessageParser.Request;
 import edu.umd.cs.ztorrent.MessageParser.Response;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+import java.net.*;
 import java.util.*;
 
 /***
@@ -117,12 +115,12 @@ public class ManagedConnection extends MetaConnection {
                             conState = ConnectionState.closed;
                         }
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        System.out.println("[SKIP] Connection refused from: " + ip + ":" + port);
                         conState = ConnectionState.closed;
                     }
                 }
             }.start();
-        } else if (recvHandShake == true) {//Inbound connection
+        } else if (recvHandShake == true) { //Inbound connection
             try {
                 sockOut = sock.getOutputStream();
                 sockIn = sock.getInputStream();
@@ -130,7 +128,6 @@ public class ManagedConnection extends MetaConnection {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-
 
             conState = ConnectionState.connected;
             sentHandShake = true;
@@ -141,11 +138,11 @@ public class ManagedConnection extends MetaConnection {
                 conState = ConnectionState.closed;
             }
         } else {
-            throw new RuntimeException("State uknown");
+            throw new RuntimeException("[WARNING] Connection state: UNKNOWN");
         }
 
         if (announcedMap == null || announcedMap.length != peerBitMap.getLength()) {
-            throw new RuntimeException("Invalid announced map. Either null or incorrect length!");
+            throw new RuntimeException("[WARNING] Invalid 'announced' bitmap. Either NULL or incorrect length!");
         }
         this.announcedMap = announcedMap;
     }
