@@ -72,11 +72,7 @@ public abstract class Tracker {
 
     public void initialize(Torrent t) {
     }
-
-    public boolean isWorking() {
-        return workingTracker;
-    }
-
+    
     /**
      * Error message will be set if
      * isWorking is false

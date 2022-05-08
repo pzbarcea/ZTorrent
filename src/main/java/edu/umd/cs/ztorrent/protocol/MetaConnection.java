@@ -358,7 +358,6 @@ public class MetaConnection {
         conState = ConnectionState.closed;
     }
 
-
     @Override
     /***
      * Returns peerID, if set.

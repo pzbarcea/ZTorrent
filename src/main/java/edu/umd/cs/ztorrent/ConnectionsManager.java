@@ -109,7 +109,6 @@ public class ConnectionsManager {
             for (Response r : rlist) {
                 bytes += r.block.length;
                 if (disseminatedPiecesToCompete.containsKey(r.index)) {
-//					System.out.println("working towards complete!");
                     if (disseminatedPiecesToCompete.get(r.index).addData(r.begin, r.block)) {
                         //complete
                         System.out.println("Complete! " + r.index);
@@ -155,7 +154,7 @@ public class ConnectionsManager {
      * This dequeue's piece # from all clients
      * actively working to complete.
      *
-     * @param piece
+     * @param p
      */
     public void dequeuePiece(Piece p) {
         List<ManagedConnection> mcs = pieceToClients.get(p);
@@ -207,7 +206,7 @@ public class ConnectionsManager {
      * Cancels the piece for a specific given connection.
      *
      * @param mc
-     * @param p
+     * @param piece
      */
     public void cancelPieceForConnection(ManagedConnection mc, int piece) {
         Piece p = disseminatedPiecesToCompete.get(piece);
