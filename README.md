@@ -104,9 +104,7 @@ java.net.ConnectException: Connection refused (Connection refused)
 ```
 * (Paul) Review and rephrase the documentation in `ManagedConnection.java`
 * In System.out: "INVALID response (unsupported tracker)" means that the response from Node coudn't be processed. Maybe different security constraints, maybe other cases of the protocol.
-* (A) which one is the port (for tracker)
 * (P) TODOs you can document them as issues or things that don't yet work.
-* (A) All main functions unused to be replaced as UnitTest.
 
 ## Needs clarification:
 * what is byte[] b = hexStringToByteArray("00599b501d8713640be4f481433dd0848a592ef3");

@@ -26,9 +26,6 @@ import java.util.regex.Pattern;
  */
 public class HttpResponse {
     public enum HeaderType {HTTP, Date, Server, LastModified, Etag, ContentType, ContentLength, Connection, Pragma, TransferEncoding, UKNOWN}
-
-    //private final String ResponseHeaders[]={"HTTP","Date:","Server:","Last-Modified:","ETag:","Content-Type:","Content-Length:","Connection:","Pragma:","Set-Cookie:"};
-
     public final Map<HeaderType, String> headerMap;
     public int status = -1;
     public String version;
@@ -119,13 +116,6 @@ public class HttpResponse {
 
     }
 
-    /*
-     * The Status-Line and headers must all end with <CR><LF> (a carriage return followed by a line feed).
-     * The empty line must consist of only <CR><LF> and no other whitespace.
-     */
-
-
-    //HELPER FUNCTIONS:
     private static String bytesToString(byte[] b) {
         return new String(b, StandardCharsets.UTF_8);
     }
@@ -213,8 +203,7 @@ public class HttpResponse {
         if (buf.size() == 0) {
             return new byte[0];
         }
+
         return buf.toByteArray();
     }
-
-
 }
