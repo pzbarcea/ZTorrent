@@ -108,3 +108,12 @@ java.net.ConnectException: Connection refused (Connection refused)
 * (A) Remove unused code (classes like ActiveCallback etc.)
 * (P) TODOs you can document them as issues or things that don't yet work.
 * (A) All main functions unused to be replaced as UnitTest.
+
+
+## Known Bugs/Issues (Either fix or include in final report)
+* If a running or inactive torrent is deleted manually (either through CLI with rm -f or from File Explorer) while the GUI is running, it will cause a NullPointerException when attemptign to stop or restart torrents
+  * From stack trace:
+  * at edu.umd.cs.ztorrent.TorrentClient.setTorrentInactive(TorrentClient.java:91)
+  * at edu.umd.cs.ztorrent.TorrentClient.deleteTorrentData(TorrentClient.java:105)
+  * at edu.umd.cs.ztorrent.ui.TorrentUI.actionPerformed(TorrentUI.java:142)
+* 

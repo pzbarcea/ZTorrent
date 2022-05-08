@@ -43,7 +43,6 @@ import java.util.*;
  *  //TODO: make block safe. boolean perhaps? need to do something if buffer becomes filled.
  */
 public class ManagedConnection extends MetaConnection {
-    List<ActiveCallback> callbacks;
     //Requests fromUs
     //Requests fromPeer
     private final Set<Request> ourRequests; // from us
@@ -69,7 +68,6 @@ public class ManagedConnection extends MetaConnection {
         peerRequests = new HashSet<Request>();
         ourRequests = new HashSet<Request>();
         peerSentBlocks = new ArrayList<Response>();
-        callbacks = new ArrayList<ActiveCallback>();
         recvHandShake = false;
         conState = ConnectionState.uninitialized;
     }
@@ -338,14 +336,6 @@ public class ManagedConnection extends MetaConnection {
 
     public void setMaxRequests(int i) {
         max_queued = i;
-    }
-
-    public void addCallback(ActiveCallback ac) {
-        callbacks.add(ac);
-    }
-
-    public boolean removeCallback(ActiveCallback ac) {
-        return callbacks.remove(ac);
     }
 
     public byte[] getPeerID() {
