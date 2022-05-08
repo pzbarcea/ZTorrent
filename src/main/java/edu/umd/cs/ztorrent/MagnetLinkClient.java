@@ -170,16 +170,6 @@ public class MagnetLinkClient extends MetaTorrent {
                 mc.setAmChoking(false);
                 mc.setAmInterested(true);
                 mc.doWork(this);
-//				if(mc.supportsMetaMetaRequest()){
-//					if(mc.getActiveRequests().length<2){//pretty slow but w/e
-//						
-//						int i = meta.getOpenPiece();
-//						if(i!=-1){
-//							mc.sendMetaMetaRequest(i);
-//						}
-////						System.out.println("Asking for piece! "+i+" from "+mc);
-//					}
-//				}
             }
         }
         DHTtracker.doWork();
@@ -222,20 +212,6 @@ public class MagnetLinkClient extends MetaTorrent {
 
     public void close() {
         DHTtracker.close(null);
-    }
-
-    public static void main(String[] args) throws IOException, InterruptedException, NoSuchAlgorithmException {
-        Torrent t = TorrentParser.parseTorrentFile("ubuntu.torrent");
-        BigInteger big = new BigInteger(1, t.hashInfo);
-        MagnetLinkClient ml = createFromURI(String.format("%0" + (t.hashInfo.length << 1) + "X", big));
-//		HTTPTracker ht = new HTTPTracker(t.tracker);
-
-        while (!ml.isComplete()) {
-            ml.doWork();
-            Thread.sleep(10);
-        }
-
-
     }
 
 }
