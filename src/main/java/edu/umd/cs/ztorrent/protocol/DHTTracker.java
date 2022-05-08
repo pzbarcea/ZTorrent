@@ -9,7 +9,6 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -102,8 +101,6 @@ public class DHTTracker extends Tracker {
 
     }
 
-    ////////////////////////////// TODO: remove //////////////////////////////
-
     private byte[] getEightClosest(final byte[] target) {
         List<Node> nodes = new ArrayList<Node>();
         for (Node node : idToNode.values()) {
@@ -162,12 +159,12 @@ public class DHTTracker extends Tracker {
             //filter through responses
             processResponses();
 
+
+            //http://bittorrent.org/beps/bep_0005.html (DHT protocol explained here, including Kademlia algo)
             //Search or send requests
-            Node closest = null; //MINIMIZE kademlia
+            Node closest = null;
             BigInteger i = new BigInteger(1, new byte[]{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1});//large.
-            //TODO: Switch to N closest.
             for (Node n : idToNode.values()) {
-                //TODO: prefer nodes that we can talk to (now.)!!
                 if (!n.canTalkToNode()) {
                     continue;
                 }
@@ -179,8 +176,8 @@ public class DHTTracker extends Tracker {
 
             }
 
-            if (closest != null && closest.canTalkToNode()) {//no more then 1 per 3 seconds
-                //query for nodes with closer hash
+            //Limit number of requests (every 3 seconds)
+            if (closest != null && closest.canTalkToNode()) {
                 closest.lastQuery = nextFromLast(closest.lastQuery);
                 byte[] findNode = get_peers(id, closest.lastQuery, infoHash);
                 System.out.println("Asking: " + closest);
@@ -196,10 +193,6 @@ public class DHTTracker extends Tracker {
                 closest.drops++;
             }
 
-
-            ////////////////// MAINTENANCE //////////////////
-
-
             connectionCleaner.clear();
             for (Node n : idToNode.values()) {
                 if (n.drops > 7 || System.currentTimeMillis() - n.timeSinceLastRecv > 15 * 60 * 1000) {
@@ -212,12 +205,12 @@ public class DHTTracker extends Tracker {
                 idToRequestsO.remove(n.nodeId);
             }
             connectionCleaner.clear();
-            //Keep N closest. (maybe 40?)
+
+            //Keep closest nodes
             if (idToNode.size() > 40) {
                 List<Node> allNodes = new ArrayList<Node>(idToNode.values());
                 Collections.sort(allNodes, new Comparator<Node>() {
                     @Override
-                    //smallest is closest: TODO: test.
                     public int compare(Node o1, Node o2) {
                         BigInteger a = kademlia(o1.nodeId.id, infoHash);
                         BigInteger b = kademlia(o2.nodeId.id, infoHash);
@@ -232,20 +225,20 @@ public class DHTTracker extends Tracker {
             for (Node n : connectionCleaner) {
                 if (n.gaveClients) {
                     System.out.println("Tried to drop a special one! " + n);
-                    continue; //Might end up asking him for more E_O
+                    continue;
                 }
                 System.out.println("Dropping: " + n + " lower then top 40.");
                 idToNode.remove(n.nodeId);
                 idToRequestsO.remove(n.nodeId);
             }
 
-
-            // for each active request (clean up those drops) 30 second timeout.
+            // Clean "active" requests that dropped
             for (ID conId : idToRequestsO.keySet()) {
                 Map<String, Request> rMap = idToRequestsO.get(conId);
                 if (rMap != null) {
                     packetCleaner.clear();
                     for (String s : rMap.keySet()) {
+                        //If we have exceeded 30 seconds timeout, then we drop the request
                         if (System.currentTimeMillis() - rMap.get(s).timeCreated > 30 * 1000) {
                             System.out.println("Dropping Reqest " + s + " on connection " + conId.toString());
                             packetCleaner.add(s);
@@ -256,9 +249,6 @@ public class DHTTracker extends Tracker {
                     }
                 }
             }
-
-            //////////////// END-MAINTENANCE //////////////////
-
 
         } catch (IOException e) {
             //Oh how the great have fallen.
@@ -515,7 +505,6 @@ public class DHTTracker extends Tracker {
                 } else if (rt.rt == RType.announce_peer) {
                     actual.recved = true;
                     actual.announcedInto = true;
-                    //dont really have to do much..
                 }
 
             } else {
