@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Manages connection between torrent states.
  * TODO: On initialization looks for user data.
  *
- * @author wiselion
+ * @author pzbarcea
  */
 public class TorrentClient extends AbstractTableModel {
     private static final long serialVersionUID = -143709093895815620L;

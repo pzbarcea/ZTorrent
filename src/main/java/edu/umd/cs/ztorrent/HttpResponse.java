@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
  *
  *
  * By all means not a complete definition of all possible responses.
- * @author wiselion
+ * @author pzbarcea
  *
  */
 public class HttpResponse {

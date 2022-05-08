@@ -286,7 +286,7 @@ public class ManagedConnection extends MetaConnection {
      * Returns list of active requests.
      *
      * @return
-     * @author wiselion
+     * @author pzbarcea
      */
     public List<Request> getPeerRequests() {
         List<Request> q = new ArrayList<Request>(peerRequests.size());

@@ -9,7 +9,7 @@ import java.io.IOException;
  * This is what allows for hot swappable logic 
  * of torrents. However we never ened up have enought time
  * so its a bit of a waste.
- * @author wiselion
+ * @author pzbarcea
  *
  */
 public class TorrentTransmitter {

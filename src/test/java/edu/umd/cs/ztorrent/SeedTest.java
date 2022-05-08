@@ -12,7 +12,7 @@ import java.security.NoSuchAlgorithmException;
  * Either lion share seeds this or this seeds lion share set it up however you'd like.
  * either way it should work.
  *
- * @author wiselion
+ * @author pzbarcea
  */
 public class SeedTest {
     // @Test

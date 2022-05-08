@@ -22,7 +22,7 @@ import java.util.*;
  * -
  * TODO: edge 1, client leaves block requeue'd but no one able to complete
  *
- * @author wiselion
+ * @author pzbarcea
  */
 public class ConnectionsManager {
     private class ConnectionWork {

@@ -22,7 +22,7 @@ import java.util.*;
  * we find a client to send us the meta data.
  * (piece size and file sizes, etc)
  *
- * @author wiselion
+ * @author pzbarcea
  */
 public class MagnetLinkClient extends MetaTorrent {
     /**

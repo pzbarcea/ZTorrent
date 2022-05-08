@@ -10,7 +10,7 @@ import java.util.HashMap;
  * -Magnet links
  * - DHT
  *
- * @author wiselion
+ * @author pzbarcea
  */
 public class TorrentExtensions {
 

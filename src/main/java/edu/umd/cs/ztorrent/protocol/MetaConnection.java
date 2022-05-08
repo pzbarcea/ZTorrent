@@ -25,7 +25,7 @@ import java.util.*;
  * Can attempt to become a managed connection once
  * the meta data is complete.
  *
- * @author wiselion
+ * @author pzbarcea
  */
 public class MetaConnection {
 
@@ -50,7 +50,7 @@ public class MetaConnection {
     protected Set<Request> peerRequests;  //from peer
     ////////////////EXTENTIONS/////////////////////
     /***
-     * @author wiselion
+     * @author pzbarcea
      */
     protected boolean extendedMessages;
     protected Map<String, Integer> extensions;

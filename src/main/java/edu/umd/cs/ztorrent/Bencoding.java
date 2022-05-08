@@ -22,7 +22,7 @@ import java.util.Map.Entry;
  * Major problem was that java's conversion to string was doing a
  * Irreversible conversion! so i had to leave it as byteString
  *
- * @author wiselion
+ * @author pzbarcea
  */
 //TODO: create toBytes() for completeness.
 //TODO CONVERT TO LONG

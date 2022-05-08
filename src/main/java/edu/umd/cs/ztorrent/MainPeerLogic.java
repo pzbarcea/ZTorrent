@@ -18,7 +18,7 @@ import java.util.*;
  * -collect list of rarity pieces we dont have and disseminate get requests for them
  * amoung our connections
  *
- * @author wiselion
+ * @author pzbarcea
  */
 public class MainPeerLogic extends PeerLogic {
     int recvPieces = 0;

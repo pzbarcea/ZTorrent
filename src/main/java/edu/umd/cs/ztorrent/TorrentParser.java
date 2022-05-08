@@ -14,7 +14,7 @@ import java.util.List;
 
 
 /**
- * @author wiselion
+ * @author pzbarcea
  */
 public class TorrentParser {
     //TODO: ERROR CHECKING!!! OMG. Seriously.
@@ -131,8 +131,8 @@ public class TorrentParser {
     //BASIC TEST (LOCAL)
 //	public static void main(String [] args) throws IOException, NoSuchAlgorithmException{
 //		Torrent t = parseTorrentFile("ubuntu.torrent");
-//		Torrent t = parseTorrentFile("C:\\Users\\wiselion\\Desktop\\417FinalProject\\BitTorrentProject\\CheckMyTorrentIP.torrent");
-//		Torrent t = parseTorrentFile("C:\\Users\\wiselion\\Desktop\\417FinalProject\\BitTorrentProject\\ubuntu-12.04.3-desktop-amd64.9197657.TPB.torrent");
+//		Torrent t = parseTorrentFile("C:\\Users\\pzbarcea\\Desktop\\417FinalProject\\BitTorrentProject\\CheckMyTorrentIP.torrent");
+//		Torrent t = parseTorrentFile("C:\\Users\\pzbarcea\\Desktop\\417FinalProject\\BitTorrentProject\\ubuntu-12.04.3-desktop-amd64.9197657.TPB.torrent");
 
     //System.out.println(urlEncode("AaBbasdkj123-_=+&wa^wa%@ds&!bvc*#ewr&^ghfda#^~`".getBytes("UTF-8")));
 //		Tracker tracker = new Tracker(t.tracker);

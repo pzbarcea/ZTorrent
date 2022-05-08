@@ -5,7 +5,7 @@ package edu.umd.cs.ztorrent;
  * a data type that was minimal enough to support
  * getting meta data through meta data extension.
  *
- * @author wiselion
+ * @author pzbarcea
  */
 public class MetaTorrent {
     public final byte[] hashInfo;

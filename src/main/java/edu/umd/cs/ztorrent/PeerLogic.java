@@ -8,7 +8,7 @@ import java.io.IOException;
  * E.g. to easily go from pop
  * See Diagram: PeerLogic_Control_Flow.jgp
  *
- * @author wiselion
+ * @author pzbarcea
  */
 public abstract class PeerLogic {
 

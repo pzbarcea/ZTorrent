@@ -15,7 +15,7 @@ import java.util.*;
 
 /****
  * Base class. Contains all the information of the torrent
- * @author wiselion
+ * @author pzbarcea
  */
 public class Torrent extends MetaTorrent {
     public static int STANDARD_CACHE_SIZE = 1024 * 1024 * 20;//20MB

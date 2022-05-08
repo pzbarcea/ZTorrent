@@ -107,7 +107,7 @@ public class DownloadFile {
      * @param b     - byte array retults be written to
      * @return amount of bytes written
      * @throws IOException
-     * @author wiselion
+     * @author pzbarcea
      */
     public int getPiece(int index, int off, byte[] b) throws IOException {
         if (leftPiece <= index && rightPiece >= index && pieceIndexToOffSet.containsKey(index)) {

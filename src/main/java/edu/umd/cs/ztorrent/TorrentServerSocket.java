@@ -19,7 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * This is then matched against torrent list. 
  *
  *
- * @author wiselion
+ * @author pzbarcea
  */
 public class TorrentServerSocket {
     private List<ManagedConnection> connections;
