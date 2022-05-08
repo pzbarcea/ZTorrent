@@ -3,7 +3,7 @@
 
 Final Project of CMSC417 - Computer Networking
 
-## Gettign started
+## Getting started
 
 Building
 
