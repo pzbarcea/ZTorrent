@@ -103,30 +103,6 @@ public class DHTTracker extends Tracker {
     }
 
     ////////////////////////////// TODO: remove //////////////////////////////
-    public static byte[] hexStringToByteArray(String s) {
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i + 1), 16));
-        }
-        return data;
-    }
-
-    public static void main(String[] args) throws InterruptedException, NoSuchAlgorithmException, IOException {
-//		Torrent t = TorrentParser.parseTorrentFile("8mb_lex.torrent");
-
-        byte[] b = hexStringToByteArray("00599b501d8713640be4f481433dd0848a592ef3");
-        System.out.println(b.length);
-        BigInteger big = new BigInteger(1, b);
-        System.out.println(String.format("%0" + (b.length << 1) + "X", big));
-
-        DHTTracker dht = new DHTTracker(b, Torrent.generateSessionKey(20).getBytes(StandardCharsets.UTF_8));
-        while (true) {
-            dht.doWork();
-            Thread.sleep(10);
-        }
-    }
 
     private byte[] getEightClosest(final byte[] target) {
         List<Node> nodes = new ArrayList<Node>();
@@ -287,7 +263,7 @@ public class DHTTracker extends Tracker {
         } catch (IOException e) {
             //Oh how the great have fallen.
             this.workingTracker = false;
-            this.error = "Uknown IOException. Probably cant find host. ---->" + e.getMessage();
+            this.error = "[WARNING] IOException: Can't'connect to host" + e.getMessage();
         }
 
     }
