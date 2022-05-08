@@ -218,44 +218,5 @@ public class Piece implements Comparable<Piece> {
         return b;
     }
 
-
-    // Test:
-    public static void main(String[] args) {
-        //test the get blocks simple loop should confirm this thing as stable:
-        Piece p = new Piece(0, 128 * 1024);
-        Request first = p.getNextBlock();
-        boolean b;
-        for (int i = 0; i < 8; i++) {
-            b = p.addData(first.begin, new byte[first.len]);
-            first = p.getNextBlock();
-            if (b)
-                System.out.println("true on i=" + i);
-        }
-
-        //test our get all pieces function.
-        p = new Piece(0, 128 * 1024);
-        p.addData(64 * 1024, new byte[1024]);
-        List<Request> rList = p.getAllBlocksLeft();
-        for (Request r : rList) {
-            System.out.println("Block Size " + r.len);
-            p.addData(r.begin, new byte[r.len]);
-        }
-        //wahoo
-        System.out.println("	Test 2: " + p.isComplete());
-
-
-        p = new Piece(0, 128 * 1024);
-        //p.addData(64*1024,new byte[1024]);
-        rList = p.getAllBlocksLeft();
-        for (Request r : rList) {
-            System.out.println("Block Size " + r.len);
-            p.addData(r.begin, new byte[r.len]);
-        }
-        //wahoo
-        System.out.println("	Test 3: " + p.isComplete());
-
-    }
-
-
 }
 

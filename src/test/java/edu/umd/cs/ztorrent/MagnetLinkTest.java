@@ -19,13 +19,13 @@ public class MagnetLinkTest {
         MagnetLinkClient ml = MagnetLinkClient.createFromURI(String.format("%0" + (t.hashInfo.length << 1) + "X", big));
 
         int i = 500;
-        while (i > 0 || !ml.isComplete()) {
+        while (!(i < 0 || ml.isComplete())) {
             ml.doWork();
             Thread.sleep(10);
             --i;
         }
 
-
+        System.out.println("[TEST] Complete");
     }
 
 }

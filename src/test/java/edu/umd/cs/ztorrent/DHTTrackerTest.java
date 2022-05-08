@@ -27,6 +27,8 @@ public class DHTTrackerTest {
             Thread.sleep(10);
             --i;
         }
+
+        System.out.println("[TEST] Complete");
     }
 
     public static byte[] hexStringToByteArray(String s) {
