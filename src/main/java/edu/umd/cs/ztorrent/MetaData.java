@@ -94,12 +94,4 @@ public class MetaData {
         }
         return false;
     }
-
-    public void clear() {
-        //fuuuuuuuuuk i hope this doesnt happen.
-        //Could be byzentine nodes tho...  :-/
-        complete = false;
-        started = false;
-    }
-
 }

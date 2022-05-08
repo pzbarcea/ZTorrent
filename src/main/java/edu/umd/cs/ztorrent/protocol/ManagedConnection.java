@@ -46,11 +46,6 @@ public class ManagedConnection extends MetaConnection {
     private final Set<Request> ourRequests; // from us
 
     private int historySize = 0;
-    //Normally we might do this
-    //esp. if we want bandwidth control!
-    //leave out for now:
-    //Blocks fromPeer?
-    //Blocks fromUs?
     private List<Response> peerSentBlocks;
     private long have = 0;
     private final MessageParser mp;
@@ -95,8 +90,6 @@ public class ManagedConnection extends MetaConnection {
         if (sock == null) { //Outbound connection.
             sock = new Socket();
 
-            //Threading the connect phase.
-            //TODO: Check conventions if this is ok.
             new Thread() {
                 @Override
                 public void run() {
@@ -149,7 +142,7 @@ public class ManagedConnection extends MetaConnection {
 
     @Override
     public void blindInitialize(MetaData md) {
-        throw new RuntimeException("Invalid for managed connection.");
+        throw new RuntimeException("[ERROR] Not allowed blindInitialize on ManagedConnection.");
     }
 
     //TODO: Consider if it might be a good idea to only pass out if connected.
@@ -186,33 +179,6 @@ public class ManagedConnection extends MetaConnection {
             conState = ConnectionState.closed;
         }
         return true;
-    }
-
-    /***
-     * Sends a cancel for given block request.
-     * If remove doesn't match previous add request error will
-     * be thrown.
-     * Note: requests are removed on receive of block
-     * These are hard sends! [data will be written on call]
-     * The upload and maintenance counter will be updated.
-     * @param r
-     */
-    public void pushCancel(Request r) {
-        if (conState != ConnectionState.connected) {
-            throw new RuntimeException("Can only send requests on 'connected' connections");
-        } else if (peer_choking) {
-            throw new RuntimeException("Can only send requests on unchoked connections");
-        } else if (!ourRequests.contains(r)) {
-            throw new RuntimeException("Can't canel request that doesn't exist!");
-        }
-        ourRequests.remove(r);
-        try {
-            maintenance += 17;
-            mp.cancel(sockOut, r.index, r.begin, r.len);
-        } catch (IOException e) {
-            conState = ConnectionState.closed;
-        }
-
     }
 
     /**
@@ -335,24 +301,8 @@ public class ManagedConnection extends MetaConnection {
         max_queued = i;
     }
 
-    public byte[] getPeerID() {
-        return peerID;
-    }
-
-    public byte[] getVersion() {
-        return version;
-    }
-
     public byte[] getInfoHash() {
         return infoHash;
-    }
-
-    public long getDownloadedBytes() {
-        return download;
-    }
-
-    public long getUploadedBytes() {
-        return upload;
     }
 
     public long haveSinceLastCall() {
@@ -456,5 +406,4 @@ public class ManagedConnection extends MetaConnection {
         connected,
         closed
     }
-
 }
