@@ -16,17 +16,9 @@ import java.net.Socket;
 import java.util.*;
 
 /**
- * Mostly created due to the need for there to be
- * a connection type that was minimal enough to support
- * getting meta data through meta data extension.
- * <p>
- * Can attempt to become a managed connection once
- * the meta data is complete.
- *
- * @author pzbarcea
+ * Connection for sending metadata across peers
  */
 public class MetaConnection {
-
     public final int port;
     public final InetAddress ip;
     protected boolean am_choking = true;
@@ -44,12 +36,8 @@ public class MetaConnection {
     protected InputStream sockIn;
     protected Socket sock;
     protected long maintenance;
-    protected byte[] announcedMap;//Unused in MetaConnection
-    protected Set<Request> peerRequests;  //from peer
-    ////////////////EXTENTIONS/////////////////////
-    /***
-     * @author pzbarcea
-     */
+    protected byte[] announcedMap;
+    protected Set<Request> peerRequests;
     protected Map<String, Integer> extensions;
     protected Map<Integer, String> revExtensions;
     protected int metaSize = -1;
@@ -60,7 +48,6 @@ public class MetaConnection {
     protected int max_reported = -1;
     private boolean isMetaConnection = false;
     private final Set<Integer> metaMetaRequests = new HashSet<Integer>();
-    private final boolean sentEXHandShake = false;
 
     public MetaConnection(InetAddress ip, int port) {
         this.ip = ip;
@@ -107,19 +94,12 @@ public class MetaConnection {
         return conState;
     }
 
-    /**
-     * Only a couple of rules here.
-     * DONT BLOCK.
-     *
-     * @throws IOException
-     */
     public final void doWork(MetaTorrent t) throws IOException {
         if (conState == ConnectionState.closed || conState == ConnectionState.uninitialized) {
             throw new RuntimeException("Invalid request. Cant do work on closed/uninitialized connections");
         }
 
         if (conState == ConnectionState.pending) {
-            //Do nothing till connected state.
             return;
         }
         if (conState == ConnectionState.connected && sock.isClosed()) {
@@ -158,7 +138,6 @@ public class MetaConnection {
 
                     if ((version[5] & 0x10) > 0) {
                         connectionSupportsMeta = true;
-//						sockOut.write(createExtenedHandShake((int)metaData.size));
                     }
 
                     if (!isMetaConnection) {
@@ -170,46 +149,44 @@ public class MetaConnection {
             } else {
                 mp.consumeMessage(sockIn);
                 while (mp.hasMessage()) {
-                    //Input logic.
                     PeerMessage pm = mp.getNext();
                     doDataIn(pm);
                 }
 
             }
         } catch (Exception e) {
-            e.printStackTrace();
             conState = ConnectionState.closed;
+            e.printStackTrace();
         }
     }
 
-    /// EXTENSIONS: ///
     protected void doExtension(int id, byte[] msg) {
         try {
 
             if (id == 0) {
-                //handshake set mappings
                 Bencoding b = new Bencoding(msg);
                 Bencoding m = b.dictionary.get("m");
                 extensions = new HashMap<String, Integer>();
                 revExtensions = new HashMap<Integer, String>();
                 for (String s : m.dictionary.keySet()) {
                     System.out.println(s + ":" + (int) (long) m.dictionary.get(s).integer);
-                    extensions.put(s, (int) (long) m.dictionary.get(s).integer);//... cast to long so i can cast to int....
+                    extensions.put(s, (int) (long) m.dictionary.get(s).integer);
                     revExtensions.put((int) (long) m.dictionary.get(s).integer, s);
                 }
-                //for now this is all we care about TODO: make generic
+
                 if (b.dictionary.containsKey("metadata_size")) {
                     metaSize = (int) (long) b.dictionary.get("metadata_size").integer;
                     if (metaSize <= 0) {
-                        metaSize = -1;//we dont know...
+                        metaSize = -1;
                     } else {
-                        connectionSupportsMetaMeta = true;//seems valid... lets try?
+                        connectionSupportsMetaMeta = true;
                         metaData.setSize(metaSize);
                     }
                 }
                 if (extensions.containsKey("v")) {
                     name = b.dictionary.get("v").getString();
                 }
+
                 if (extensions.containsKey("reqq")) {
                     max_reported = (int) (long) b.dictionary.get("reqq").integer;
                 }
@@ -224,7 +201,9 @@ public class MetaConnection {
                     int piece = (int) (long) b.dictionary.get("piece").integer;
                     byte[] left = new byte[msg.length - off];
                     System.arraycopy(msg, off, left, 0, left.length);
-                    if (i == 0) {//request
+
+                    //Represents a request
+                    if (i == 0) {
                         if (metaData.isComplete()) {
                             byte[] p = metaData.getPiece(piece);
                             maintenance += p.length;
@@ -233,13 +212,12 @@ public class MetaConnection {
                             maintenance += 20;
                             mp.extension(sockOut, TorrentExtensions.rejectMetaDataPiece(ourExtension, piece));
                         }
-                    } else if (i == 1) {//response
+                    //Represents a response
+                    } else if (i == 1) {
                         metaMetaRequests.remove(piece);
                         metaData.add(piece, left);
-                    } else {//dont have cancel. Set meta meta false
+                    } else {
                         connectionSupportsMetaMeta = false;
-                        //drop our shit.
-
                     }
                 } else {
                     System.out.println("Unsupported protocol message: " + e);
@@ -251,21 +229,19 @@ public class MetaConnection {
         }
 
     }
-    /// EXTENSIONS- END ///
 
     protected void doDataIn(PeerMessage pm) {
         if (pm.type == PeerMessage.Type.CHOKE) {
             this.peer_choking = true;
-            //Drop our requests. They aint gana get done.
             System.out.println(this + " choked us.");
         } else if (pm.type == PeerMessage.Type.UNCHOKE) {
             System.out.println(this + " unchoked us.");
             this.peer_choking = false;
         } else if (pm.type == PeerMessage.Type.INTERESTED) {
-            System.out.println(this + " intrested in us.");
+            System.out.println(this + " interested in us.");
             this.peer_interested = true;
         } else if (pm.type == PeerMessage.Type.NOT_INTERESTED) {
-            System.out.println(this + " not intrested in us.");
+            System.out.println(this + " not interested in us.");
             this.peer_interested = false;
         } else if (pm.type == PeerMessage.Type.EXTENSION) {
             doExtension(pm.extensionID, pm.extension);
@@ -281,12 +257,11 @@ public class MetaConnection {
         return false;
     }
 
+    // TODO: REWORD -  Should convert Connection to PeerConnection.
     public PeerConnection toManagedConnection(Torrent t) {
-        // Should convert Connection to PeerConnection.
         return null;
     }
 
-    //// API /////
     public boolean amChoking() {
         return am_choking;
     }
@@ -303,12 +278,6 @@ public class MetaConnection {
         return peer_interested;
     }
 
-    /***
-     * Immediate IO!
-     * Wont block!
-     * If set to choke we drop their request list!
-     * @param t
-     */
     public void setAmChoking(boolean t) {
         if (conState != ConnectionState.connected) {
             throw new RuntimeException("Can only send choke state on 'connected' connections");
@@ -358,15 +327,13 @@ public class MetaConnection {
 
     @Override
     /***
-     * Returns peerID, if set.
-     * Other wise returns ip and port.
+     * Returns a string representation of the connection, depending on if we have a peerID
      */
     public String toString() {
         if (peerID != null) {
             BigInteger bi = new BigInteger(1, peerID);
             return String.format("%0" + (peerID.length << 1) + "X", bi);
         } else {
-            //no hand shake just refer to as ip and port.
             return (ip.toString() + ":" + port);
         }
     }
