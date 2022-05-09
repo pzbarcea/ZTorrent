@@ -53,7 +53,7 @@ public class TorrentClient extends AbstractTableModel {
 
                 if (!has) {
                     allTorrents.add(t);
-                    activeTorrents.put(t, new TorrentTransmitter(new MainPeerLogic(), t));
+                    activeTorrents.put(t, new TorrentTransmitter(new PeerWorker(), t));
                 }
             }
 
@@ -123,7 +123,7 @@ public class TorrentClient extends AbstractTableModel {
     public void reActivate(Torrent t) throws NoSuchAlgorithmException, IOException {
         if (!activeTorrents.containsKey(t)) {
             t.reload();
-            activeTorrents.put(t, new TorrentTransmitter(new MainPeerLogic(), t));
+            activeTorrents.put(t, new TorrentTransmitter(new PeerWorker(), t));
             inactiveTorrents.remove(t);
         } else {
             System.out.println("Do nothing already active");

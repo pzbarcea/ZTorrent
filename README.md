@@ -118,4 +118,4 @@ java.net.ConnectException: Connection refused (Connection refused)
   * at edu.umd.cs.ztorrent.TorrentClient.setTorrentInactive(TorrentClient.java:91)
   * at edu.umd.cs.ztorrent.TorrentClient.deleteTorrentData(TorrentClient.java:105)
   * at edu.umd.cs.ztorrent.ui.TorrentUI.actionPerformed(TorrentUI.java:142)
-* 
+* (A) TODO: remove maintenance member from MetaConnection and PeerConnection.

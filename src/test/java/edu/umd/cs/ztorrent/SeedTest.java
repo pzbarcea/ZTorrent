@@ -21,7 +21,7 @@ public class SeedTest {
         System.out.println(working_directory);
 
         Torrent t = TorrentParser.parseTorrentFile(working_directory + "/src/test/resources/ubuntu-22.04-live-server-amd64.iso.torrent");
-        MainPeerLogic bpl = new MainPeerLogic();
+        PeerWorker bpl = new PeerWorker();
         t.addPeer(InetAddress.getByName("127.0.0.1"), 6881, null);
         while (true) {
             bpl.doWork(t);

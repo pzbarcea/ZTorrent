@@ -133,7 +133,7 @@ public class HTTPTracker extends Tracker {
             System.out.println("Response length: " + response.contentSize);
             System.out.println("Actual length: " + response.body.length);
             System.out.println("ResponseOut:\n " + new String(response.body, StandardCharsets.UTF_8));
-            System.out.println("Uknown:\n " + response.headerMap.get(HeaderType.UKNOWN));
+            System.out.println("Unknown:\n " + response.headerMap.get(HeaderType.UKNOWN));
             System.out.println("\n\n");
             if (response.status == 200) {
                 Bencoding b;

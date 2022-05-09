@@ -20,7 +20,7 @@ import java.util.*;
  *
  * @author pzbarcea
  */
-public class MainPeerLogic extends PeerLogic {
+public class PeerWorker extends AbstractPeerWorker {
     int recvPieces = 0;
     int activeConnections = 0;
     private static final int MAX_ENQEUED = 32;//20*1024*16 =
@@ -57,18 +57,13 @@ public class MainPeerLogic extends PeerLogic {
         Iterator<PeerConnection> itor = pList.iterator();
         while (itor.hasNext()) {
             PeerConnection mc = itor.next();
+
             if (mc.getConnectionState() == ConnectionState.uninitialized) {
-                mc.initalizeConnection(t.pm.bitmap.getMapCopy(), t);
-                connectionsManager.initializeConnection(mc);
-                t.pm.bitmap.addPeerMap(mc.getPeerBitmap());//adds
+                initialize(t, mc);
             } else if (mc.getConnectionState() == ConnectionState.closed) {
-                //pull off anything new?
-                itor.remove();
-                connectionCleanUp(mc);
-                haveAccumulator = 1;//just set so can recalculate.
-                t.pm.bitmap.removePeerMap(mc.getPeerBitmap());
+                close(t, itor, mc);
             } else {
-                mc.doWork(t);
+                process(t, mc);
             }
 
             if (mc.getConnectionState() == ConnectionState.connected) {
@@ -156,31 +151,7 @@ public class MainPeerLogic extends PeerLogic {
 
 
                 //check if any requests have timed out...
-                cleaningList.clear();
-                for (Request r : mc.getActiveRequest()) {
-                    if (System.currentTimeMillis() - r.sentTime > 1000 * 10) {//10 second timeout
-                        cleaningList.add(r.index);
-                    }
-                }
-
-                for (Integer p : cleaningList) {
-                    System.out.println("Time expired. " + p + " on " + mc);
-                    mc.resetHistory();
-                    connectionsManager.cancelPieceForConnection(mc, p);
-                }
-
-                if (cleaningList.size() > 0) {
-                    //drop max queue size.
-                    exhausted = false;
-                    int i = mc.getMaxRequests();
-                    i *= .5;
-                    if (i < 1) {
-                        i = 1;
-                    }
-                    mc.setMaxRequests(i);
-                    System.out.println("Dropping max queue for " + mc + " to " + i);
-                }
-
+                processTimedoutRequests(mc);
 
                 if (mc.peerInterested()) {
                     for (Piece piece : completedLast) {
@@ -256,6 +227,51 @@ public class MainPeerLogic extends PeerLogic {
 
 
         t.pm.doBlockingWork(); // TODO: remove from here. set to threaded process.
+    }
+
+    private void processTimedoutRequests(PeerConnection mc) {
+
+        cleaningList.clear();
+        for (Request r : mc.getActiveRequest()) {
+            if (System.currentTimeMillis() - r.sentTime > 1000 * 10) {//10 second timeout
+                cleaningList.add(r.index);
+            }
+        }
+
+        for (Integer p : cleaningList) {
+            System.out.println("Time expired. " + p + " on " + mc);
+            mc.resetHistory();
+            connectionsManager.cancelPieceForConnection(mc, p);
+        }
+
+        if (cleaningList.size() > 0) {
+            //drop max queue size.
+            exhausted = false;
+            int i = mc.getMaxRequests();
+            i *= .5;
+            if (i < 1) {
+                i = 1;
+            }
+            mc.setMaxRequests(i);
+            System.out.println("Dropping max queue for " + mc + " to " + i);
+        }
+    }
+
+    private void process(Torrent t, PeerConnection mc) throws IOException {
+        mc.doWork(t);
+    }
+
+    private void close(Torrent t, Iterator<PeerConnection> itor, PeerConnection mc) {
+        itor.remove();
+        connectionCleanUp(mc);
+        haveAccumulator = 1;//just set so can recalculate.
+        t.pm.bitmap.removePeerMap(mc.getPeerBitmap());
+    }
+
+    private void initialize(Torrent t, PeerConnection mc) {
+        mc.initalizeConnection(t.pm.bitmap.getMapCopy(), t);
+        connectionsManager.initializeConnection(mc);
+        t.pm.bitmap.addPeerMap(mc.getPeerBitmap());//adds
     }
 
 }

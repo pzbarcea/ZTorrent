@@ -10,15 +10,15 @@ import java.io.IOException;
  *
  * @author pzbarcea
  */
-public abstract class PeerLogic {
+public abstract class AbstractPeerWorker {
 
     /**
      * At its essence this is all peer logic is
-     * We assume the PeerLogic will loop over all
+     * We assume the AbstractPeerWorker will loop over all
      * the managed connection and push and pull data
      * as needed.
      *
-     * @param input torrent
+     * @param t
      */
     public abstract void doWork(Torrent t) throws IOException;
 }
