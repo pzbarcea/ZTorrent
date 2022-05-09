@@ -14,41 +14,41 @@ import java.security.NoSuchAlgorithmException;
 
 
 /***
- * zTorrent UI
+ * zTorrent GUI
  */
 public class TorrentUI extends JFrame implements ActionListener {
-    //TODO: damn download bar!!
-
-    private static final long serialVersionUID = 1L;
-    final JFileChooser fileChooser;
-    final JButton start, stop, open, delete;
-    final JSplitPane mainPane;
-    public final JTable torrentList;
-    final TorrentClient client;
+    JTable torrentList;
+    TorrentClient client;
+    JFileChooser filePicker;
+    JButton resumeButton;
+    JButton pauseButton;
+    JButton openButton;
+    JButton deleteButton;
+    JSplitPane mainPane;
 
     public TorrentUI(TorrentClient client) {
         this.client = client;
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());//get look and feel of whatever OS we're using
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                 UnsupportedLookAndFeelException ex) {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
-            System.err.println("Error initializing zTorrentClient: " + ex);
+        //https://docs.oracle.com/javase/specs/jls/se7/html/jls-14.html#jls-14.20
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
+            System.err.println("Error starting zTorrent GUI: " + ex);
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> client.on = false));
 
-        setSize(400, 300);
-        open = new JButton("Open");
-        start = new JButton("Start");
-        stop = new JButton("Stop");
-        delete = new JButton("Delete");
+        setSize(600, 450);
+        openButton = new JButton("Open");
+        resumeButton = new JButton("Resume");
+        pauseButton = new JButton("Pause");
+        deleteButton = new JButton("Remove");
 
         JPanel topPanel = new JPanel(new GridLayout(1, 5));
-        topPanel.add(open);
-        topPanel.add(delete);
-        topPanel.add(start);
-        topPanel.add(stop);
+        topPanel.add(openButton);
+        topPanel.add(resumeButton);
+        topPanel.add(pauseButton);
+        topPanel.add(deleteButton);
 
         //Name,size, progress bar, dl down, dl up
         torrentList = new JTable(client);
@@ -91,13 +91,13 @@ public class TorrentUI extends JFrame implements ActionListener {
         c.gridx = 0;
         c.gridy = 1;
         this.add(mainPane, c);
-        open.addActionListener(this);
-        stop.addActionListener(this);
-        delete.addActionListener(this);
-        start.addActionListener(this);
+        openButton.addActionListener(this);
+        pauseButton.addActionListener(this);
+        deleteButton.addActionListener(this);
+        resumeButton.addActionListener(this);
 
-        fileChooser = new JFileChooser();
-        mainPane.setDividerLocation(265);
+        filePicker = new JFileChooser();
+        mainPane.setDividerLocation(265); //TODO: CHANGE
         this.pack();
         setTitle("zTorrent Client");
         setLocationRelativeTo(null);
@@ -107,11 +107,11 @@ public class TorrentUI extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
 
-        if (e.getSource() == open) {
-            int returnVal = fileChooser.showOpenDialog(TorrentUI.this);
+        if (e.getSource() == openButton) {
+            int returnVal = filePicker.showOpenDialog(TorrentUI.this);
 
             if (returnVal == JFileChooser.APPROVE_OPTION) {
-                File file = fileChooser.getSelectedFile();
+                File file = filePicker.getSelectedFile();
                 //This is where a real application would open the file.
                 System.out.println("Opening: " + file.getName());
                 try {
@@ -123,13 +123,13 @@ public class TorrentUI extends JFrame implements ActionListener {
             } else {
                 System.out.println("Open command cancelled by user.");
             }
-        } else if (e.getSource() == delete) {
+        } else if (e.getSource() == deleteButton) {
             System.out.println("delete ");
             System.out.println("Delete " + torrentList.getSelectedRow());
             client.deleteTorrentData(client.getTorrent(torrentList.getSelectedRow()));
 
             //TODO: Choices...
-        } else if (e.getSource() == stop) {
+        } else if (e.getSource() == pauseButton) {
             System.out.println("stop ");
             System.out.println("Stop " + torrentList.getSelectedRow());
             try {
@@ -137,7 +137,7 @@ public class TorrentUI extends JFrame implements ActionListener {
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
-        } else if (e.getSource() == start) {
+        } else if (e.getSource() == resumeButton) {
             System.out.println("play ");
             System.out.println("Start " + torrentList.getSelectedRow());
             //Effectively just reload torrent.
@@ -146,8 +146,6 @@ public class TorrentUI extends JFrame implements ActionListener {
             } catch (IOException | NoSuchAlgorithmException e1) {
                 e1.printStackTrace();
             }
-
-
         }
     }
 
