@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class DHTTracker extends Tracker {
     Map<ID, Node> idToNode;
-    Map<ID, Map<String, Request>> idToRequestsO;//out
+    Map<ID, Map<String, Request>> idToRequestsO;
     Queue<Packet> requests;
     Queue<Packet> responses;
     DatagramSocket clientSocket;
@@ -108,7 +108,7 @@ public class DHTTracker extends Tracker {
         }
         Collections.sort(nodes, new Comparator<Node>() {
             @Override
-            //smallest is closest.
+            //The smaller one will be closer
             public int compare(Node o1, Node o2) {
                 BigInteger a = kademlia(o1.nodeId.id, target);
                 BigInteger b = kademlia(o2.nodeId.id, target);
@@ -130,20 +130,8 @@ public class DHTTracker extends Tracker {
     @Override
     protected void work() {
         try {
-            //dont call more then once every 3 secs.
             if (idToNode.size() == 0 && (System.currentTimeMillis() - lastRoot > 3 * 1000)) {
-                //add root node?
-                //send pings to roots
-                /**
-                 * Boot strapping lister:
-                 * dht.transmissionbt.com
-                 * router.utorrent.com
-                 * router.bittorrent.com
-                 * Man it feels like poping in
-                 * the primary root servers into a textfile....
-                 */
                 byte[] ping = constructPing(id, "ZZ");
-                //boot strap nodes:
                 DatagramPacket dp0 = new DatagramPacket(ping, ping.length, InetAddress.getByName("dht.transmissionbt.com"), 6881);
                 DatagramPacket dp1 = new DatagramPacket(ping, ping.length, InetAddress.getByName("router.utorrent.com"), 6881);
                 DatagramPacket dp2 = new DatagramPacket(ping, ping.length, InetAddress.getByName("router.bittorrent.com"), 6881);
@@ -153,10 +141,8 @@ public class DHTTracker extends Tracker {
                 lastRoot = System.currentTimeMillis();
             }
 
-            //respond to requests
             processRequests();
 
-            //filter through responses
             processResponses();
 
 
@@ -206,7 +192,7 @@ public class DHTTracker extends Tracker {
             }
             connectionCleaner.clear();
 
-            //Keep closest nodes
+            //Keep closest nodes (right now only top 40 nodes are kept)
             if (idToNode.size() > 40) {
                 List<Node> allNodes = new ArrayList<Node>(idToNode.values());
                 Collections.sort(allNodes, new Comparator<Node>() {
@@ -232,7 +218,7 @@ public class DHTTracker extends Tracker {
                 idToRequestsO.remove(n.nodeId);
             }
 
-            // Clean "active" requests that dropped
+            //Clean "active" requests that dropped (requests that are labelled as active but really are dead)
             for (ID conId : idToRequestsO.keySet()) {
                 Map<String, Request> rMap = idToRequestsO.get(conId);
                 if (rMap != null) {
@@ -240,7 +226,7 @@ public class DHTTracker extends Tracker {
                     for (String s : rMap.keySet()) {
                         //If we have exceeded 30 seconds timeout, then we drop the request
                         if (System.currentTimeMillis() - rMap.get(s).timeCreated > 30 * 1000) {
-                            System.out.println("Dropping Reqest " + s + " on connection " + conId.toString());
+                            System.out.println("Dropping Request " + s + " on connection " + conId.toString());
                             packetCleaner.add(s);
                         }
                     }
@@ -251,17 +237,15 @@ public class DHTTracker extends Tracker {
             }
 
         } catch (IOException e) {
-            //Oh how the great have fallen.
             this.workingTracker = false;
             this.error = "[WARNING] IOException: Can't'connect to host" + e.getMessage();
         }
 
     }
 
-    //unsigned integer == distance(A,B) = |A xor B|
     BigInteger kademlia(byte[] a, byte[] b) {
         if (a.length != b.length) {
-            throw new RuntimeException("Array's must be same length");
+            throw new RuntimeException("[ERROR] Got arrays of differing length");
         }
         byte[] c = new byte[a.length];
         for (int i = 0; i < a.length; i++) {
@@ -273,7 +257,7 @@ public class DHTTracker extends Tracker {
     /**
      * @param id
      * @param q
-     * @param r  - whether or not its a request. true if request
+     * @param r  - Boolean set to true if message is a request
      * @return
      * @throws UnsupportedEncodingException
      */
@@ -343,7 +327,10 @@ public class DHTTracker extends Tracker {
         return b.toByteArray();
     }
 
-    //The return value for a query for peers includes an opaque value known as the "token."
+    //From https://www.bittorrent.org/beps/bep_0005.html
+    //A query for peers needs to return a token --
+    //The BitTorrent implementation uses the SHA1 hash of the IP address concatenated
+    // onto a secret that changes every five minutes and tokens up to ten minutes old are accepted.
     byte[] get_peers(ID id, String q, byte[] infoHash) throws UnsupportedEncodingException {
         Bencoding b = msgBase(id, q, false);
         b.dictionary.put("q", new Bencoding("get_peers"));
@@ -407,9 +394,10 @@ public class DHTTracker extends Tracker {
             InetAddress ip = InetAddress.getByAddress(addr);
             int port = ((peers[i * 6 + 4] & 0xFF) << 8 | (peers[i * 6 + 5] & 0xFF));
             System.out.println("Peer: " + ip.getHostAddress() + ":" + port);
-            if (!Arrays.equals(ip.getAddress(), new byte[]{0, 0, 0, 0})) {//This is a baddie telling me to connect to local!
+            if (!Arrays.equals(ip.getAddress(), new byte[]{0, 0, 0, 0})) {
                 potentialPeers.add(new MetaConnection(ip, port));
             }
+
             total++;
         }
     }
@@ -431,7 +419,7 @@ public class DHTTracker extends Tracker {
 
     @Override
     protected long getWaitMS() {
-        if (havePeers) {//Its not as important once we've found some peers.
+        if (havePeers) {
             return 20000;
         }
         return 1000;
@@ -439,7 +427,6 @@ public class DHTTracker extends Tracker {
 
     @Override
     public void update(Torrent t) {
-        //push out our list.
         for (MetaConnection mc : potentialPeers) {
             t.addConnection(mc.toManagedConnection(t));
         }
@@ -454,7 +441,6 @@ public class DHTTracker extends Tracker {
 
     @Override
     public void close(Torrent t) {
-        //shut down. close port.
         recv.stop();
     }
 
@@ -468,7 +454,7 @@ public class DHTTracker extends Tracker {
                 Map<String, Request> rMap = idToRequestsO.get(actual.nodeId);
                 String s = p.b.dictionary.get("t").getString();
                 Request rt = rMap.remove(s);
-                actual.drops = 0;//reset drops
+                actual.drops = 0;
                 if (rt == null) {
                     System.out.println("Got response but no matching request?");
                     continue;
@@ -484,6 +470,7 @@ public class DHTTracker extends Tracker {
                         }
                         havePeers = true;
                     }
+
                     if (r.dictionary.containsKey("nodes")) {
                         placeNodes(r.dictionary.get("nodes").byteString);
                     }
@@ -491,13 +478,6 @@ public class DHTTracker extends Tracker {
                     if (r.dictionary.containsKey("token")) {
                         actual.lastToken = r.dictionary.get("token").byteString;
                     }
-                    //TODO:
-//					actual.lastQuery = nextFromLast(actual.lastQuery);
-//					byte [] data = announce_peer(id,actual.lastQuery, infoHash, actual.lastToken, false, -1);
-//					DatagramPacket dp = new DatagramPacket(data,data.length,actual.ip,actual.port);
-//					clientSocket.send(dp);
-
-
                 } else if (rt.rt == RType.find_node) {
                     actual.recved = true;
                     Bencoding nodes = p.b.dictionary.get("nodes");
@@ -508,7 +488,6 @@ public class DHTTracker extends Tracker {
                 }
 
             } else {
-                //We use pings to add our root's....
                 if (!idToNode.containsKey(p.n.nodeId)) {
                     System.out.println("Got new node!");
                     idToNode.put(p.n.nodeId, p.n);
@@ -525,17 +504,15 @@ public class DHTTracker extends Tracker {
             Packet p = requests.poll();
             Node n = idToNode.get(p.n.nodeId);
             if (n != null) {
-                //Immedate respond.
                 n.out++;
                 if (n.in > 100) {
                     idToNode.remove(n);
                     idToRequestsO.remove(n.nodeId);
                 }
-                //For now this "Tracker" doesn't host peers (we dont keep a peer list).
-                //we always return nodes. plain and simple.
+
                 String s = p.b.dictionary.get("q").getString();
                 if (!p.b.dictionary.containsKey("t")) {
-                    continue;//bad!
+                    continue;
                 }
                 Map<String, Bencoding> args = p.b.dictionary.get("a").dictionary;
                 String t = p.b.dictionary.get("t").getString();
@@ -545,27 +522,26 @@ public class DHTTracker extends Tracker {
                     d = constructPing(id, t);
                 } else if (s.equals("find_nodes")) {
                     if (!args.containsKey("target")) {
-                        continue;//bad!
+                        continue;
                     }
                     final byte[] target = args.get("target").byteString;
-                    //get 8 closest nodes
+
                     byte[] nodes = getEightClosest(target);
-                    d = constructNodeResponse(id, t, nodes);//Were not really using token :-{
+                    d = constructNodeResponse(id, t, nodes);
                 } else if (s.equals("get_peers")) {
                     if (!args.containsKey("info_hash")) {
-                        continue;//bad!
+                        continue;
                     }
                     final byte[] target = args.get("info_hash").byteString;
                     byte[] nodes = getEightClosest(target);
-                    d = constructPeersResponseN(id, t, nodes, new byte[]{65, 65, 65, 65});//Were not really using token :-{
+                    d = constructPeersResponseN(id, t, nodes, new byte[]{65, 65, 65, 65});
 
                 } else if (s.equals("announce_peer")) {
-                    //say ok, but were actually doing nothing.
                     d = constructAnnounceResponse(id, t);
                 } else {
-                    //respond with ping?
                     d = constructPing(id, t);
                 }
+
                 DatagramPacket dp0 = new DatagramPacket(d, d.length, n.ip, n.port);
                 clientSocket.send(dp0);
             }
@@ -573,10 +549,6 @@ public class DHTTracker extends Tracker {
         }
     }
 
-    /**
-     * Its possible to get lost.
-     * This restarts us to root.
-     */
     public void restart() {
         idToNode.clear();
         idToRequestsO.clear();
@@ -599,11 +571,12 @@ public class DHTTracker extends Tracker {
 
     @Override
     public int totalPeersObtained() {
-        // TODO Auto-generated method stub
         return total;
     }
 
-    private enum RType {ping, get_peers, find_node, announce_peer}
+    private enum RType {
+        ping, get_peers, find_node, announce_peer
+    }
 
     private static class Packet {
 
@@ -625,7 +598,6 @@ public class DHTTracker extends Tracker {
         }
     }
 
-    ///Sooo lame. :-/
     private class ID {
         public final int hash;
         public final byte[] id;
@@ -670,10 +642,10 @@ public class DHTTracker extends Tracker {
         byte[] lastToken;
         int drops = 0;
         boolean gaveClients = false;
-        boolean announcedInto = false;//announced our selves as a peer into this node.
+        boolean announcedInto = false;
         int in = 1;
         int out = 1;
-        boolean recved = false;//Set first time.
+        boolean recved = false;
         String lastQuery = "zz";
 
         public Node(ID nodeId, int port, InetAddress ip) {
@@ -689,13 +661,6 @@ public class DHTTracker extends Tracker {
             return String.format("%0" + (nodeId.id.length << 1) + "X", big);
         }
 
-        /**
-         * Follows the "Rules of Speaking" i outlined
-         * in the docs.
-         *
-         * @param n
-         * @return
-         */
         private boolean canTalkToNode() {
             long now = System.currentTimeMillis();
             if (!recved) {
@@ -708,6 +673,4 @@ public class DHTTracker extends Tracker {
         }
 
     }
-
-
 }

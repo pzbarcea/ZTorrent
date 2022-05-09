@@ -34,7 +34,7 @@ public class TorrentCli {
             System.exit(1);
         }
 
-        // Display help and exit if requested
+        // Display help if requested
         if (Boolean.TRUE.equals((Boolean) parser.getOptionValue(help))) {
             usage(System.out);
             System.exit(0);
@@ -61,7 +61,5 @@ public class TorrentCli {
             System.out.println("File provided is not a VALID .torrent file");
             System.exit(3);
         }
-
-
     }
 }
