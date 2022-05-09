@@ -37,10 +37,8 @@ public class HTTPTracker extends Tracker {
             if (port == -1) {
                 port = 80;
             }
-            //address = InetAddress.getByName(url.getHost());
 
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
@@ -58,13 +56,12 @@ public class HTTPTracker extends Tracker {
 
     @Override
     protected long getWaitMS() {
-        // TODO Auto-generated method stub
         return wait;
     }
 
     @Override
     public void update(Torrent t) {
-
+        return;
     }
 
     @Override
@@ -78,18 +75,11 @@ public class HTTPTracker extends Tracker {
     }
 
     /***
-     * Updates torrent file with results from tracker
-     * If tracker gives bad results it prints out the http response.
+     * REWORD: Updates torrent file with results from tracker
      *
-     * @note Recently added robustness. sent time out after 8 seconds of no recv
-     * @note BLOCKS. :-/ i made sure not for too long. but still might want to thread.
-     *   blocks for upto 8 seconds. be wary.
-     * @param torrent
-     * @param event
+     * Generates a GET request,
      */
     private void work(Torrent torrent, Event event) {
-        //form Get request
-        // ",page,string,peerID,bytes,31415,ip
         try {
             String gq = url.getQuery();
             if (gq == null) {
@@ -118,7 +108,6 @@ public class HTTPTracker extends Tracker {
                     + "&compact=1" + "&port=" + torrent.uPnP_Port + e + " HTTP/1.1\r\nHost: " + url.getHost() + "\r\n\r\n";
 
             System.out.println(getRequest);
-            //TODO: report status to console
             Socket socket = new Socket();
             socket.setSoTimeout(8 * 1000);
             socket.connect(new InetSocketAddress(url.getHost(), port));
@@ -128,7 +117,7 @@ public class HTTPTracker extends Tracker {
 
             HttpResponse response = new HttpResponse(socket.getInputStream());
             socket.close();
-            //TODO: output log
+
             System.out.println("Response Status: " + response.status);
             System.out.println("Response length: " + response.contentSize);
             System.out.println("Actual length: " + response.body.length);
@@ -180,7 +169,6 @@ public class HTTPTracker extends Tracker {
 
                 }
 
-
                 this.e = Event.regular;
 
             } else {
@@ -190,15 +178,10 @@ public class HTTPTracker extends Tracker {
                 this.error = new String(response.body, StandardCharsets.UTF_8);
             }
 
-        } catch (IOException e) {
-            this.workingTracker = false;
-            this.error = "Error IOException, Maybe HTTP maybe socket error. " + e.getMessage();
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             this.workingTracker = false;
-            this.error = "Error unkown. probably HTTP-Response ---> " + e.getMessage();
+            this.error = "[ERROR] " + e.getMessage();
         }
-
     }
 
     @Override
