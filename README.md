@@ -109,7 +109,7 @@ java.net.ConnectException: Connection refused (Connection refused)
 ## Needs clarification:
 * what is byte[] b = hexStringToByteArray("00599b501d8713640be4f481433dd0848a592ef3");
   * in DHTTracker, line 119
-* 
+  * (^ Moved to unit test)
 
 
 ## Known Bugs/Issues (Either fix or include in final report)
@@ -118,4 +118,7 @@ java.net.ConnectException: Connection refused (Connection refused)
   * at edu.umd.cs.ztorrent.TorrentClient.setTorrentInactive(TorrentClient.java:91)
   * at edu.umd.cs.ztorrent.TorrentClient.deleteTorrentData(TorrentClient.java:105)
   * at edu.umd.cs.ztorrent.ui.TorrentUI.actionPerformed(TorrentUI.java:142)
-* 
+* No HTTPS support (example: Ubuntu iso torrent)
+* We only use static session key (somewhere) 
+* visitor design pattern
+* Martin Fowler state machine
