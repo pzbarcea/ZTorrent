@@ -53,10 +53,9 @@ public class UDPTracker extends Tracker {
             sock = new DatagramSocket();
             sock.setSoTimeout(3 * 1000);
         } catch (SocketException e1) {
-            // TODO Auto-generated catch block
             e1.printStackTrace();
         }
-        //Start connection message
+        
         DatagramPacket sendPacket = null, recvPacket = null;
         byte[] sendBuffer = null, recvBuffer = null;
         long conID = 0x41727101980l;
@@ -78,7 +77,6 @@ public class UDPTracker extends Tracker {
             sock.receive(recvPacket);
             reponse = recvPacket.getData();
             if (reponse != null) {
-                // Start Announce
                 int actionIdFromResponse = ByteUtils.readInt(reponse, 0);
                 int transactionIdFromResponse = ByteUtils.readInt(reponse, 4);
                 long connectionIdFromResponse = ByteUtils.readUnsignedInt(reponse, 8);
@@ -158,7 +156,6 @@ public class UDPTracker extends Tracker {
 
     @Override
     protected void work() {
-        //Do work till we get initial connection.
         if (!completeOnce) {
             getUPDTrackerResult(t, Event.started);
         }
@@ -172,7 +169,7 @@ public class UDPTracker extends Tracker {
 
     @Override
     public void update(Torrent t) {
-    }//meh.
+    }
 
 
     @Override
