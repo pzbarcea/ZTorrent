@@ -43,13 +43,12 @@ public class TorrentUI extends JFrame implements ActionListener {
         pauseButton = new JButton("Pause");
         deleteButton = new JButton("Remove");
 
-        JPanel topPanel = new JPanel(new GridLayout(1, 5));
-        topPanel.add(addButton);
-        topPanel.add(resumeButton);
-        topPanel.add(pauseButton);
-        topPanel.add(deleteButton);
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 5));
+        buttonPanel.add(addButton);
+        buttonPanel.add(resumeButton);
+        buttonPanel.add(pauseButton);
+        buttonPanel.add(deleteButton);
 
-        //Name,size, progress bar, dl down, dl up
         torrentList = new JTable(client);
         JScrollPane scrollPane = new JScrollPane(torrentList);
 
@@ -61,14 +60,30 @@ public class TorrentUI extends JFrame implements ActionListener {
         torrentList.setShowVerticalLines(true);
         torrentList.setGridColor(Color.GRAY);
         torrentList.setFillsViewportHeight(true);
-        torrentList.setPreferredSize(new Dimension(500, 300));
+        torrentList.setPreferredSize(new Dimension(1000, 400));
         torrentList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         torrentList.getColumnModel().getColumn(0).setPreferredWidth(200);
 
-        topPanel.setBackground(Color.darkGray);
+        buttonPanel.setBackground(Color.darkGray);
         torrentList.setBackground(Color.darkGray);
         torrentList.setForeground(Color.WHITE);
         scrollPane.setBackground(Color.darkGray);
+
+        JPanel banner = new JPanel();
+        banner.setBackground(Color.BLACK);
+        banner.setForeground(Color.lightGray);
+
+        JLabel label = new JLabel();
+        label.setText("zTorrent: Paul Zbarcea, Harvey Sun");
+        label.setForeground(Color.lightGray);
+        label.setFont(new Font("Serif", Font.PLAIN, 40));
+        banner.add(label);
+
+        JSplitPane splitPane = new JSplitPane();
+        splitPane.setTopComponent(scrollPane);
+        splitPane.setBottomComponent(banner);
+        splitPane.setOrientation(0);
+        splitPane.setDividerLocation(350);
 
         GridBagLayout experimentLayout = new GridBagLayout();
         this.setLayout(experimentLayout);
@@ -81,7 +96,7 @@ public class TorrentUI extends JFrame implements ActionListener {
         c.gridy = 0;
         c.weightx = 1;
         c.weighty = 0;
-        this.add(topPanel, c);
+        this.add(buttonPanel, c);
 
         c.fill = GridBagConstraints.BOTH;
         c.anchor = GridBagConstraints.CENTER;
@@ -89,7 +104,7 @@ public class TorrentUI extends JFrame implements ActionListener {
         c.weighty = 1;
         c.gridx = 0;
         c.gridy = 1;
-        this.add(scrollPane, c);
+        this.add(splitPane, c);
 
         addButton.addActionListener(this);
         pauseButton.addActionListener(this);
@@ -153,7 +168,7 @@ public class TorrentUI extends JFrame implements ActionListener {
 
         TorrentClient client = new TorrentClient();
         final TorrentUI ex = new TorrentUI(client);
-        ex.setSize(1000, 400);
+        ex.setSize(1000, 485);
         SwingUtilities.invokeLater(() -> ex.setVisible(true));
 
         client.mainLoop();
