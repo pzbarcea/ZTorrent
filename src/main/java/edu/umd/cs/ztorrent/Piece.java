@@ -1,6 +1,6 @@
 package edu.umd.cs.ztorrent;
 
-import edu.umd.cs.ztorrent.MessageParser.Request;
+import edu.umd.cs.ztorrent.message.MessageRequest;
 
 import java.util.*;
 
@@ -93,7 +93,7 @@ public class Piece implements Comparable<Piece> {
      *
      * @return
      */
-    public Request getNextBlock() {
+    public MessageRequest getNextBlock() {
         if (complete) {
             return null;
         }
@@ -113,7 +113,7 @@ public class Piece implements Comparable<Piece> {
                     //Our next piece falls between two pieces
                     int m = curr.begin - (last.begin + last.data.length);//delta aka between blocks
                     m = m > max ? m : max;
-                    return new Request(pieceIndex, last.begin + last.data.length, m);
+                    return new MessageRequest(pieceIndex, last.begin + last.data.length, m);
                 }
                 last = curr;
             }
@@ -121,24 +121,25 @@ public class Piece implements Comparable<Piece> {
 
 
         if (last == null) {//First request for this piece ^.^
-            return new Request(pieceIndex, 0, max);
+            return new MessageRequest(pieceIndex, 0, max);
         } else {//At the end? Maybe?
             int m = finalPiece.length - (last.begin + last.data.length) > max ? max : finalPiece.length - last.begin + last.data.length;
             if (m != 0) {//if not complete.
-                return new Request(pieceIndex, last.begin + last.data.length, max);
+                return new MessageRequest(pieceIndex, last.begin + last.data.length, max);
             }
         }
         return null;//its actually complete.
     }
 
-    public List<Request> getAllBlocksLeft() {
-        //count blocks.
+    public List<MessageRequest> getAllBlocksLeft() {
+        //If torrent is completed, no blocks are left to download
         if (complete) {
             return null;
         }
-        List<Request> list = new ArrayList<Request>();
+
+        List<MessageRequest> list = new ArrayList<>();
         SubPiece last = null;
-        //TODO: simplify? bit incomprehensible
+
         int i = 0;
         Iterator<SubPiece> itor = data.iterator();
         while (itor.hasNext()) {
@@ -148,9 +149,9 @@ public class Piece implements Comparable<Piece> {
                 int bytes = sp.begin - i;
                 for (int z = 0; z < bytes; z += idealSize) {
                     if (z + idealSize > bytes) {
-                        list.add(new Request(pieceIndex, i + z, bytes - z));
+                        list.add(new MessageRequest(pieceIndex, i + z, bytes - z));
                     } else {
-                        list.add(new Request(pieceIndex, i + z, idealSize));
+                        list.add(new MessageRequest(pieceIndex, i + z, idealSize));
                     }
                 }
             }
@@ -164,9 +165,9 @@ public class Piece implements Comparable<Piece> {
         }
         for (i = last.data.length + last.begin; i < finalPiece.length; i += idealSize) {
             if (i + idealSize > finalPiece.length) {
-                list.add(new Request(pieceIndex, i, finalPiece.length - i));
+                list.add(new MessageRequest(pieceIndex, i, finalPiece.length - i));
             } else {
-                list.add(new Request(pieceIndex, i, idealSize));
+                list.add(new MessageRequest(pieceIndex, i, idealSize));
             }
         }
 

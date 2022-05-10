@@ -1,19 +1,21 @@
 package edu.umd.cs.ztorrent.protocol;
 
 import edu.umd.cs.ztorrent.*;
-import edu.umd.cs.ztorrent.MessageParser.HandShake;
-import edu.umd.cs.ztorrent.MessageParser.PeerMessage;
-import edu.umd.cs.ztorrent.MessageParser.Request;
-import edu.umd.cs.ztorrent.MessageParser.Response;
+import edu.umd.cs.ztorrent.message.MessageParser;
+import edu.umd.cs.ztorrent.message.MessageParser.HandShake;
+import edu.umd.cs.ztorrent.message.PeerMessage;
+import edu.umd.cs.ztorrent.message.MessageRequest;
+import edu.umd.cs.ztorrent.message.MessageResponse;
+import edu.umd.cs.ztorrent.message.MessageType;
 
 import java.io.IOException;
 import java.net.*;
 import java.util.*;
 
 public class PeerConnection extends MetaConnection {
-    private final Set<Request> ourRequests;
+    private final Set<MessageRequest> ourRequests;
     private int historySize = 0;
-    private List<Response> peerSentBlocks;
+    private List<MessageResponse> peerSentBlocks;
     private long have = 0;
     private final MessageParser mp;
     private long download;
@@ -25,9 +27,9 @@ public class PeerConnection extends MetaConnection {
         super(ip, port);
         download = upload = maintenance = 0;
         mp = new MessageParser();
-        peerRequests = new HashSet<Request>();
-        ourRequests = new HashSet<Request>();
-        peerSentBlocks = new ArrayList<Response>();
+        peerRequests = new HashSet<MessageRequest>();
+        ourRequests = new HashSet<MessageRequest>();
+        peerSentBlocks = new ArrayList<MessageResponse>();
         recvHandShake = false;
         conState = ConnectionState.uninitialized;
     }
@@ -108,7 +110,7 @@ public class PeerConnection extends MetaConnection {
         return peerPieceOrganizer;
     }
 
-    public boolean pushRequest(Request r) {
+    public boolean pushRequest(MessageRequest r) {
         if (conState != ConnectionState.connected) {
             throw new RuntimeException("Can only send requests on 'connected' connections");
         } else if (peer_choking) {
@@ -138,9 +140,9 @@ public class PeerConnection extends MetaConnection {
             return;
         }
         try {
-            Iterator<Request> itor = ourRequests.iterator();
+            Iterator<MessageRequest> itor = ourRequests.iterator();
             while (itor.hasNext()) {
-                Request r = itor.next();
+                MessageRequest r = itor.next();
                 if (r.index == p.pieceIndex) {
                     itor.remove();
                     maintenance += 17;
@@ -152,7 +154,7 @@ public class PeerConnection extends MetaConnection {
         }
     }
 
-    public void pushRequestResponse(Request r, byte[] block) {
+    public void pushRequestResponse(MessageRequest r, byte[] block) {
         if (!peerRequests.remove(r)) {
             throw new RuntimeException("Giving unrequested block! But whyyyy! =(");
         } else if (conState != ConnectionState.connected) {
@@ -183,24 +185,24 @@ public class PeerConnection extends MetaConnection {
         }
     }
 
-    public List<Request> getPeerRequests() {
-        List<Request> q = new ArrayList<Request>(peerRequests.size());
-        for (Request r : peerRequests) {
+    public List<MessageRequest> getPeerRequests() {
+        List<MessageRequest> q = new ArrayList<MessageRequest>(peerRequests.size());
+        for (MessageRequest r : peerRequests) {
             q.add(r);
         }
         return q;
     }
 
-    public Request[] getActiveRequest() {
-        return ourRequests.toArray(new Request[0]);
+    public MessageRequest[] getActiveRequest() {
+        return ourRequests.toArray(new MessageRequest[0]);
     }
 
-    public List<Response> getPeerResponseBlocks() {
+    public List<MessageResponse> getPeerResponseBlocks() {
         if (peerSentBlocks.size() < 1) {
             return null;
         }
-        List<Response> r = peerSentBlocks;
-        peerSentBlocks = new ArrayList<Response>();
+        List<MessageResponse> r = peerSentBlocks;
+        peerSentBlocks = new ArrayList<MessageResponse>();
         return r;
     }
 
@@ -244,20 +246,20 @@ public class PeerConnection extends MetaConnection {
 
     @Override
     protected void doDataIn(PeerMessage pm) {
-        if (pm.type == PeerMessage.Type.CHOKE) {
+        if (pm.type == MessageType.CHOKE) {
             this.peer_choking = true;
             System.out.println(this + " choked us.");
             ourRequests.clear();
-        } else if (pm.type == PeerMessage.Type.UNCHOKE) {
+        } else if (pm.type == MessageType.UNCHOKE) {
             System.out.println(this + " unchoked us.");
             this.peer_choking = false;
-        } else if (pm.type == PeerMessage.Type.INTERESTED) {
+        } else if (pm.type == MessageType.INTERESTED) {
             System.out.println(this + " intrested in us.");
             this.peer_interested = true;
-        } else if (pm.type == PeerMessage.Type.NOT_INTERESTED) {
+        } else if (pm.type == MessageType.NOT_INTERESTED) {
             System.out.println(this + " not intrested in us.");
             this.peer_interested = false;
-        } else if (pm.type == PeerMessage.Type.HAVE) {
+        } else if (pm.type == MessageType.HAVE) {
             System.out.println(this + " has " + pm.piece);
             if (!am_interested) {
                 System.out.println("Client sent us have! But WE AIN'T EVEN interested.");
@@ -269,7 +271,7 @@ public class PeerConnection extends MetaConnection {
                 System.out.println("Bugs. Maybe it was " + pm.piece);
             }
 
-        } else if (pm.type == PeerMessage.Type.BIT_FILED) {
+        } else if (pm.type == MessageType.BIT_FILED) {
             System.out.println("Got bitmap from " + this);
             if (peerPieceOrganizer.getCompletedPieces() == 0) {
                 peerPieceOrganizer.setBitMap(pm.bitfield);
@@ -280,18 +282,18 @@ public class PeerConnection extends MetaConnection {
                 System.out.println("This wasn't first time. Playing games?" + this);
             }
 
-        } else if (pm.type == PeerMessage.Type.REQUEST) {
-            peerRequests.add(new Request(pm.index, pm.begin, pm.length));
+        } else if (pm.type == MessageType.REQUEST) {
+            peerRequests.add(new MessageRequest(pm.index, pm.begin, pm.length));
             if (am_choking) {
                 System.out.println("Recieved request but choking request!");
             }
 
-        } else if (pm.type == PeerMessage.Type.CANCEL) {
-            peerRequests.remove(new Request(pm.index, pm.begin, pm.length));
-        } else if (pm.type == PeerMessage.Type.PIECE) {
+        } else if (pm.type == MessageType.CANCEL) {
+            peerRequests.remove(new MessageRequest(pm.index, pm.begin, pm.length));
+        } else if (pm.type == MessageType.PIECE) {
             System.out.println("Got piece " + pm.index + " from " + this);
-            Request r = new Request(pm.index, pm.begin, pm.block.length);
-            Response rs = new Response(pm.index, pm.begin, pm.block);
+            MessageRequest r = new MessageRequest(pm.index, pm.begin, pm.block.length);
+            MessageResponse rs = new MessageResponse(pm.index, pm.begin, pm.block);
             if (ourRequests.remove(r)) {
                 historySize++;
                 download += pm.block.length;
@@ -299,7 +301,7 @@ public class PeerConnection extends MetaConnection {
                 System.out.println("Recieved Piece " + pm.index + "," + pm.begin + "," + pm.length + " but didnt send request!");
             }
             peerSentBlocks.add(rs);
-        } else if (pm.type == PeerMessage.Type.EXTENSION) {
+        } else if (pm.type == MessageType.EXTENSION) {
             doExtension(pm.extensionID, pm.extension);
         }
     }

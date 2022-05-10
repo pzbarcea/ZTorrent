@@ -188,7 +188,7 @@ public class Torrent extends MetaTorrent {
         while (mcs.hasNext()) {
             try {
                 PeerConnection mc = mcs.next();
-                mc.shutDown();
+                mc.tearDown();
             } catch (Exception e) {
             }
             mcs.remove();

@@ -1,9 +1,11 @@
 package edu.umd.cs.ztorrent.protocol;
 
 import edu.umd.cs.ztorrent.*;
-import edu.umd.cs.ztorrent.MessageParser.HandShake;
-import edu.umd.cs.ztorrent.MessageParser.PeerMessage;
-import edu.umd.cs.ztorrent.MessageParser.Request;
+import edu.umd.cs.ztorrent.message.MessageParser;
+import edu.umd.cs.ztorrent.message.MessageParser.HandShake;
+import edu.umd.cs.ztorrent.message.PeerMessage;
+import edu.umd.cs.ztorrent.message.MessageRequest;
+import edu.umd.cs.ztorrent.message.MessageType;
 import edu.umd.cs.ztorrent.protocol.PeerConnection.ConnectionState;
 
 import java.io.IOException;
@@ -37,7 +39,7 @@ public class MetaConnection {
     protected Socket sock;
     protected long maintenance;
     protected byte[] announcedMap;
-    protected Set<Request> peerRequests;
+    protected Set<MessageRequest> peerRequests;
     protected Map<String, Integer> extensions;
     protected Map<Integer, String> revExtensions;
     protected int metaSize = -1;
@@ -229,19 +231,19 @@ public class MetaConnection {
     }
 
     protected void doDataIn(PeerMessage pm) {
-        if (pm.type == PeerMessage.Type.CHOKE) {
+        if (pm.type == MessageType.CHOKE) {
             this.peer_choking = true;
             System.out.println(this + " choked us.");
-        } else if (pm.type == PeerMessage.Type.UNCHOKE) {
+        } else if (pm.type == MessageType.UNCHOKE) {
             System.out.println(this + " unchoked us.");
             this.peer_choking = false;
-        } else if (pm.type == PeerMessage.Type.INTERESTED) {
+        } else if (pm.type == MessageType.INTERESTED) {
             System.out.println(this + " interested in us.");
             this.peer_interested = true;
-        } else if (pm.type == PeerMessage.Type.NOT_INTERESTED) {
+        } else if (pm.type == MessageType.NOT_INTERESTED) {
             System.out.println(this + " not interested in us.");
             this.peer_interested = false;
-        } else if (pm.type == PeerMessage.Type.EXTENSION) {
+        } else if (pm.type == MessageType.EXTENSION) {
             doExtension(pm.extensionID, pm.extension);
         }
     }
@@ -317,7 +319,7 @@ public class MetaConnection {
         }
     }
 
-    public void shutDown() throws IOException {
+    public void tearDown() throws IOException {
         sock.close();
         conState = ConnectionState.closed;
     }

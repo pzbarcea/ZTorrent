@@ -1,52 +1,58 @@
 package edu.umd.cs.ztorrent;
 
-import edu.umd.cs.ztorrent.MessageParser.Request;
-import edu.umd.cs.ztorrent.MessageParser.Response;
+import edu.umd.cs.ztorrent.message.MessageRequest;
+import edu.umd.cs.ztorrent.message.MessageResponse;
 import edu.umd.cs.ztorrent.protocol.PeerConnection;
 import edu.umd.cs.ztorrent.protocol.PeerConnection.ConnectionState;
 
 import java.util.*;
 
 /**
- * This class was constructed to make peer logic
- * and management easier.
- * <p>
- * This class manages dissemination of pieces across
- * managed connections.
- * <p>
- * This class also maintains actively worked on pieces.
- * <p>
- * -Tracks which pieces are being worked on
- * -Tracks which connections are working on which pieces
- * -Provides an interface for incoming blocks to be completed.
- * -
- * TODO: edge 1, client leaves block requeue'd but no one able to complete
+ * Handles transfer of piece statuses across a connection and maintains the state for each piece being worked on
  *
- * @author pzbarcea
+ * This class allows us to know which pieces are being transferred, by which peer connection, and update them as they
+ * are completed
  */
-public class ConnectionsManager {
-    private class ConnectionWork {
-        Set<Piece> queued = new TreeSet<Piece>();
-        List<Request> blockLeft = new LinkedList<Request>();//blocks queued from pieces but not yet sent.
+public class ConnectionsHandler {
+    /**
+     * Represents the status of a connection
+     * For each connection, we have a set of pieces that are currently queued (in use)
+     * and a list of pieces that are "buffered"
+     *
+     * Buffered pieces are stored as MessageRequests for specific pieces that we will send later, once we have
+     * more space in the queue to add these new pieces
+     */
+    private class ConnectionStatus {
+        Set<Piece> queuedPieces = new TreeSet<>();
+        LinkedList<MessageRequest> requestsToSend = new LinkedList<>();
     }
 
-    //List of things disseminated
-    //Managed connection.
-    private final Map<PeerConnection, ConnectionWork> clientToPieceSet = new HashMap<PeerConnection, ConnectionWork>();
-    //for sake of completeness. Build it correct now so i don't have to come back
-    private final Map<Piece, List<PeerConnection>> pieceToClients = new HashMap<Piece, List<PeerConnection>>();
-    private final Set<Piece> currentQueue = new TreeSet<Piece>();//Queued up pieces. But none given out.
-    private final Map<Integer, Piece> disseminatedPiecesToCompete = new HashMap<Integer, Piece>();//pieces that are given to at least 1 connection
-    private final Map<Integer, Piece> otherPiecesGettingComplete = new HashMap<Integer, Piece>();//(why? well we don't exactly know.)
-    private List<Piece> recentlyCompleted = new ArrayList<Piece>();
+    //Maps the specific connection to its connection status (the pieces it has queued, plus all the other piece requests it has queued)
+    private final Map<PeerConnection, ConnectionStatus> clientToPieceSet = new HashMap<>();
 
-    public void connectionCleanUp(PeerConnection mc) {
-        Piece[] ps = clientToPieceSet.get(mc).queued.toArray(new Piece[0]);
-        if (ps != null) {
-            for (Piece p : ps) {
-                cancelPieceForConnection(mc, (int) p.pieceIndex);
-            }
+    //Maps a piece to all the clients that have requested it. Useful because we need to know who to transfer a piece to
+    private final Map<Piece, List<PeerConnection>> pieceToClients = new HashMap<>();
+
+    //The set of pieces that need to be added eventually (we have a maximum number of piece requested at a time)
+    private final Set<Piece> currentQueue = new TreeSet<>();
+
+    //Maps the pieces that are currently in use by >= 1 connection
+    private final Map<Integer, Piece> disseminatedPiecesToCompete = new HashMap<>();
+
+    //Maps the pieces that are finished or finishing
+    private final Map<Integer, Piece> otherPiecesGettingComplete = new HashMap<>();
+
+    //Represents the set of pieces that have finished. Used by the PeerWorker to track which pieces finished (and also for the
+    // CLI and GUI to print out which pieces finished so we know we are progressing in the download)
+    // TODO: Can we use this to update the download bar in the GUI?
+    private List<Piece> recentlyCompleted = new ArrayList<>();
+
+    public void destroyConnection(PeerConnection mc) {
+        Piece[] ps = clientToPieceSet.get(mc).queuedPieces.toArray(new Piece[0]);
+        for (Piece p : ps) {
+            cancelPieceForConnection(mc, (int) p.pieceIndex);
         }
+
         clientToPieceSet.remove(mc);
     }
 
@@ -62,16 +68,24 @@ public class ConnectionsManager {
      * @param maxPieces
      * @param mc
      */
-    public void enqueuePieces(int maxPieces, PeerConnection mc) {
-        Iterator<Piece> itor = currentQueue.iterator();
-        ConnectionWork cw = clientToPieceSet.get(mc);
-        while (itor.hasNext()) {
-            Piece p = itor.next();
-            if (cw.queued.size() + 1 > maxPieces) {
+
+    /**
+     *
+     * Continues to add pieces from the current ongoing pieces queue to the
+     *
+     * @param maxPieces - the maximum size of the queue. We should not exceed this size to maintain some efficiency
+     * @param connection - the connection to a specific Peer that we need to communicate with
+     */
+    public void enqueuePieces(int maxPieces, PeerConnection connection) {
+        Iterator<Piece> iter = currentQueue.iterator();
+        ConnectionStatus cstatus = clientToPieceSet.get(connection);
+        while (iter.hasNext()) {
+            Piece p = iter.next();
+            if (cstatus.queuedPieces.size() + 1 > maxPieces) {
                 break;
             }
 
-            if (mc.getPeerBitmap().hasPiece((int) p.pieceIndex)) {
+            if (connection.getPeerBitmap().hasPiece((int) p.pieceIndex)) {
                 //TO ENSURE SAME PIECE IS SHARED IN MULTI-QUE CASES
                 Piece piece = disseminatedPiecesToCompete.get((int) p.pieceIndex);
                 if (piece == null) {
@@ -79,34 +93,31 @@ public class ConnectionsManager {
                 }
                 List<PeerConnection> lMC = pieceToClients.get((int) piece.pieceIndex);
                 if (lMC == null) {
-                    lMC = new ArrayList<PeerConnection>();
+                    lMC = new ArrayList<>();
                 }
-                lMC.add(mc);
+                lMC.add(connection);
                 pieceToClients.put(piece, lMC);
-                cw.queued.add(piece);
-                cw.blockLeft.addAll(piece.getAllBlocksLeft());
-                itor.remove();
+                cstatus.queuedPieces.add(piece);
+                cstatus.requestsToSend.addAll(piece.getAllBlocksLeft());
+                iter.remove();
                 disseminatedPiecesToCompete.put((int) p.pieceIndex, p);
-
             }
         }
     }
 
-    //TODO: enqueue function for pieces
-    public Set<Piece> currentQueue() {
+    public Set<Piece> getCurrentQueue() {
         return currentQueue;
     }
-    //TODO: completion stuff.
 
     /**
      * Pulls all the read in blocks.
      * On completion cancels any mismatched sections.
      */
     public long readFromConnection(PeerConnection mc, PieceOrganizer b) {
-        List<Response> rlist = mc.getPeerResponseBlocks();
+        List<MessageResponse> rlist = mc.getPeerResponseBlocks();
         long bytes = 0;
         if (rlist != null) {
-            for (Response r : rlist) {
+            for (MessageResponse r : rlist) {
                 bytes += r.block.length;
                 if (disseminatedPiecesToCompete.containsKey(r.index)) {
                     if (disseminatedPiecesToCompete.get(r.index).addData(r.begin, r.block)) {
@@ -136,7 +147,7 @@ public class ConnectionsManager {
         if (clientToPieceSet.containsKey(mc)) {
             throw new RuntimeException("Incorrect use. MC already initialized");
         }
-        ConnectionWork cw = new ConnectionWork();
+        ConnectionStatus cw = new ConnectionStatus();
         clientToPieceSet.put(mc, cw);
     }
 
@@ -145,8 +156,9 @@ public class ConnectionsManager {
         if (recentlyCompleted.size() == 0) {
             return null;
         }
+
         List<Piece> plist = recentlyCompleted;
-        recentlyCompleted = new ArrayList<Piece>();
+        recentlyCompleted = new ArrayList<>();
         return plist;
     }
 
@@ -160,15 +172,9 @@ public class ConnectionsManager {
         List<PeerConnection> mcs = pieceToClients.get(p);
         if (mcs != null) {
             for (PeerConnection mc : mcs) {
-                ConnectionWork cw = clientToPieceSet.get(mc);
-                cw.queued.remove(p);
-                Iterator<Request> itor = cw.blockLeft.iterator();
-                while (itor.hasNext()) {
-                    Request r = itor.next();
-                    if (r.index == p.pieceIndex) {
-                        itor.remove();
-                    }
-                }
+                ConnectionStatus cw = clientToPieceSet.get(mc);
+                cw.queuedPieces.remove(p);
+                cw.requestsToSend.removeIf(r -> r.index == p.pieceIndex);
                 mc.cancelPiece(p);
             }
         }
@@ -193,13 +199,13 @@ public class ConnectionsManager {
      * @param mc
      * @return
      */
-    public List<Request> getBufferedRequests(PeerConnection mc) {
-        return clientToPieceSet.get(mc).blockLeft;
+    public List<MessageRequest> getBufferedRequests(PeerConnection mc) {
+        return clientToPieceSet.get(mc).requestsToSend;
     }
 
     public Piece[] getQueuedPieces(PeerConnection mc) {
-        ConnectionWork cw = clientToPieceSet.get(mc);
-        return cw.queued.toArray(new Piece[0]);
+        ConnectionStatus cw = clientToPieceSet.get(mc);
+        return cw.queuedPieces.toArray(new Piece[0]);
     }
 
     /**
@@ -220,15 +226,9 @@ public class ConnectionsManager {
                 disseminatedPiecesToCompete.remove(piece);
             }
 
-            ConnectionWork cw = clientToPieceSet.get(mc);
-            cw.queued.remove(p);
-            Iterator<Request> itor = cw.blockLeft.iterator();
-            while (itor.hasNext()) {
-                Request r = itor.next();
-                if (r.index == p.pieceIndex) {
-                    itor.remove();
-                }
-            }
+            ConnectionStatus cw = clientToPieceSet.get(mc);
+            cw.queuedPieces.remove(p);
+            cw.requestsToSend.removeIf(r -> r.index == p.pieceIndex);
             if (mc.getConnectionState() == ConnectionState.connected) {
                 mc.cancelPiece(p);
             }

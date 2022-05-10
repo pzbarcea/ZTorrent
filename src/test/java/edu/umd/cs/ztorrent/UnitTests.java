@@ -1,8 +1,10 @@
 package edu.umd.cs.ztorrent;
 
 import edu.umd.cs.ztorrent.HttpResponse.HeaderType;
-import edu.umd.cs.ztorrent.MessageParser.HandShake;
-import edu.umd.cs.ztorrent.MessageParser.PeerMessage;
+import edu.umd.cs.ztorrent.message.MessageParser;
+import edu.umd.cs.ztorrent.message.MessageParser.HandShake;
+import edu.umd.cs.ztorrent.message.PeerMessage;
+import edu.umd.cs.ztorrent.message.MessageType;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -81,26 +83,26 @@ public class UnitTests {
         MP.choke(os);
         bis = new ByteArrayInputStream(os.toByteArray());
         MP.consumeMessage(bis);
-        System.out.println("	Test 2: " + (MP.getNext().type == PeerMessage.Type.CHOKE));
+        System.out.println("	Test 2: " + (MP.getNext().type == MessageType.CHOKE));
 
 
         os.reset();
         MP.unchoke(os);
         bis = new ByteArrayInputStream(os.toByteArray());
         MP.consumeMessage(bis);
-        System.out.println("	Test 3: " + (MP.getNext().type == PeerMessage.Type.UNCHOKE));
+        System.out.println("	Test 3: " + (MP.getNext().type == MessageType.UNCHOKE));
 
         os.reset();
         MP.interested(os);
         bis = new ByteArrayInputStream(os.toByteArray());
         MP.consumeMessage(bis);
-        System.out.println("	Test 4: " + (MP.getNext().type == PeerMessage.Type.INTERESTED));
+        System.out.println("	Test 4: " + (MP.getNext().type == MessageType.INTERESTED));
 
         os.reset();
         MP.not_interested(os);
         bis = new ByteArrayInputStream(os.toByteArray());
         MP.consumeMessage(bis);
-        System.out.println("	Test 5: " + (MP.getNext().type == PeerMessage.Type.NOT_INTERESTED));
+        System.out.println("	Test 5: " + (MP.getNext().type == MessageType.NOT_INTERESTED));
 
         os.reset();
         MP.bitfield(os, bitField);
@@ -119,7 +121,7 @@ public class UnitTests {
         bis = new ByteArrayInputStream(os.toByteArray());
         MP.consumeMessage(bis);
         PeerMessage p = MP.getNext();
-        System.out.println("	Test 8: " + (p.begin == 10211 && p.index == 10199 && p.length == 12311 && p.type == PeerMessage.Type.REQUEST));
+        System.out.println("	Test 8: " + (p.begin == 10211 && p.index == 10199 && p.length == 12311 && p.type == MessageType.REQUEST));
 
         byte[] block = testGen(10234);
         os.reset();
@@ -134,7 +136,7 @@ public class UnitTests {
         bis = new ByteArrayInputStream(os.toByteArray());
         MP.consumeMessage(bis);
         p = MP.getNext();
-        System.out.println("	Test 10: " + (p.begin == 10211 && p.index == 10199 && p.length == 12311 && p.type == PeerMessage.Type.CANCEL));
+        System.out.println("	Test 10: " + (p.begin == 10211 && p.index == 10199 && p.length == 12311 && p.type == MessageType.CANCEL));
 
 
     }

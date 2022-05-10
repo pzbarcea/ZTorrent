@@ -1,6 +1,7 @@
 package edu.umd.cs.ztorrent;
 
-import edu.umd.cs.ztorrent.MessageParser.HandShake;
+import edu.umd.cs.ztorrent.message.MessageParser;
+import edu.umd.cs.ztorrent.message.MessageParser.HandShake;
 import edu.umd.cs.ztorrent.protocol.PeerConnection;
 
 import java.io.IOException;
