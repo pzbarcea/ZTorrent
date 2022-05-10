@@ -1,9 +1,7 @@
 package edu.umd.cs.ztorrent;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -57,17 +55,17 @@ public class Bencoder {
     public Bencoder(byte[] data) {
         try {
             if (data.length < 2) {
-                throw new RuntimeException("Data is not bencoded properly");
+                throw new Exception("Data is not bencoded properly");
             }
 
 
             getBencoding(data, 0, data.length, this);
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public static int getBencoding(byte[] data, int start, int len, Bencoder r) throws UnsupportedEncodingException {
+    public static int getBencoding(byte[] data, int start, int len, Bencoder r) throws Exception {
         if (data[start] == 'i') {
             int dist = -1;
             for (int i = start + 1; i < len; i++) {
@@ -77,13 +75,13 @@ public class Bencoder {
                 }
             }
             if (dist == -1) {
-                throw new RuntimeException("Bencoding failed on integer!");
+                throw new Exception("[ERROR] Could not bencode integer");
             }
             byte[] integer = new byte[dist - 1 - start];
             //src dst
             System.arraycopy(data, start + 1, integer, 0, dist - 1 - start);
             String str = new String(integer, 0, integer.length, StandardCharsets.UTF_8);
-            r.integer = new Long(str);
+            r.integer = Long.valueOf(str);
             r.type = BencodeType.Integer;
             r.tmp = new byte[dist + 1 - start];
             System.arraycopy(data, start, r.tmp, 0, dist + 1 - start);
@@ -97,9 +95,9 @@ public class Bencoder {
             if (data[start] == 'd') {
                 dict = true;
                 r.type = BencodeType.Dictionary;
-                r.dictionary = new LinkedHashMap<String, Bencoder>();
+                r.dictionary = new LinkedHashMap<>();
             } else {
-                r.list = new LinkedList<Bencoder>();
+                r.list = new LinkedList<>();
             }
 
             while (cur < len && data[cur] != 'e') {
@@ -130,12 +128,12 @@ public class Bencoder {
                 }
             }
             if (dist == -1) {
-                throw new RuntimeException("Bencoding failed on String!");
+                throw new Exception("[ERROR] Could not bencode String");
             }
             byte[] integer = new byte[dist - start];
             //src dst
             System.arraycopy(data, start, integer, 0, dist - start);
-            int slen = new Integer(new String(integer, 0, integer.length, StandardCharsets.UTF_8));
+            int slen = Integer.parseInt(new String(integer, 0, integer.length, StandardCharsets.UTF_8));
             byte[] string = new byte[slen];
             System.arraycopy(data, dist + 1, string, 0, slen);
             r.byteString = string;
@@ -151,48 +149,46 @@ public class Bencoder {
         byte[] out = null;
         try {
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
-            OutputStream baos = bo;
             if (this.type == BencodeType.Dictionary) {
-                baos.write('d');
+                ((OutputStream) bo).write('d');
                 for (Entry<String, Bencoder> s : dictionary.entrySet()) {
                     byte[] bytes = s.getKey().getBytes(StandardCharsets.UTF_8);
                     String l = Long.toString(bytes.length);
-                    baos.write(l.getBytes(StandardCharsets.UTF_8));
-                    baos.write(':');
-                    baos.write(bytes);
-                    baos.write(s.getValue().toByteArray());
+                    bo.write(l.getBytes(StandardCharsets.UTF_8));
+                    ((OutputStream) bo).write(':');
+                    bo.write(bytes);
+                    bo.write(s.getValue().toByteArray());
                 }
-                baos.write('e');
+                ((OutputStream) bo).write('e');
             } else if (this.type == BencodeType.Integer) {
-                baos.write('i');
+                ((OutputStream) bo).write('i');
                 String s = integer.toString();
-                baos.write(s.getBytes(StandardCharsets.UTF_8));
-                baos.write('e');
+                bo.write(s.getBytes(StandardCharsets.UTF_8));
+                ((OutputStream) bo).write('e');
             } else if (this.type == BencodeType.List) {
-                baos.write('l');
+                ((OutputStream) bo).write('l');
                 for (Bencoder b : list) {
-                    baos.write(b.toByteArray());
+                    bo.write(b.toByteArray());
                 }
-                baos.write('e');
+                ((OutputStream) bo).write('e');
             } else {
                 byte[] bytes = byteString;
                 String l = Long.toString(bytes.length);
-                baos.write(l.getBytes(StandardCharsets.UTF_8));
-                baos.write(':');
-                baos.write(bytes);
+                bo.write(l.getBytes(StandardCharsets.UTF_8));
+                ((OutputStream) bo).write(':');
+                bo.write(bytes);
             }
 
-            baos.close();
-            baos.flush();
+            ((OutputStream) bo).close();
+            bo.flush();
             out = bo.toByteArray();
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return out;
     }
-
-
+    
     public String getString() {
         return new String(byteString, 0, byteString.length, StandardCharsets.UTF_8);
     }
