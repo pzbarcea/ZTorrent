@@ -29,8 +29,8 @@ public class PeerWorker implements Torrentable {
     private long haveAccumulator = 0;
     private final long MIN_RARITY_TIME = 1000;
     private final ConnectionsHandler connectionsHandler = new ConnectionsHandler();
-    private final List<Piece> completedLast = new ArrayList<Piece>();
-    private final Set<Integer> cleaningList = new HashSet<Integer>();
+    private final List<Piece> completedLast = new ArrayList<>();
+    private final Set<Integer> cleaningList = new HashSet<>();
     private final long start = System.currentTimeMillis();
 
     private void destroyConnection(PeerConnection mc) {
@@ -79,7 +79,7 @@ public class PeerWorker implements Torrentable {
                 if (!mc.amInterested()) {
                     mc.setAmInterested(true);
                 }
-                long l = connectionsHandler.readFromConnection(mc, t.pm.bitmap);
+                long l = connectionsHandler.readData(mc, t.pm.bitmap);
                 down += l;
                 t.addDownloaded(l);
 
@@ -115,8 +115,8 @@ public class PeerWorker implements Torrentable {
 
 
                     //write requests
-                    Iterator<MessageRequest> rlist = connectionsHandler.getBufferedRequests(mc).iterator();
-                    if (connectionsHandler.getBufferedRequests(mc).size() > 0) {
+                    Iterator<MessageRequest> rlist = connectionsHandler.getPendingRequests(mc).iterator();
+                    if (connectionsHandler.getPendingRequests(mc).size() > 0) {
 //						System.out.println("Something could.");
                     }
                     while (rlist.hasNext()) {
@@ -137,7 +137,7 @@ public class PeerWorker implements Torrentable {
 
 
                     //enqueue some requests if not fully filled.
-                    connectionsHandler.enqueuePieces(MAX_ENQEUED + 3, mc);
+                    connectionsHandler.addPieces(MAX_ENQEUED + 3, mc);
 
                 } else {
                     //Dequeue im choked lists are dropped.
@@ -145,7 +145,7 @@ public class PeerWorker implements Torrentable {
                     Piece[] ps = connectionsHandler.getQueuedPieces(mc);
                     for (Piece p : ps) {
                         exhausted = false;
-                        connectionsHandler.cancelPieceForConnection(mc, (int) p.pieceIndex);
+                        connectionsHandler.removePiece(mc, (int) p.pieceIndex);
                     }
                 }
 
@@ -164,7 +164,7 @@ public class PeerWorker implements Torrentable {
         }
 
         completedLast.clear();
-        List<Piece> piecesCompleted = connectionsHandler.recentlyCompletedPieces();
+        List<Piece> piecesCompleted = connectionsHandler.getCompletedPieces();
         if (piecesCompleted != null) {
             for (Piece p : piecesCompleted) {
                 completedLast.add(p);
@@ -187,7 +187,7 @@ public class PeerWorker implements Torrentable {
 
         //Sets Completion queue by rarity.
         //TODO: client may leave, access to piece might disapear..
-        Set<Piece> workingQueue = connectionsHandler.getCurrentQueue();
+        Set<Piece> workingQueue = connectionsHandler.getQueue();
         if (workingQueue.size() == 0 && !t.pm.bitmap.isComplete() && !exhausted) {//&&!exhausted
             workingQueue.clear();
             List<Rarity> rList = t.pm.bitmap.getRarityList();
@@ -198,7 +198,7 @@ public class PeerWorker implements Torrentable {
                     break;
                 }
                 //if some one has it and we don't and were not working to get it yet.
-                if (rar.getValue() > 0 && !t.pm.hasPiece(rar.index) && !connectionsHandler.getWorkingSet().contains(rar.index)) {
+                if (rar.getValue() > 0 && !t.pm.hasPiece(rar.index) && !connectionsHandler.getActivePieces().contains(rar.index)) {
                     System.out.println("Queued " + rar.index);
                     workingQueue.add(t.pm.bitmap.createPiece(rar.index));
                     addedOnce = true;
@@ -241,7 +241,7 @@ public class PeerWorker implements Torrentable {
         for (Integer p : cleaningList) {
             System.out.println("Time expired. " + p + " on " + mc);
             mc.resetHistory();
-            connectionsHandler.cancelPieceForConnection(mc, p);
+            connectionsHandler.removePiece(mc, p);
         }
 
         if (cleaningList.size() > 0) {
@@ -270,7 +270,7 @@ public class PeerWorker implements Torrentable {
 
     private void initialize(Torrent t, PeerConnection mc) {
         mc.initializeConnection(t.pm.bitmap.getMapCopy(), t);
-        connectionsHandler.initializeConnection(mc);
+        connectionsHandler.beginConnection(mc);
         t.pm.bitmap.addPeerMap(mc.getPeerBitmap());//adds
     }
 

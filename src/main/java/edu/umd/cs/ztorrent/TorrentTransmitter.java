@@ -9,47 +9,32 @@ import java.io.IOException;
  * This is what allows for hot swappable logic 
  * of torrents. However we never ened up have enought time
  * so its a bit of a waste.
- * @author pzbarcea
  *
  */
 public class TorrentTransmitter {
     private Torrentable logic;
-    private final Torrent ourTorrent;
-
-    //TODO: trackers
-    public Torrentable getLogic() {
-        return logic;
-    }
-
-    public void setLogic(Torrentable logic) {
-        this.logic = logic;
-    }
-
-    public Torrent getOurTorrent() {
-        return ourTorrent;
-    }
+    private final Torrent us;
 
     public TorrentTransmitter(Torrentable pl, Torrent t) {
         this.logic = pl;
-        this.ourTorrent = t;
-        for (Tracker tr : ourTorrent.getTrackers()) {
+        this.us = t;
+        for (Tracker tr : us.getTrackers()) {
             tr.initialize(t);
         }
 
     }
 
     public void work() throws IOException {
-        logic.doWork(ourTorrent);
-        for (Tracker t : ourTorrent.getTrackers()) {
+        logic.doWork(us);
+        for (Tracker t : us.getTrackers()) {
             t.doWork();
         }
 
     }
 
     public void close() {
-        for (Tracker tr : ourTorrent.getTrackers()) {
-            tr.close(ourTorrent);
+        for (Tracker tr : us.getTrackers()) {
+            tr.close(us);
         }
     }
-
 }
