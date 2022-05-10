@@ -82,44 +82,44 @@ public class UnitTests {
         os.reset();
         MP.choke(os);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.consumeMessage(bis);
+        MP.parseMessages(bis);
         System.out.println("	Test 2: " + (MP.getNext().type == MessageType.CHOKE));
 
 
         os.reset();
         MP.unchoke(os);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.consumeMessage(bis);
+        MP.parseMessages(bis);
         System.out.println("	Test 3: " + (MP.getNext().type == MessageType.UNCHOKE));
 
         os.reset();
         MP.interested(os);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.consumeMessage(bis);
+        MP.parseMessages(bis);
         System.out.println("	Test 4: " + (MP.getNext().type == MessageType.INTERESTED));
 
         os.reset();
         MP.not_interested(os);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.consumeMessage(bis);
+        MP.parseMessages(bis);
         System.out.println("	Test 5: " + (MP.getNext().type == MessageType.NOT_INTERESTED));
 
         os.reset();
         MP.bitfield(os, bitField);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.consumeMessage(bis);
+        MP.parseMessages(bis);
         System.out.println("	Test 6: " + (Arrays.equals(bitField, MP.getNext().bitfield)));
 
         os.reset();
         MP.have(os, 10241139);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.consumeMessage(bis);
+        MP.parseMessages(bis);
         System.out.println("	Test 7: " + (MP.getNext().piece == 10241139));
 
         os.reset();
         MP.request(os, 10199, 10211, 12311);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.consumeMessage(bis);
+        MP.parseMessages(bis);
         PeerMessage p = MP.getNext();
         System.out.println("	Test 8: " + (p.begin == 10211 && p.index == 10199 && p.length == 12311 && p.type == MessageType.REQUEST));
 
@@ -127,14 +127,14 @@ public class UnitTests {
         os.reset();
         MP.piece(os, 0, 300, block);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.consumeMessage(bis);
+        MP.parseMessages(bis);
         p = MP.getNext();
         System.out.println("	Test 9: " + (Arrays.equals(block, p.block) && p.index == 0 && p.begin == 300));
 
         os.reset();
         MP.cancel(os, 10199, 10211, 12311);
         bis = new ByteArrayInputStream(os.toByteArray());
-        MP.consumeMessage(bis);
+        MP.parseMessages(bis);
         p = MP.getNext();
         System.out.println("	Test 10: " + (p.begin == 10211 && p.index == 10199 && p.length == 12311 && p.type == MessageType.CANCEL));
 

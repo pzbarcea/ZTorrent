@@ -10,13 +10,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 
-/**
- * Utility class that reads messages in non-blocking mode.
- * Also contains static functions to speak the torrent proto.
- * <p>
- * <p>
- * NOT SYNCHRONIZABLE!! So dont do it.
- */
 public class MessageParser {
 
     private static final int UNINITIALIZED = -1;
@@ -25,99 +18,94 @@ public class MessageParser {
 
     byte[] sizeBuf = new byte [LENGTH_PREFIX_SIZE];
     private final Queue<PeerMessage> queue = new LinkedList<>();
-    private boolean intro = false;
     private byte[] buffer;
     private int off;
-    private int size = UNINITIALIZED; //always the first byte, always in int range.
+    private int size = UNINITIALIZED;
 
-    /***
-     * Called until handShake complete
-     * Non-blocking ^.^
+    /**
+     * The handshake is a required message and must be the first message transmitted by the client.
+     * It is (49+len(pstr)) bytes long.
+     * https://wiki.theory.org/index.php/BitTorrentSpecification
+     *
      * @param in
-     * @return null if not yet complete header
-     * 		   HandShake if complete.
+     * @return null if handshake wasn't received in full, new HandShake if completed
+     *
      * @throws IOException
      */
     public static HandShake readBlockingHandShake(InputStream in) throws IOException {
-        boolean inComplete = false;
+        boolean finished = false;
         HandShake hs = null;
         int size = -1;
         byte[] buffer = null;
-        int off = 0;
-        while (!inComplete) {
+        int readBytes = 0;
+
+        while (!finished) {
             if (size == -1) {
                 size = in.read();
                 buffer = new byte[48 + size];
-                off = 0;
-                if (size >= 100 && size < 0) {
-                    throw new RuntimeException("Invalid size " + size);
-                }
+                readBytes = 0;
             } else {
-                off += in.read(buffer, off, 48 + size - off);
-                if (off == 48 + size) {
+                readBytes += in.read(buffer, readBytes, 48 + size - readBytes);
+                if (readBytes == 48 + size) {
                     byte[] version = Arrays.copyOfRange(buffer, 0, size);
                     byte[] reserved = Arrays.copyOfRange(buffer, size, size + 8);
                     byte[] hashInfo = Arrays.copyOfRange(buffer, size + 8, size + 8 + 20);
                     byte[] peerID = Arrays.copyOfRange(buffer, size + 8 + 20, size + 8 + 20 + 20);
                     hs = new HandShake(peerID, hashInfo, version, reserved);
-                    inComplete = true;
+                    finished = true;
                 }
             }
         }
         return hs;
     }
 
-    private static int readInt(byte[] data, int offset) {
+    private static int bytesToInt(byte[] data, int offset) {
         return ((data[offset++] & 0xFF) << 24) |
                 ((data[offset++] & 0xFF) << 16) |
                 ((data[offset++] & 0xFF) << 8) |
                 (data[offset++] & 0xFF);
     }
 
-    /***
-     * Very simple! Parses current buffer.
-     * To retrieve make a poll request.
+    /**
+     * Parse input stream into messages, append messages to message queue.
      * @throws IOException
      */
-    public void consumeMessage(InputStream in) throws IOException {
-//		if(!intro){throw new RuntimeException("Haven't called readHandShake() till completion!?!");}
+    public void parseMessages(InputStream in) throws IOException {
         while (in.available() > 0) {
             if (size == -1) {
                 off += in.read(sizeBuf, off, 4 - off);
                 if (off == 4) {
                     off = 0;
-                    size = readInt(sizeBuf, 0);
+                    size = bytesToInt(sizeBuf, 0);
                     buffer = new byte[size];
 
                     if (size > 1024 * 1024 * 10 || size < 0) {
-                        throw new IOException("INVALID PARSE EXCEPTION " + size);
+                        throw new IOException("[ERROR]: IOException");
                     }
                 }
             } else {
                 try {
                     off += in.read(buffer, off, size - off);
                 } catch (Exception e) {
-                    System.out.println("ERROR: Size: " + size + " off:" + off);
-                    throw new IOException("They dont talk to right!");
+                    throw new IOException("[ERROR]: IOException");
                 }
 
                 if (off == size) {
-                    if (size != KEEPALIVE) { //zero is just keep alive.
+                    // If received a valid message that isn't keep-alive, append message to queue
+                    if (size != KEEPALIVE) {
                         PeerMessage pm = buildFromByte(buffer);
                         if (pm != null)
                             queue.add(pm);
                     }
-                    off = 0; // reset parser state variables.
-                    size = -1;// reset parser state variables.
-
+                    off = 0;
+                    size = -1;
                 }
             }
         }
     }
 
-    /***
-     * Called until handShake complete
-     * Non-blocking ^.^
+    /**
+     * Reads an incoming Handshake until complete.
      * @param in
      * @return null if not yet complete header
      * 		   HandShake if complete.
@@ -139,7 +127,6 @@ public class MessageParser {
                     HandShake hs = new HandShake(peerID, hashInfo, version, reserved);
                     off = 0;
                     size = -1;
-                    intro = true;
                     return hs;
                 }
             }
@@ -147,14 +134,44 @@ public class MessageParser {
         return null;
     }
 
-    private static long readUnsignedInt(byte[] data, int offset) {
+    private static long bytesToUnsignedInt(byte[] data, int offset) {
         return (((long) data[offset++] & 0xFF) << 24) |
                 (((long) data[offset++] & 0xFF) << 16) |
                 (((long) data[offset++] & 0xFF) << 8) |
                 ((long) data[offset++] & 0xFF);
     }
 
-    //Ok fine what you had before would have made this a bit quicker....
+    /**
+     * keep-alive: <len=0000>
+     *     The keep-alive message is a message with zero bytes, specified with the length prefix set to zero.
+     *     There is no message ID and no payload.
+     * choke: <len=0001><id=0>
+     * unchoke: <len=0001><id=1>
+     * interested: <len=0001><id=2>
+     * not interested: <len=0001><id=3>
+     * have: <len=0005><id=4><piece index>
+     *     The have message is fixed length.
+     *     The payload is the zero-based index of a piece that has just been successfully downloaded and verified via the hash.
+     * bitfield: <len=0001+X><id=5><bitfield>
+     *     The bitfield message is variable length, where X is the length of the bitfield.
+     *     The payload is a bitfield representing the pieces that have been successfully downloaded.
+     *     The high bit in the first byte corresponds to piece index 0.
+     *     Bits that are cleared indicated a missing piece, and set bits indicate a valid and available piece.
+     *     Spare bits at the end are set to zero.
+     * request: <len=0013><id=6><index><begin><length>
+     *     index: integer specifying the zero-based piece index
+     *     begin: integer specifying the zero-based byte offset within the piece
+     *     length: integer specifying the requested length.
+     * piece: <len=0009+X><id=7><index><begin><block>
+     *     index: integer specifying the zero-based piece index
+     *     begin: integer specifying the zero-based byte offset within the piece
+     *     block: block of data, which is a subset of the piece specified by index.
+     * cancel: <len=0013><id=8><index><begin><length>
+     * port: <len=0003><id=9><listen-port>
+     *
+     * @param buffer2
+     * @return
+     */
     private PeerMessage buildFromByte(byte[] buffer2) {
         PeerMessage PM;
         switch (buffer2[0]) {
@@ -169,7 +186,7 @@ public class MessageParser {
             case 4:
                 PM = new PeerMessage(MessageType.HAVE);
 
-                PM.piece = readUnsignedInt(buffer2, 1);
+                PM.piece = bytesToUnsignedInt(buffer2, 1);
                 return PM;
             case 5:
                 PM = new PeerMessage(MessageType.BIT_FILED);
@@ -177,35 +194,29 @@ public class MessageParser {
                 return PM;
             case 6:
                 PM = new PeerMessage(MessageType.REQUEST);
-                PM.index = readUnsignedInt(buffer2, 1);
-                PM.begin = readUnsignedInt(buffer2, 5);
-                PM.length = readUnsignedInt(buffer2, 9);
+                PM.index = bytesToUnsignedInt(buffer2, 1);
+                PM.begin = bytesToUnsignedInt(buffer2, 5);
+                PM.length = bytesToUnsignedInt(buffer2, 9);
                 return PM;
             case 7:
                 PM = new PeerMessage(MessageType.PIECE);
-                PM.index = readUnsignedInt(buffer2, 1);
-                PM.begin = readUnsignedInt(buffer2, 5);
+                PM.index = bytesToUnsignedInt(buffer2, 1);
+                PM.begin = bytesToUnsignedInt(buffer2, 5);
                 PM.block = Arrays.copyOfRange(buffer2, 9, buffer2.length);
                 return PM;
             case 8:
                 PM = new PeerMessage(MessageType.CANCEL);
-                PM.index = readUnsignedInt(buffer2, 1);
-                PM.begin = readUnsignedInt(buffer2, 5);
-                PM.length = readUnsignedInt(buffer2, 9);
+                PM.index = bytesToUnsignedInt(buffer2, 1);
+                PM.begin = bytesToUnsignedInt(buffer2, 5);
+                PM.length = bytesToUnsignedInt(buffer2, 9);
                 return PM;
-            case 9:
-                PM = new PeerMessage(MessageType.PORT);
-                //TODO: WE SHALT SUPPORT
-                throw new RuntimeException("Not yet implemented: " + buffer2[0]);
             case 20:
-                //Extension message. We now support :-)
                 PM = new PeerMessage(MessageType.EXTENSION);
                 PM.extensionID = buffer2[1];
                 PM.extension = Arrays.copyOfRange(buffer2, 2, buffer2.length);
                 return PM;
-
             default:
-                throw new RuntimeException("Message parser unknown id: " + buffer2[0]);
+                throw new RuntimeException("[ERROR]: RuntimeException, unknown id received in message parser: " + buffer2[0]);
         }
     }
 
@@ -217,14 +228,21 @@ public class MessageParser {
         return queue.poll();
     }
 
-    //handshake: <pstrlen><pstr><reserved><info_hash><peer_id>
+    /**
+     * keep-alive: <len=0000>
+     * The keep-alive message is a message with zero bytes, specified with the length prefix set to zero.
+     * There is no message ID and no payload.
+     * Peers may close a connection if they receive no messages (keep-alive or any other message) for a certain period of time,
+     * so a keep-alive message must be sent to maintain the connection alive if no command have been sent for a given amount of time.
+     * This amount of time is generally two minutes.
+     * @param os
+     * @param infoHash
+     * @param peerID
+     * @throws IOException
+     */
     public void sendHandShake(OutputStream os, byte[] infoHash, byte[] peerID) throws IOException {
         byte[] sptr = "BitTorrent protocol".getBytes(StandardCharsets.UTF_8);
         byte[] reserved = {0, 0, 0, 0, 0, 0, 0, 0};//eight (8) reserved bytes. All current implementations use all zeroes
-//		reserved[5] = (byte) (reserved[5]|(1<<4));//EXTENSION PROTOCOL IS NOW SUPPORTED! 0x10 -> set in 5th byte
-//		if((byte)(reserved[5]&0x10) >0){
-//			System.out.println("Works?");
-//		}
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
         bo.write(19);
         bo.write(sptr);
@@ -238,18 +256,14 @@ public class MessageParser {
         os.write(o);
     }
 
-    /**
-     * choke: <len=0000>
-     * capacity: 4
+    /*
      *
-     * @param os
-     * @throws IOException
+     * All of the remaining messages in the protocol take the form of <length prefix><message ID><payload>.
+     * The length prefix is a four byte big-endian value.
+     * The message ID is a single decimal byte. The payload is message dependent.
+     * https://wiki.theory.org/index.php/BitTorrentSpecification
+     *
      */
-    public void keep_alive(OutputStream os) throws IOException {
-        ByteBuffer b = ByteBuffer.allocate(4);
-        b.putInt(KEEPALIVE);
-        os.write(b.array());
-    }
 
     /**
      * choke: <len=0001><id=0>
@@ -394,32 +408,10 @@ public class MessageParser {
         os.write(b.array());
     }
 
-    /**
-     * port: <len=0003><id=9><listen-port>
-     * capacity: 4 + 1 + 2
-     *
-     * @param os
-     * @param port
-     */
-    public void port(OutputStream os, long port) throws IOException {
-        ByteBuffer b = ByteBuffer.allocate(7);
-        b.putInt(3);
-        b.put((byte) 9);
-        b.putShort((short) port);
-        os.write(b.array());
-    }
-
     public void extension(OutputStream os, byte[] pushIT) throws IOException {
         os.write(pushIT);
     }
 
-    /*
-     *
-     * All of the remaining messages in the protocol take the form of <length prefix><message ID><payload>.
-     * The length prefix is a four byte big-endian value.
-     * The message ID is a single decimal byte. The payload is message dependent.
-     *
-     */
     public static class HandShake {
         public final byte[] peerID, hashInfo, version, reserved;
 

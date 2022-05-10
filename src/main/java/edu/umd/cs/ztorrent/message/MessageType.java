@@ -10,6 +10,5 @@ public enum MessageType {
         REQUEST,
         PIECE,
         CANCEL,
-        PORT,
         EXTENSION
 }
