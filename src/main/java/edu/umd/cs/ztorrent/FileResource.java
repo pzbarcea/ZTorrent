@@ -42,7 +42,7 @@ public class FileResource {
         pieceIndexToOffSet = new HashMap<Integer, Long>();
     }
 
-    public void initialize(int pieceLength, BitMap bm) throws IOException {
+    public void initialize(int pieceLength, PieceOrganizer bm) throws IOException {
         this.pieceLength = pieceLength;
         this.leftPiece = (int) (byteOffSet / pieceLength);
         this.rightPiece = (int) Math.ceil((double) (byteOffSet + length) / pieceLength) - 1;//len 0?

@@ -1,6 +1,5 @@
 package edu.umd.cs.ztorrent;
 
-import edu.umd.cs.ztorrent.BitMap.Rarity;
 import edu.umd.cs.ztorrent.MessageParser.Request;
 import edu.umd.cs.ztorrent.protocol.PeerConnection;
 import edu.umd.cs.ztorrent.protocol.PeerConnection.ConnectionState;
@@ -190,7 +189,7 @@ public class PeerWorker implements Torrentable {
         Set<Piece> workingQueue = connectionsManager.currentQueue();
         if (workingQueue.size() == 0 && !t.pm.bitmap.isComplete() && !exhausted) {//&&!exhausted
             workingQueue.clear();
-            List<Rarity> rList = t.pm.bitmap.getRarity();
+            List<Rarity> rList = t.pm.bitmap.getRarityList();
             boolean addedOnce = false;
             for (Rarity rar : rList) {
                 if (workingQueue.size() >= 5 * activeConnections || workingQueue.size() >= 50) {

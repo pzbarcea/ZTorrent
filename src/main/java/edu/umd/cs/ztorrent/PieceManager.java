@@ -38,7 +38,7 @@ public class PieceManager {
     int cacheSize;
     int pieceLength;
     FileResource[] files;
-    public final BitMap bitmap;
+    public final PieceOrganizer bitmap;
     private final Bencoder shaPieces;
 
     /**
@@ -59,7 +59,7 @@ public class PieceManager {
             actualChunks = 2;
         }
 
-        bitmap = new BitMap(totalBytes, pieceLength);
+        bitmap = new PieceOrganizer(totalBytes, pieceLength);
         writeToDisk = new ArrayList<Piece>();
         readsFromDisk = new ArrayList<Integer>();
 

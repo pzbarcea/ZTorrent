@@ -18,7 +18,7 @@ public class PeerConnection extends MetaConnection {
     private final MessageParser mp;
     private long download;
     private long upload;
-    private BitMap peerBitMap;
+    private PieceOrganizer peerPieceOrganizer;
     private int max_queued = 3;
 
     public PeerConnection(InetAddress ip, int port) {
@@ -42,7 +42,7 @@ public class PeerConnection extends MetaConnection {
     }
 
     public void initializeConnection(byte[] announcedMap, Torrent t) {
-        peerBitMap = new BitMap(t.totalBytes, t.pieceLength);
+        peerPieceOrganizer = new PieceOrganizer(t.totalBytes, t.pieceLength);
         metaData = t.meta;
         if (conState != ConnectionState.uninitialized) {
             throw new RuntimeException("Invalid State Exception");
@@ -93,7 +93,7 @@ public class PeerConnection extends MetaConnection {
             throw new RuntimeException("[WARNING] Connection state: UNKNOWN");
         }
 
-        if (announcedMap == null || announcedMap.length != peerBitMap.getLength()) {
+        if (announcedMap == null || announcedMap.length != peerPieceOrganizer.getLength()) {
             throw new RuntimeException("[WARNING] Invalid 'announced' bitmap. Either NULL or incorrect length!");
         }
         this.announcedMap = announcedMap;
@@ -104,8 +104,8 @@ public class PeerConnection extends MetaConnection {
         throw new RuntimeException("[ERROR] Not allowed blindInitialize on PeerConnection.");
     }
 
-    public BitMap getPeerBitmap() {
-        return peerBitMap;
+    public PieceOrganizer getPeerBitmap() {
+        return peerPieceOrganizer;
     }
 
     public boolean pushRequest(Request r) {
@@ -262,8 +262,8 @@ public class PeerConnection extends MetaConnection {
             if (!am_interested) {
                 System.out.println("Client sent us have! But WE AIN'T EVEN interested.");
             }
-            if (!peerBitMap.hasPiece((int) pm.piece)) {
-                peerBitMap.addPieceComplete(pm.piece);
+            if (!peerPieceOrganizer.hasPiece((int) pm.piece)) {
+                peerPieceOrganizer.addPieceComplete(pm.piece);
                 have++;
             } else {
                 System.out.println("Bugs. Maybe it was " + pm.piece);
@@ -271,12 +271,12 @@ public class PeerConnection extends MetaConnection {
 
         } else if (pm.type == PeerMessage.Type.BIT_FILED) {
             System.out.println("Got bitmap from " + this);
-            if (peerBitMap.getCompletedPieces() == 0) {
-                peerBitMap.setBitMap(pm.bitfield);
-                have = peerBitMap.getCompletedPieces();
-                System.out.println("Has " + have + " of " + peerBitMap.getNumberOfPieces());
+            if (peerPieceOrganizer.getCompletedPieces() == 0) {
+                peerPieceOrganizer.setBitMap(pm.bitfield);
+                have = peerPieceOrganizer.getCompletedPieces();
+                System.out.println("Has " + have + " of " + peerPieceOrganizer.getNumberOfPieces());
             } else {
-                peerBitMap.setBitMap(pm.bitfield);
+                peerPieceOrganizer.setBitMap(pm.bitfield);
                 System.out.println("This wasn't first time. Playing games?" + this);
             }
 

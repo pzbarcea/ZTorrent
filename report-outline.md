@@ -56,7 +56,9 @@ they should be expected to interoperate
 ## 4. Known bugs and Issues
 * Get nullPointerException if file is removed while GUI is working on it
 * I don't think the .partial files are ever removed/cleaned
-* No support for deleting the actual file(s) (not just removing .torrent from GUI)
+* No support for deleting the actual file(s) (not just removing .torrent) from GUI
+* Magnet links not working
+* GUI sometimes freezes on some combination of actions (but not sure what)
 
 ## 5. Contributions
 * Figure this out last

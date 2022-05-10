@@ -102,7 +102,7 @@ public class ConnectionsManager {
      * Pulls all the read in blocks.
      * On completion cancels any mismatched sections.
      */
-    public long readFromConnection(PeerConnection mc, BitMap b) {
+    public long readFromConnection(PeerConnection mc, PieceOrganizer b) {
         List<Response> rlist = mc.getPeerResponseBlocks();
         long bytes = 0;
         if (rlist != null) {
