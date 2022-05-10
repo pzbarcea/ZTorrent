@@ -269,7 +269,7 @@ public class PeerWorker extends AbstractPeerWorker {
     }
 
     private void initialize(Torrent t, PeerConnection mc) {
-        mc.initalizeConnection(t.pm.bitmap.getMapCopy(), t);
+        mc.initializeConnection(t.pm.bitmap.getMapCopy(), t);
         connectionsManager.initializeConnection(mc);
         t.pm.bitmap.addPeerMap(mc.getPeerBitmap());//adds
     }

@@ -10,41 +10,8 @@ import java.io.IOException;
 import java.net.*;
 import java.util.*;
 
-/***
- * Let this be the managedConnection for the peer
- * Let it handle things like communication
- * Let this be the Socket of the connection
- *
- * Put simply PeerConnection will follow the rules of the protocol.
- * It will take in and attempt to push out data as is available by the rules.
- *
- * This class is very much the state of the connection.
- * TODO: announced map control for under reporting?
- * We store long because 4 byte UNSIGNED indexing is used.
- *
- * By the specs:
- *
- * CHOKED: 
- *  When a peer chokes the client, it is a notification that no requests will be answered until the client is unchoked. 
- *  The client should not attempt to send requests for blocks, and it should consider all pending (unanswered) requests to be discarded by the remote peer.
- *  -may send have (if peer interested)
- *  -may send blocks (if we aren't peer not choked)
- *
- * Interested:
- *  Whether or not the remote peer is interested in something this client has to offer.
- *  This is a notification that the remote peer will begin requesting blocks when the client unchokes them.
- *  -may send blocks(if we aren't peer not choked)
- * 	-may send requests (if peer don't have us choked)
- *
- *  This class composed of 90% boiler plate for good api interface.
- *  @Warning: 2MB output stream is set. If this gets fully utilized it will block.
- *  //TODO: make block safe. boolean perhaps? need to do something if buffer becomes filled.
- */
 public class PeerConnection extends MetaConnection {
-    //Requests fromUs
-    //Requests fromPeer
-    private final Set<Request> ourRequests; // from us
-
+    private final Set<Request> ourRequests;
     private int historySize = 0;
     private List<Response> peerSentBlocks;
     private long have = 0;
@@ -74,20 +41,14 @@ public class PeerConnection extends MetaConnection {
         this.peerID = hs.peerID;
     }
 
-    /**
-     * Takes in the byte map for announcing
-     *
-     * @param announcedMap
-     * @throws IOException
-     */
-    public void initalizeConnection(byte[] announcedMap, Torrent t) {
+    public void initializeConnection(byte[] announcedMap, Torrent t) {
         peerBitMap = new BitMap(t.totalBytes, t.pieceLength);
-        metaData = t.meta;//must be initialized
+        metaData = t.meta;
         if (conState != ConnectionState.uninitialized) {
             throw new RuntimeException("Invalid State Exception");
         }
         conState = ConnectionState.pending;
-        if (sock == null) { //Outbound connection.
+        if (sock == null) {
             sock = new Socket();
 
             new Thread() {
@@ -95,16 +56,15 @@ public class PeerConnection extends MetaConnection {
                 public void run() {
                     try {
                         sock.setKeepAlive(true);
-                        sock.setSoTimeout(2 * 60 * 1000);//2 min timeout
+                        sock.setSoTimeout(2 * 60 * 1000);
                         sock.setReceiveBufferSize(1024 * 1024 * 2);
                         sock.setSendBufferSize(1024 * 1024 * 2);
-                        sock.connect(new InetSocketAddress(ip, port));//BLOCKS!
+                        sock.connect(new InetSocketAddress(ip, port));
                         sockOut = sock.getOutputStream();
                         sockIn = sock.getInputStream();
                         if (sock.isConnected()) {
                             conState = ConnectionState.connected;
                         } else {
-                            //should have thrown error.
                             conState = ConnectionState.closed;
                         }
                     } catch (IOException e) {
@@ -113,12 +73,11 @@ public class PeerConnection extends MetaConnection {
                     }
                 }
             }.start();
-        } else if (recvHandShake == true) { //Inbound connection
+        } else if (recvHandShake == true) {
             try {
                 sockOut = sock.getOutputStream();
                 sockIn = sock.getInputStream();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
 
@@ -145,19 +104,10 @@ public class PeerConnection extends MetaConnection {
         throw new RuntimeException("[ERROR] Not allowed blindInitialize on PeerConnection.");
     }
 
-    //TODO: Consider if it might be a good idea to only pass out if connected.
     public BitMap getPeerBitmap() {
         return peerBitMap;
     }
 
-    /***
-     * Adds a request for block.
-     * If requests already exists will do
-     * nothing.
-     * These are hard sends! [data will be written on call]
-     * The upload and maintenance counter will be updated.
-     * @param r
-     */
     public boolean pushRequest(Request r) {
         if (conState != ConnectionState.connected) {
             throw new RuntimeException("Can only send requests on 'connected' connections");
@@ -165,7 +115,7 @@ public class PeerConnection extends MetaConnection {
             throw new RuntimeException("Can only send requests on unchoked connections");
         }
         if (ourRequests.contains(r.index)) {
-            return false;//already contained.
+            return false;
         }
         if (ourRequests.size() + 1 > max_queued) {
             throw new RuntimeException("Over enqued max size set to: " + max_queued);
@@ -181,12 +131,6 @@ public class PeerConnection extends MetaConnection {
         return true;
     }
 
-    /**
-     * Removes any matching requests to this piece.
-     * Connection must be connected.
-     *
-     * @param p
-     */
     public void cancelPiece(Piece p) {
         if (conState != ConnectionState.connected) {
             throw new RuntimeException("Can only send requests on 'connected' connections");
@@ -208,15 +152,6 @@ public class PeerConnection extends MetaConnection {
         }
     }
 
-    /**
-     * Takes block response, will throw error if response doesnt
-     * exist in peerRequest set.
-     * These are hard sends! [data will be written on call]
-     * The upload and maintenance counter will be updated.
-     *
-     * @param r
-     * @param block
-     */
     public void pushRequestResponse(Request r, byte[] block) {
         if (!peerRequests.remove(r)) {
             throw new RuntimeException("Giving unrequested block! But whyyyy! =(");
@@ -248,12 +183,6 @@ public class PeerConnection extends MetaConnection {
         }
     }
 
-    /**
-     * Returns list of active requests.
-     *
-     * @return
-     * @author pzbarcea
-     */
     public List<Request> getPeerRequests() {
         List<Request> q = new ArrayList<Request>(peerRequests.size());
         for (Request r : peerRequests) {
@@ -262,16 +191,10 @@ public class PeerConnection extends MetaConnection {
         return q;
     }
 
-    public Request[] getActiveRequest() {//TODO bug here.
+    public Request[] getActiveRequest() {
         return ourRequests.toArray(new Request[0]);
     }
 
-    /**
-     * List of blocks gotten since last call.
-     * Note will return null if size 0.
-     *
-     * @return
-     */
     public List<Response> getPeerResponseBlocks() {
         if (peerSentBlocks.size() < 1) {
             return null;
@@ -323,7 +246,6 @@ public class PeerConnection extends MetaConnection {
     protected void doDataIn(PeerMessage pm) {
         if (pm.type == PeerMessage.Type.CHOKE) {
             this.peer_choking = true;
-            //Drop our requests. They aint gana get done.
             System.out.println(this + " choked us.");
             ourRequests.clear();
         } else if (pm.type == PeerMessage.Type.UNCHOKE) {
@@ -365,9 +287,8 @@ public class PeerConnection extends MetaConnection {
             }
 
         } else if (pm.type == PeerMessage.Type.CANCEL) {
-            peerRequests.remove(new Request(pm.index, pm.begin, pm.length));//should work
+            peerRequests.remove(new Request(pm.index, pm.begin, pm.length));
         } else if (pm.type == PeerMessage.Type.PIECE) {
-            //get piece
             System.out.println("Got piece " + pm.index + " from " + this);
             Request r = new Request(pm.index, pm.begin, pm.block.length);
             Response rs = new Response(pm.index, pm.begin, pm.block);
@@ -375,7 +296,6 @@ public class PeerConnection extends MetaConnection {
                 historySize++;
                 download += pm.block.length;
             } else {
-                //For now this isnt a shutdownable event.
                 System.out.println("Recieved Piece " + pm.index + "," + pm.begin + "," + pm.length + " but didnt send request!");
             }
             peerSentBlocks.add(rs);
@@ -393,13 +313,6 @@ public class PeerConnection extends MetaConnection {
         return false;
     }
 
-
-    /***
-     * State of this connection.
-     * uninitialized -> meaning no connection attempt made
-     * closed -> meaning socket disconnect, was requested, or error occured.
-     * pending -> socket connected but handshake not yet completed.
-     */
     public enum ConnectionState {
         uninitialized,
         pending,

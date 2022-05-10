@@ -69,16 +69,15 @@ public class MetaConnection {
             public void run() {
                 try {
                     sock.setKeepAlive(true);
-                    sock.setSoTimeout(2 * 60 * 1000);//2 min timeout
+                    sock.setSoTimeout(2 * 60 * 1000);
                     sock.setReceiveBufferSize(1024 * 1024 * 2);
                     sock.setSendBufferSize(1024 * 1024 * 2);
-                    sock.connect(new InetSocketAddress(ip, port));//BLOCKS!
+                    sock.connect(new InetSocketAddress(ip, port));
                     sockOut = sock.getOutputStream();
                     sockIn = sock.getInputStream();
                     if (sock.isConnected()) {
                         conState = ConnectionState.connected;
                     } else {
-                        //should have thrown error.
                         conState = ConnectionState.closed;
                     }
                 } catch (IOException e) {
@@ -116,7 +115,6 @@ public class MetaConnection {
 
                 HandShake hs = mp.readHandShake(sockIn);
                 if (hs != null) {
-                    //send bitmap
                     if (peerID != null && !Arrays.equals(hs.peerID, peerID)) {
                         System.out.println("WARNING: PRE CONNECTION PEER-ID MISMATCH!");
                     }
@@ -257,7 +255,6 @@ public class MetaConnection {
         return false;
     }
 
-    // TODO: REWORD -  Should convert Connection to PeerConnection.
     public PeerConnection toManagedConnection(Torrent t) {
         return null;
     }

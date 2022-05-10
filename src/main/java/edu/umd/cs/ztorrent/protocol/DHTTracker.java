@@ -354,12 +354,10 @@ public class DHTTracker extends Tracker {
         btarget.byteString = infoHash;
         btarget.type = Type.String;
         b.dictionary.get("a").dictionary.put("info_hash", btarget);
-        //Token
         Bencoding btoken = new Bencoding();
         btoken.byteString = token;
         btoken.type = Type.String;
         b.dictionary.get("a").dictionary.put("token", btoken);
-        //Implied Port
         b.dictionary.get("a").dictionary.put("port", new Bencoding("" + port));
         if (isport) {
             b.dictionary.get("a").dictionary.put("implied_port", new Bencoding("1"));
@@ -402,9 +400,7 @@ public class DHTTracker extends Tracker {
         }
     }
 
-    //loops from aa to zz...
     private String nextFromLast(String last) {
-        //aa to zz
         char c0 = last.charAt(0);
         char c1 = (char) (last.charAt(0) + 1);
         if (c1 > 'z') {
@@ -632,7 +628,6 @@ public class DHTTracker extends Tracker {
         }
     }
 
-    //Node in DHT network
     private class Node {
         final ID nodeId;
         final int port;
