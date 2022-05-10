@@ -65,11 +65,15 @@ public class TorrentUI extends JFrame implements ActionListener {
         torrentList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         torrentList.getColumnModel().getColumn(0).setPreferredWidth(200);
 
+        topPanel.setBackground(Color.darkGray);
+        torrentList.setBackground(Color.darkGray);
+        torrentList.setForeground(Color.WHITE);
+        scrollPane.setBackground(Color.darkGray);
+
         GridBagLayout experimentLayout = new GridBagLayout();
         this.setLayout(experimentLayout);
 
         GridBagConstraints c = new GridBagConstraints();
-        mainPane = new JPanel();
 
         c.fill = GridBagConstraints.HORIZONTAL;
         c.anchor = GridBagConstraints.PAGE_START;
@@ -86,6 +90,7 @@ public class TorrentUI extends JFrame implements ActionListener {
         c.gridx = 0;
         c.gridy = 1;
         this.add(scrollPane, c);
+
         addButton.addActionListener(this);
         pauseButton.addActionListener(this);
         deleteButton.addActionListener(this);
@@ -148,10 +153,9 @@ public class TorrentUI extends JFrame implements ActionListener {
 
         TorrentClient client = new TorrentClient();
         final TorrentUI ex = new TorrentUI(client);
-        ex.setSize(1000, 300);
+        ex.setSize(1000, 400);
         SwingUtilities.invokeLater(() -> ex.setVisible(true));
 
         client.mainLoop();
     }
-
 }
