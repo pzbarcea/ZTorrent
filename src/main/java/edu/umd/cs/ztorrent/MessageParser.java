@@ -67,6 +67,13 @@ public class MessageParser {
         return hs;
     }
 
+    private static int readInt(byte[] data, int offset) {
+        return ((data[offset++] & 0xFF) << 24) |
+                ((data[offset++] & 0xFF) << 16) |
+                ((data[offset++] & 0xFF) << 8) |
+                (data[offset++] & 0xFF);
+    }
+
     /***
      * Very simple! Parses current buffer.
      * To retrieve make a poll request.
@@ -79,7 +86,7 @@ public class MessageParser {
                 off += in.read(sizeBuf, off, 4 - off);
                 if (off == 4) {
                     off = 0;
-                    size = ByteUtils.readInt(sizeBuf, 0);
+                    size = readInt(sizeBuf, 0);
                     buffer = new byte[size];
 
                     if (size > 1024 * 1024 * 10 || size < 0) {
@@ -140,6 +147,13 @@ public class MessageParser {
         return null;
     }
 
+    private static long readUnsignedInt(byte[] data, int offset) {
+        return (((long) data[offset++] & 0xFF) << 24) |
+                (((long) data[offset++] & 0xFF) << 16) |
+                (((long) data[offset++] & 0xFF) << 8) |
+                ((long) data[offset++] & 0xFF);
+    }
+
     //Ok fine what you had before would have made this a bit quicker....
     private PeerMessage buildFromByte(byte[] buffer2) {
         PeerMessage PM;
@@ -155,7 +169,7 @@ public class MessageParser {
             case 4:
                 PM = new PeerMessage(PeerMessage.Type.HAVE);
 
-                PM.piece = ByteUtils.readUnsignedInt(buffer2, 1);
+                PM.piece = readUnsignedInt(buffer2, 1);
                 return PM;
             case 5:
                 PM = new PeerMessage(PeerMessage.Type.BIT_FILED);
@@ -163,21 +177,21 @@ public class MessageParser {
                 return PM;
             case 6:
                 PM = new PeerMessage(PeerMessage.Type.REQUEST);
-                PM.index = ByteUtils.readUnsignedInt(buffer2, 1);
-                PM.begin = ByteUtils.readUnsignedInt(buffer2, 5);
-                PM.length = ByteUtils.readUnsignedInt(buffer2, 9);
+                PM.index = readUnsignedInt(buffer2, 1);
+                PM.begin = readUnsignedInt(buffer2, 5);
+                PM.length = readUnsignedInt(buffer2, 9);
                 return PM;
             case 7:
                 PM = new PeerMessage(PeerMessage.Type.PIECE);
-                PM.index = ByteUtils.readUnsignedInt(buffer2, 1);
-                PM.begin = ByteUtils.readUnsignedInt(buffer2, 5);
+                PM.index = readUnsignedInt(buffer2, 1);
+                PM.begin = readUnsignedInt(buffer2, 5);
                 PM.block = Arrays.copyOfRange(buffer2, 9, buffer2.length);
                 return PM;
             case 8:
                 PM = new PeerMessage(PeerMessage.Type.CANCEL);
-                PM.index = ByteUtils.readUnsignedInt(buffer2, 1);
-                PM.begin = ByteUtils.readUnsignedInt(buffer2, 5);
-                PM.length = ByteUtils.readUnsignedInt(buffer2, 9);
+                PM.index = readUnsignedInt(buffer2, 1);
+                PM.begin = readUnsignedInt(buffer2, 5);
+                PM.length = readUnsignedInt(buffer2, 9);
                 return PM;
             case 9:
                 PM = new PeerMessage(PeerMessage.Type.PORT);

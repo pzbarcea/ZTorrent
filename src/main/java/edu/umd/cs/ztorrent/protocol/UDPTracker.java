@@ -1,6 +1,5 @@
 package edu.umd.cs.ztorrent.protocol;
 
-import edu.umd.cs.ztorrent.ByteUtils;
 import edu.umd.cs.ztorrent.Torrent;
 import edu.umd.cs.ztorrent.protocol.HTTPTracker.Event;
 
@@ -46,6 +45,24 @@ public class UDPTracker extends Tracker {
         }
     }
 
+    private static long readUnsignedInt(byte[] data, int offset) {
+        return (((long) data[offset++] & 0xFF) << 24) |
+                (((long) data[offset++] & 0xFF) << 16) |
+                (((long) data[offset++] & 0xFF) << 8) |
+                ((long) data[offset++] & 0xFF);
+    }
+
+    private static int readInt(byte[] data, int offset) {
+        return ((data[offset++] & 0xFF) << 24) |
+                ((data[offset++] & 0xFF) << 16) |
+                ((data[offset++] & 0xFF) << 8) |
+                (data[offset++] & 0xFF);
+    }
+
+    private static short readShort(byte[] data, int offset) {
+        return (short) ((short) ((data[offset++] & 0xFF) << 8) |
+                (data[offset++] & 0xFF));
+    }
 
     public void getUPDTrackerResult(Torrent t, Event e) {
         DatagramSocket sock = null;
@@ -77,9 +94,9 @@ public class UDPTracker extends Tracker {
             sock.receive(recvPacket);
             reponse = recvPacket.getData();
             if (reponse != null) {
-                int actionIdFromResponse = ByteUtils.readInt(reponse, 0);
-                int transactionIdFromResponse = ByteUtils.readInt(reponse, 4);
-                long connectionIdFromResponse = ByteUtils.readUnsignedInt(reponse, 8);
+                int actionIdFromResponse = readInt(reponse, 0);
+                int transactionIdFromResponse = readInt(reponse, 4);
+                long connectionIdFromResponse = readUnsignedInt(reponse, 8);
                 transactionID = r.nextInt();
                 int event = 0;
                 if (e == Event.started) {
@@ -98,16 +115,16 @@ public class UDPTracker extends Tracker {
                 if (reponse != null) {
                     completeOnce = true;
                     if (reponse.length >= 20) {
-                        int recTransId = ByteUtils.readInt(reponse, 4);
-                        int interval = ByteUtils.readInt(reponse, 8);
-                        int leechers = ByteUtils.readInt(reponse, 12);
-                        int seeders = ByteUtils.readInt(reponse, 16);
+                        int recTransId = readInt(reponse, 4);
+                        int interval = readInt(reponse, 8);
+                        int leechers = readInt(reponse, 12);
+                        int seeders = readInt(reponse, 16);
                         short peerPort = -1;
                         for (int i = 0; i < (reponse.length - 20) / 6 && peerPort != 0; i++) {
                             byte[] rawIp = new byte[4];
                             System.arraycopy(reponse, 20 + i * 6, rawIp, 0, 4);
                             InetAddress ip = InetAddress.getByAddress(rawIp);
-                            peerPort = ByteUtils.readShort(reponse, 24 + 6 * i);
+                            peerPort = readShort(reponse, 24 + 6 * i);
                             if (peerPort != 0) {
                                 total++;
                                 t.addPeer(ip, peerPort, null);
