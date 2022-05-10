@@ -13,16 +13,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * Bencoding is simple. Ill just write parser for it here.
- * 2 hours later....
- * I thought it would only take 30 mins...
- * But it here now so enjoy it!
- * Oh crap it needs to be reversible for SHA!
- * ----||NOTES||----
- * Major problem was that java's conversion to string was doing a
- * Irreversible conversion! so i had to leave it as byteString
- *
- * @author pzbarcea
+ * Functions used for
  */
 //TODO: create toBytes() for completeness.
 //TODO CONVERT TO LONG
@@ -34,7 +25,7 @@ public class Bencoding {
     public Map<String, Bencoding> dictionary;
     public byte[] byteString;
     public Long integer;
-    byte[] tmp; //TODO: not this.
+    byte[] tmp;
 
     public Bencoding() {
     }
@@ -141,7 +132,6 @@ public class Bencoding {
             int slen = new Integer(new String(integer, 0, integer.length, StandardCharsets.UTF_8));
             byte[] string = new byte[slen];
             System.arraycopy(data, dist + 1, string, 0, slen);
-//			r.string= new String(string,"UTF-8");
             r.byteString = string;
             r.type = Type.String;
             r.tmp = new byte[dist + slen + 1 - start];

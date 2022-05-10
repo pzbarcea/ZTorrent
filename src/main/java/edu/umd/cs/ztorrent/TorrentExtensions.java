@@ -5,13 +5,6 @@ import edu.umd.cs.ztorrent.Bencoding.Type;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 
-/**
- * Message constructors and parsers for torrent extensions
- * -Magnet links
- * - DHT
- *
- * @author pzbarcea
- */
 public class TorrentExtensions {
 
     /**
