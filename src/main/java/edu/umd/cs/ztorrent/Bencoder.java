@@ -1,7 +1,9 @@
 package edu.umd.cs.ztorrent;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -25,6 +27,7 @@ import java.util.Map.Entry;
  * https://stackoverflow.com/questions/1664124/bencoding-binary-data-in-java-strings
  */
 public class Bencoder {
+
     public BencodeType type;
     public List<Bencoder> list;
     public Map<String, Bencoder> dictionary;
@@ -45,7 +48,7 @@ public class Bencoder {
         this.integer = i;
     }
 
-    public static Bencoder cBS(byte[] b) {
+    public static Bencoder encodeBytes(byte[] b) {
         Bencoder ben = new Bencoder();
         ben.byteString = b;
         ben.type = BencodeType.String;
@@ -55,17 +58,17 @@ public class Bencoder {
     public Bencoder(byte[] data) {
         try {
             if (data.length < 2) {
-                throw new Exception("Data is not bencoded properly");
+                throw new RuntimeException("[ERROR] Improper Format for Bencoding");
             }
 
 
             getBencoding(data, 0, data.length, this);
-        } catch (Exception e) {
+        } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
     }
 
-    public static int getBencoding(byte[] data, int start, int len, Bencoder r) throws Exception {
+    public static int getBencoding(byte[] data, int start, int len, Bencoder r) throws UnsupportedEncodingException {
         if (data[start] == 'i') {
             int dist = -1;
             for (int i = start + 1; i < len; i++) {
@@ -75,13 +78,13 @@ public class Bencoder {
                 }
             }
             if (dist == -1) {
-                throw new Exception("[ERROR] Could not bencode integer");
+                throw new RuntimeException("[ERROR] Could not bencode integer");
             }
             byte[] integer = new byte[dist - 1 - start];
             //src dst
             System.arraycopy(data, start + 1, integer, 0, dist - 1 - start);
             String str = new String(integer, 0, integer.length, StandardCharsets.UTF_8);
-            r.integer = Long.valueOf(str);
+            r.integer = new Long(str);
             r.type = BencodeType.Integer;
             r.tmp = new byte[dist + 1 - start];
             System.arraycopy(data, start, r.tmp, 0, dist + 1 - start);
@@ -128,12 +131,12 @@ public class Bencoder {
                 }
             }
             if (dist == -1) {
-                throw new Exception("[ERROR] Could not bencode String");
+                throw new RuntimeException("[ERROR] Could not bencode String");
             }
             byte[] integer = new byte[dist - start];
             //src dst
             System.arraycopy(data, start, integer, 0, dist - start);
-            int slen = Integer.parseInt(new String(integer, 0, integer.length, StandardCharsets.UTF_8));
+            int slen = new Integer(new String(integer, 0, integer.length, StandardCharsets.UTF_8));
             byte[] string = new byte[slen];
             System.arraycopy(data, dist + 1, string, 0, slen);
             r.byteString = string;
@@ -183,11 +186,12 @@ public class Bencoder {
             bo.flush();
             out = bo.toByteArray();
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return out;
     }
+
 
     public String getString() {
         return new String(byteString, 0, byteString.length, StandardCharsets.UTF_8);

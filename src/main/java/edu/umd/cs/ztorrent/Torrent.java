@@ -19,7 +19,7 @@ import java.util.*;
  */
 public class Torrent extends MetaTorrent {
     public static int STANDARD_CACHE_SIZE = 1024 * 1024 * 20;//20MB
-    private final Set<PeerConnection> peerList = new HashSet<PeerConnection>();//TODO: keep only peers with valid connections?
+    private final Set<PeerConnection> peerList = new HashSet<>();//TODO: keep only peers with valid connections?
     public final PieceManager pm;
     public final int numFiles;
     public final int pieceLength;
@@ -57,8 +57,8 @@ public class Torrent extends MetaTorrent {
             e.printStackTrace();
             throw new RuntimeException("IO-Problems on piecemanager init.");
         }
-        for (FileResource d : files) {
-            d.initialize(pieceLength, pm.bitmap);
+        for (FileResource resource : files) {
+            resource.setup(pieceLength, pm.bitmap);
         }
         this.status = "Checking files";
         pm.checkFiles();

@@ -36,7 +36,7 @@ public class DHTTracker extends Tracker {
     private final byte[] infoHash;
     private final List<Node> connectionCleaner = new ArrayList<Node>(0);
     private final List<String> packetCleaner = new ArrayList<String>(0);
-    private List<MetaConnection> potentialPeers = new ArrayList<MetaConnection>();
+    private List<TorrentConnection> potentialPeers = new ArrayList<TorrentConnection>();
     private final long startTime = System.currentTimeMillis();
 
     public DHTTracker(byte[] infoHash, byte[] PeerID) throws SocketException {
@@ -298,7 +298,7 @@ public class DHTTracker extends Tracker {
 
     byte[] constructNodeResponse(ID id, String q, byte[] nodes) throws UnsupportedEncodingException {
         Bencoder b = msgBase(id, q, true);
-        b.dictionary.get("r").dictionary.put("nodes", Bencoder.cBS(nodes));
+        b.dictionary.get("r").dictionary.put("nodes", Bencoder.encodeBytes(nodes));
         return b.toByteArray();
     }
 
@@ -314,14 +314,14 @@ public class DHTTracker extends Tracker {
 
     byte[] constructPeersResponseN(ID id, String q, byte[] nodes, byte[] token) throws UnsupportedEncodingException {
         Bencoder b = msgBase(id, q, true);
-        b.dictionary.get("r").dictionary.put("token", Bencoder.cBS(token));
-        b.dictionary.get("r").dictionary.put("nodes", Bencoder.cBS(nodes));
+        b.dictionary.get("r").dictionary.put("token", Bencoder.encodeBytes(token));
+        b.dictionary.get("r").dictionary.put("nodes", Bencoder.encodeBytes(nodes));
         return b.toByteArray();
     }
 
     byte[] constructPeerResponseP(ID id, String q, Bencoder peers, byte[] token) throws UnsupportedEncodingException {
         Bencoder b = msgBase(id, q, true);
-        b.dictionary.get("r").dictionary.put("token", Bencoder.cBS(token));
+        b.dictionary.get("r").dictionary.put("token", Bencoder.encodeBytes(token));
         b.dictionary.get("r").dictionary.put("values", peers);
         return b.toByteArray();
     }
@@ -392,7 +392,7 @@ public class DHTTracker extends Tracker {
             int port = ((peers[i * 6 + 4] & 0xFF) << 8 | (peers[i * 6 + 5] & 0xFF));
             System.out.println("Peer: " + ip.getHostAddress() + ":" + port);
             if (!Arrays.equals(ip.getAddress(), new byte[]{0, 0, 0, 0})) {
-                potentialPeers.add(new MetaConnection(ip, port));
+                potentialPeers.add(new TorrentConnection(ip, port));
             }
 
             total++;
@@ -422,15 +422,15 @@ public class DHTTracker extends Tracker {
 
     @Override
     public void update(Torrent t) {
-        for (MetaConnection mc : potentialPeers) {
+        for (TorrentConnection mc : potentialPeers) {
             t.addConnection(mc.toManagedConnection(t));
         }
         potentialPeers.clear();
     }
 
-    public List<MetaConnection> connections() {
-        List<MetaConnection> mcs = potentialPeers;
-        potentialPeers = new ArrayList<MetaConnection>();
+    public List<TorrentConnection> connections() {
+        List<TorrentConnection> mcs = potentialPeers;
+        potentialPeers = new ArrayList<TorrentConnection>();
         return mcs;
     }
 

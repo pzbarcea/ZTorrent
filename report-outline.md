@@ -51,11 +51,22 @@ they should be expected to interoperate
 * ... add more here
 
 ## 3. Problems we encountered
-* Add stuff here...
+* HTTP Response includes the header, not just the body, so this needs to be parsed before we
+get anything useful from it
+* Writing to files didn't work
+  * Needed to learn how to use RandomAccessFile in java
+* Got a lot of exceptions, so we needed to add a lot of try catch blocks to solve the program crashing
+very often
+* Upload never worked
+  * Needed to port forward to make this work
+  * In better implementations, they prompt user for Firewall exception
+    * Didn't work for us, decided to abandon this and just port forward
+* 
 
 ## 4. Known bugs and Issues
 * Get nullPointerException if file is removed while GUI is working on it
-* I don't think the .partial files are ever removed/cleaned
+* I don't think the .temp files are ever removed/cleaned
+  * This is good for re-seeding, but we could fix this with diff implementation
 * No support for deleting the actual file(s) (not just removing .torrent) from GUI
 * Magnet links not working
 * GUI sometimes freezes on some combination of actions (but not sure what)

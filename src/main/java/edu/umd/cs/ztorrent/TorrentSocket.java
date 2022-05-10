@@ -22,14 +22,14 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author pzbarcea
  */
-public class TorrentServerSocket {
+public class TorrentSocket {
     private List<PeerConnection> connections;
     private final ServerSocket tcpServer;
     private final ReentrantLock clientsLock = new ReentrantLock();
     boolean alive = true;
     Thread th;
 
-    public TorrentServerSocket(int port) throws IOException {
+    public TorrentSocket(int port) throws IOException {
         tcpServer = new ServerSocket(port);
         connections = new LinkedList<PeerConnection>();
         th = new Thread() {

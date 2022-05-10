@@ -25,11 +25,11 @@ public class TorrentClient extends AbstractTableModel {
     final Set<Torrent> inactiveTorrents = Collections.synchronizedSet(new HashSet<Torrent>());//Completed or inactive
 
     final Queue<Torrent> newTorrents = new ConcurrentLinkedQueue<Torrent>();
-    TorrentServerSocket tss;
+    TorrentSocket tss;
 
     public TorrentClient() {
         try {
-            tss = new TorrentServerSocket(6881);
+            tss = new TorrentSocket(6881);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -91,9 +91,9 @@ public class TorrentClient extends AbstractTableModel {
         //Drop connections
         t.shutdown();
 
-        // close files
+        // closeFile files
         for (FileResource f : t.files) {
-            f.close();
+            f.closeFile();
         }
     }
 
@@ -103,7 +103,7 @@ public class TorrentClient extends AbstractTableModel {
             inactiveTorrents.remove(t);
             allTorrents.remove(t);
             for (FileResource f : t.files) {
-                f.delete();
+                f.deleteFile();
             }
         } catch (IOException io) {
             io.printStackTrace();
@@ -112,7 +112,7 @@ public class TorrentClient extends AbstractTableModel {
 
     public void deleteTorrent(Torrent t) throws IOException {
         setTorrentInactive(t);
-        t.getFile().delete(); // we presume the .delete() is always successful
+        t.getFile().delete(); // we presume the .deleteFile() is always successful
     }
 
     public void deleteTorrentAndData(Torrent t) throws IOException {

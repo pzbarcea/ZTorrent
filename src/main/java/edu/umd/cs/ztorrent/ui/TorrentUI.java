@@ -127,34 +127,30 @@ public class TorrentUI extends JFrame implements ActionListener {
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File file = filePicker.getSelectedFile();
                 //This is where a real application would open the file.
-                System.out.println("Opening: " + file.getName());
+                System.out.println("Opening Torrent File: " + file.getName());
                 try {
                     Torrent t = TorrentParser.parseTorrentFile(file.getAbsolutePath());
                     client.addTorrent(t);
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(mainPane, "Invalid torrent file");
+                    JOptionPane.showMessageDialog(mainPane, "Could not open torrent file");
+                    ex.printStackTrace();
                 }
             } else {
-                System.out.println("Open command cancelled by user.");
+                System.out.println("Aborted torrent open");
             }
         } else if (e.getSource() == deleteButton) {
-            System.out.println("delete ");
-            System.out.println("Delete " + torrentList.getSelectedRow());
+            System.out.println("Deleted " + torrentList.getSelectedRow());
             client.deleteTorrentData(client.getTorrent(torrentList.getSelectedRow()));
 
-            //TODO: Choices...
         } else if (e.getSource() == pauseButton) {
-            System.out.println("stop ");
-            System.out.println("Stop " + torrentList.getSelectedRow());
+            System.out.println("Stopped " + torrentList.getSelectedRow());
             try {
                 client.setTorrentInactive(client.getTorrent(torrentList.getSelectedRow()));
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
         } else if (e.getSource() == resumeButton) {
-            System.out.println("play ");
-            System.out.println("Start " + torrentList.getSelectedRow());
-            //Effectively just reload torrent.
+            System.out.println("Resumed " + torrentList.getSelectedRow());
             try {
                 client.reActivate(client.getTorrent(torrentList.getSelectedRow()));
             } catch (IOException | NoSuchAlgorithmException e1) {

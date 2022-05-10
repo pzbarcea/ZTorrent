@@ -11,7 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * From Wikipedia:
+ * https://wiki.theory.org/index.php/BitTorrentSpecification#Tracker_Response
  * "The response message consists of the following:
  *	-A Status-Line (for example HTTP/1.1 200 OK, which indicates that the client's request succeeded)
  *	-Response Headers, such as Content-Type: text/html

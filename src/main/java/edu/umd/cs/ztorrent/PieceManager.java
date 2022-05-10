@@ -106,7 +106,7 @@ public class PieceManager {
     /***
      * Gets piece from structure.
      * May have to read from disk.
-     * Assume hasPiece is called before getPiece
+     * Assume hasPiece is called before pieceFromFileToBytes
      * Throws error if piece not completed
      * Will return null when not loaded on cahce.
      * It will be enqueued for cache if returns null.
@@ -141,7 +141,7 @@ public class PieceManager {
         //Awesome ^.^ -> raf.getFilePointer()
         for (Piece p : writeToDisk) {
             for (FileResource d : files) {
-                d.writePiece(p);
+                d.writePieceToFile(p);
             }
         }
 

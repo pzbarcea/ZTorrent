@@ -20,7 +20,7 @@ import java.util.*;
 /**
  * Connection for sending metadata across peers
  */
-public class MetaConnection {
+public class TorrentConnection {
     public final int port;
     public final InetAddress ip;
     protected boolean am_choking = true;
@@ -51,7 +51,7 @@ public class MetaConnection {
     private boolean isMetaConnection = false;
     private final Set<Integer> metaMetaRequests = new HashSet<Integer>();
 
-    public MetaConnection(InetAddress ip, int port) {
+    public TorrentConnection(InetAddress ip, int port) {
         this.ip = ip;
         this.port = port;
         mp = new MessageParser();
@@ -250,8 +250,8 @@ public class MetaConnection {
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof MetaConnection) {
-            MetaConnection m = (MetaConnection) o;
+        if (o instanceof TorrentConnection) {
+            TorrentConnection m = (TorrentConnection) o;
             return m.ip.equals(ip) && m.port == port;
         }
         return false;

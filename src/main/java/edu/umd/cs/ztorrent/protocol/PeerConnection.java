@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.net.*;
 import java.util.*;
 
-public class PeerConnection extends MetaConnection {
+public class PeerConnection extends TorrentConnection {
     private final Set<MessageRequest> ourRequests;
     private int historySize = 0;
     private List<MessageResponse> peerSentBlocks;
