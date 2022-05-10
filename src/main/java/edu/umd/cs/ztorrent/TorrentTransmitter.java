@@ -13,15 +13,15 @@ import java.io.IOException;
  *
  */
 public class TorrentTransmitter {
-    private AbstractPeerWorker logic;
+    private Torrentable logic;
     private final Torrent ourTorrent;
 
     //TODO: trackers
-    public AbstractPeerWorker getLogic() {
+    public Torrentable getLogic() {
         return logic;
     }
 
-    public void setLogic(AbstractPeerWorker logic) {
+    public void setLogic(Torrentable logic) {
         this.logic = logic;
     }
 
@@ -29,7 +29,7 @@ public class TorrentTransmitter {
         return ourTorrent;
     }
 
-    public TorrentTransmitter(AbstractPeerWorker pl, Torrent t) {
+    public TorrentTransmitter(Torrentable pl, Torrent t) {
         this.logic = pl;
         this.ourTorrent = t;
         for (Tracker tr : ourTorrent.getTrackers()) {

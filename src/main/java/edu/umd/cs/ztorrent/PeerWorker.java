@@ -20,7 +20,7 @@ import java.util.*;
  *
  * @author pzbarcea
  */
-public class PeerWorker extends AbstractPeerWorker {
+public class PeerWorker implements Torrentable {
     int recvPieces = 0;
     int activeConnections = 0;
     private static final int MAX_ENQEUED = 32;//20*1024*16 =
