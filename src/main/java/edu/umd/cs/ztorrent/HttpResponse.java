@@ -3,7 +3,6 @@ package edu.umd.cs.ztorrent;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -11,7 +10,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/***
+/**
  * From Wikipedia:
  * "The response message consists of the following:
  *	-A Status-Line (for example HTTP/1.1 200 OK, which indicates that the client's request succeeded)
@@ -19,50 +18,45 @@ import java.util.regex.Pattern;
  *	-An empty line
  *	-An optional message body"
  *
- *
- * By all means not a complete definition of all possible responses.
  * @author pzbarcea
  *
  */
 public class HttpResponse {
-    public enum HeaderType {HTTP, Date, Server, LastModified, Etag, ContentType, ContentLength, Connection, Pragma, TransferEncoding, UKNOWN}
+    public enum HeaderType {HTTP, Date, Server, LastModified, Etag, ContentType, ContentLength, Connection, Pragma, TransferEncoding, UNKNOWN}
     public final Map<HeaderType, String> headerMap;
     public int status = -1;
     public String version;
     public int contentSize = -1;
     public byte[] body;
-    public final int HEADER_LIMITS = 10 * 1024;//TODO: no more then 10k in headers?
     public boolean transferEncoding;
 
     /**
-     * Will read till steam closes or content length reached.
-     * So dont go and give me an endless stream.
-     * Throws error if tag doesnt match.
+     * Parses an HTTP response header.
      *
      * @throws IOException
      */
-    public HttpResponse(InputStream in) throws IOException {//Input stream. Presumably Tcp socket.
+    public HttpResponse(InputStream in) throws IOException {
         String patternStr = "[0-9]+";
         transferEncoding = false;
         Pattern pattern = Pattern.compile(patternStr);
-        headerMap = new HashMap<HeaderType, String>();
+        headerMap = new HashMap<>();
         boolean emptyFound = false;
         byte[] dataIn;
         while (!emptyFound) {
             dataIn = readRawHeaderLine(in);
             String p = bytesToString(dataIn);
-            //parsing time.
+
             if (p == null) {
-                throw new RuntimeException("HTTP Parse Exception. Bugs. The bunny.");
+                throw new RuntimeException("[ERROR]: HttpResponse Parse Error");
             }
 
             if (p.contentEquals("\r\n")) {
                 emptyFound = true;
             } else if (p.startsWith("HTTP")) {
-                //parse out status and verion.
+                // Parse status and version
                 int i = p.indexOf(" ");
                 version = p.subSequence(5, i).toString();
-                //read to next non digit.
+
                 Matcher matcher = pattern.matcher(p.subSequence(i + 1, p.length()));
                 if (matcher.find()) {
                     status = new Integer(p.substring(i + 1 + matcher.start(), i + 1 + matcher.end()));
@@ -92,22 +86,22 @@ public class HttpResponse {
             } else {
                 System.out.println("Unknown Header: \"" + p.substring(0, p.length() - 2) + "\"");
                 String o = p;
-                if (headerMap.containsKey(HeaderType.UKNOWN)) {
-                    o = headerMap.get(HeaderType.UKNOWN) + p;
+                if (headerMap.containsKey(HeaderType.UNKNOWN)) {
+                    o = headerMap.get(HeaderType.UNKNOWN) + p;
                 }
-                headerMap.put(HeaderType.UKNOWN, o);
+                headerMap.put(HeaderType.UNKNOWN, o);
             }
         }
 
         if (contentSize == -1 && !transferEncoding) {
-            System.out.println("Warning: Reading till connection closes");
+            System.out.println("[WARNING]: Reading MAX_VALUE bytes");
             contentSize = Integer.MAX_VALUE;
             body = readBytes(in, contentSize);
         } else if (transferEncoding) {
             if ("chunked".equals(headerMap.get(HeaderType.TransferEncoding))) {
                 body = readChunked(in);
             } else {
-                throw new RuntimeException("Invalid transfer encoding: \"" + headerMap.get(HeaderType.TransferEncoding) + "\"");
+                throw new RuntimeException("[ERROR]: RuntimeException in HttpResponse");
             }
         } else {
             body = readBytes(in, contentSize);
@@ -146,13 +140,12 @@ public class HttpResponse {
         int ch;
         long bytesRead = 0;
         try {
-            while (bytesRead < bytes && (ch = inputStream.read()) >= 0) {//errr off by 1?
+            while (bytesRead < bytes && (ch = inputStream.read()) >= 0) {
                 buf.write(ch);
                 bytesRead++;
             }
         } catch (SocketTimeoutException STE) {
-            //It might be ok. We'll Try to recover from this.
-            System.out.println("" + bytes + " vs " + bytesRead + "  " + (bytesRead < bytes));
+            System.out.println("[ERROR]: SocketTimeoutException");
         }
 
         if (buf.size() == 0) {
@@ -161,43 +154,41 @@ public class HttpResponse {
         return buf.toByteArray();
     }
 
-
     public static byte[] readChunked(InputStream inputStream) throws IOException {
-        ByteArrayOutputStream tmpbuf = new ByteArrayOutputStream();
+        ByteArrayOutputStream temp = new ByteArrayOutputStream();
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         int ch;
         long bytesRead = 0;
         try {
-            //while not closed:
             while (true) {
-                //read out the size.
                 int lastCh = 0;
                 while ((ch = inputStream.read()) >= 0) {
-                    tmpbuf.write(ch);
+                    temp.write(ch);
                     if (ch == '\n' && lastCh == '\r') {
                         break;
                     }
                     lastCh = ch;
                 }
-                String s = tmpbuf.toString();
+                String s = temp.toString();
                 s = s.replaceAll(("[\\n\\r]"), "");
                 long size = Long.parseLong(s, 16);
-                tmpbuf.reset();
-                //The last-chunk is a regular chunk, with the exception that its length is zero.
+                temp.reset();
+
+                // Break if we read the last chunk
                 if (size == 0) {
                     break;
                 }
-                //read content ends with \r\n
-                while (bytesRead < size && (ch = inputStream.read()) >= 0) {//errr off by 1?
+
+                while (bytesRead < size && (ch = inputStream.read()) >= 0) {
                     buf.write(ch);
                     bytesRead++;
                 }
-                //"read content ends with \r\n"
+
                 ch = inputStream.read();
                 ch = inputStream.read();
             }
         } catch (SocketTimeoutException STE) {
-            //It might be ok. We'll Try to recover from this.
+            System.out.println("[ERROR]: SocketTimeoutException");
         }
 
         if (buf.size() == 0) {
