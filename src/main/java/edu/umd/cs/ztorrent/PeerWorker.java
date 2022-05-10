@@ -198,11 +198,11 @@ public class PeerWorker implements Torrentable {
                     break;
                 }
                 //if some one has it and we don't and were not working to get it yet.
-                if (rar.getCount() > 0 && !t.pm.hasPiece(rar.index) && !connectionsManager.getWorkingSet().contains(rar.index)) {
+                if (rar.getValue() > 0 && !t.pm.hasPiece(rar.index) && !connectionsManager.getWorkingSet().contains(rar.index)) {
                     System.out.println("Queued " + rar.index);
                     workingQueue.add(t.pm.bitmap.createPiece(rar.index));
                     addedOnce = true;
-                } else if (rar.getCount() == 0) {
+                } else if (rar.getValue() == 0) {
                     System.out.println("No one has " + rar.index);
                 }
             }

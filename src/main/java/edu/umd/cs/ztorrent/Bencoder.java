@@ -188,7 +188,7 @@ public class Bencoder {
         }
         return out;
     }
-    
+
     public String getString() {
         return new String(byteString, 0, byteString.length, StandardCharsets.UTF_8);
     }

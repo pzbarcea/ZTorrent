@@ -1,5 +1,7 @@
 package edu.umd.cs.ztorrent;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
 
 /***
@@ -20,11 +22,11 @@ public class BitMap {
         }
 
         @Override
-        public int compareTo(Rarity o) {
+        public int compareTo(@NotNull Rarity o) {
             return o.value - value;
         }
 
-        public short getCount() {
+        public short getValue() {
             return value;
         }
     }
