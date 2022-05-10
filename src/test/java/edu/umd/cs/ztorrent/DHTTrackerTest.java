@@ -18,7 +18,7 @@ public class DHTTrackerTest {
         BigInteger big = new BigInteger(1, b);
         System.out.println(String.format("%0" + (b.length << 1) + "X", big));
 
-        DHTTracker dht = new DHTTracker(b, Torrent.generateSessionKey(20).getBytes(StandardCharsets.UTF_8));
+        DHTTracker dht = new DHTTracker(b, Torrent.genRandomSessionKey(20).getBytes(StandardCharsets.UTF_8));
 
         // run test for 500 cycles.
         int i = 500;

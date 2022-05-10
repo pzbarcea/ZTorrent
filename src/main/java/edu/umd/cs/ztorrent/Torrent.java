@@ -40,7 +40,7 @@ public class Torrent extends MetaTorrent {
 
     public Torrent(String name, int pieceLength, FileResource[] files,
                    long totalBytes, byte[] byteStringHashInfo, String urlEncodedHash, Bencoder pieceHash, MetaData md, List<Tracker> trackers, String file) throws IOException {
-        super(byteStringHashInfo, generateSessionKey(20).getBytes(StandardCharsets.UTF_8), md);
+        super(byteStringHashInfo, genRandomSessionKey(20).getBytes(StandardCharsets.UTF_8), md);
         this.numFiles = files.length;
         f = new File(file);
         this.pieceLength = pieceLength;
@@ -71,7 +71,7 @@ public class Torrent extends MetaTorrent {
         this.trackers.add(new DHTTracker(hashInfo, peerID));//We're always in DHT!
     }
 
-    public static String generateSessionKey(int length) {
+    public static String genRandomSessionKey(int length) {
         String alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         int n = alphabet.length();
         String result = "";

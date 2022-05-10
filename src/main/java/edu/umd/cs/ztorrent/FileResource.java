@@ -10,49 +10,76 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * Pieces may overlap file boundaries.
- * Well. Crap. Use byte offset to calculate piece info.
- * Either this file is a pointer to an actual file.
- * OR its a partial file.
- * <p>
- * <p>
- * Partial File Format:
- * <piece index(4)><piece data(pieceLength)>
- * Why the extra 4 bytes?
- * What if we only partially download, thats why.
+ * Class representing a file to download
+ *
+ * Before a file is completed, it is represented as a partial file, storing the piece index (where the piece came from)
+ * and then the piece data
+ *
+ * From the BitTorrent protocol implementation:
+ * https://hackage.haskell.org/package/bittorrent-0.0.0.3/docs/Data-Torrent-Piece.html
  */
 public class FileResource {
+    //The file to write to. When we are completely done writing, the file should be complete with all bytes restored
+    private File myFile;
 
-    private final long length;
-    private final long byteOffSet;//TODO: offset zero based?
-    private int leftPiece, rightPiece, pieceLength;
-    private RandomAccessFile raf;
+    /**
+     *FROM: https://docs.oracle.com/javase/7/docs/api/java/io/RandomAccessFile.html
+     * A random access file behaves like a large array of bytes stored in the file system.
+     * There is a kind of cursor, or index into the implied array, called the file pointer;
+     * input operations read bytes starting at the file pointer and advance the file pointer past the bytes read.
+     * If the random access file is created in read/write mode, then output operations are also available;
+     * output operations write bytes starting at the file pointer and advance the file pointer past the bytes written.
+     * Output operations that write past the current end of the implied array cause the array to be extended.
+     * The file pointer can be read by the getFilePointer method and set by the seek method.
+     *
+     * Basically, we use this as a way to write bytes (the pieces) to a file in cached memory, then when we are ready we write
+     * it out to the actual file, myFile
+     */
+    private RandomAccessFile accessFile;
+
+    //String representing the filepath that comes before the filename, in case we want to write or read to a directory
+    // that is different than the one we are in (useful bc our Maven will generate a target directory that gets wiped and
+    // rebuilt anyway, so storing stuff there is bad)
+    private final String folder;
+
+    //String representing the filename (what comes after the folder path) this then gets appended with the folder to
+    // create the entire filepath to use for the file object (myFile
+    private final String filename;
+
+    //Represents if the file is a partial file or not (if it is a partial file, we need to only write some bytes and
+    // manipulate the file pointer, so this matters a lot)
     private boolean isPartial;
-    private final Map<Integer, Long> pieceIndexToOffSet;
-    private int numPieces;
-    private final String topFolder;
-    private final String pathAndName;
-    private File f;
 
-    public FileResource(String topFolder, String pathAndName, long length, long byteOff) {//shit parsed from torrent file
+    //Represents the length of file in Bytes (stored as Long bc this can be very large for big torrents)
+    private final long length;
+
+    //Represents the byteOffset to use
+    private final long byteOffSet;
+    private int leftPiece, rightPiece, pieceLength;
+    private int numPieces;
+
+    private final Map<Integer, Long> pieceIndexToOffSet;
+
+
+    public FileResource(String folder, String filename, long length, long byteOff) {//shit parsed from torrent file
         this.length = length;
         this.byteOffSet = byteOff;
-        this.topFolder = topFolder;
-        this.pathAndName = pathAndName;
+        this.folder = folder;
+        this.filename = filename;
         pieceIndexToOffSet = new HashMap<Integer, Long>();
     }
 
     public void initialize(int pieceLength, PieceOrganizer bm) throws IOException {
         this.pieceLength = pieceLength;
         this.leftPiece = (int) (byteOffSet / pieceLength);
-        this.rightPiece = (int) Math.ceil((double) (byteOffSet + length) / pieceLength) - 1;//len 0?
+        this.rightPiece = (int) Math.ceil((double) (byteOffSet + length) / pieceLength) - 1;
         numPieces = rightPiece - leftPiece + 1;
-        f = new File(topFolder + "\\" + pathAndName);
-        if (f.isFile()) {
+        myFile = new File(folder + "\\" + filename);
+        if (myFile.isFile()) {
             //file exists.
             //Act as if its all there.
             //(we check more in depth later.)
-            raf = new RandomAccessFile(f, "rw");
+            accessFile = new RandomAccessFile(myFile, "rw");
             int pStart = (int) byteOffSet / pieceLength;
             int pEnd = (int) Math.ceil((double) (byteOffSet + length) / pieceLength);
             for (int s = pStart; s < pEnd; s++) {
@@ -65,28 +92,28 @@ public class FileResource {
         }
         isPartial = true;
         //ok file isnt here. is the .partial there?
-        f = new File(topFolder + "\\" + pathAndName + ".partial");
-        if (f.isFile()) {
-            raf = new RandomAccessFile(f, "rw");
+        myFile = new File(folder + "\\" + filename + ".partial");
+        if (myFile.isFile()) {
+            accessFile = new RandomAccessFile(myFile, "rw");
             //read through
-            raf.seek(0);
-            while (raf.getFilePointer() < raf.length()) {
-                int pIndex = raf.readInt();
+            accessFile.seek(0);
+            while (accessFile.getFilePointer() < accessFile.length()) {
+                int pIndex = accessFile.readInt();
                 bm.addPieceComplete(pIndex);
-                pieceIndexToOffSet.put(pIndex, raf.getFilePointer());
+                pieceIndexToOffSet.put(pIndex, accessFile.getFilePointer());
                 int i = getSizeFrom(pIndex);
-                raf.skipBytes(i);
+                accessFile.skipBytes(i);
             }
 
             return;
         }
 
         //ok neither exist. lets make this now.
-        if (f.getParent() != null) {
-            File fp = new File(f.getParent());
+        if (myFile.getParent() != null) {
+            File fp = new File(myFile.getParent());
             fp.mkdirs();
         }
-        raf = new RandomAccessFile(f, "rw");
+        accessFile = new RandomAccessFile(myFile, "rw");
     }
 
     public long getOffSet() {
@@ -129,8 +156,8 @@ public class FileResource {
                 fStart = 0;
             }
 
-            raf.seek(fileOff);
-            return raf.read(b, off, (int) (fEnd - fStart));//hot stuff
+            accessFile.seek(fileOff);
+            return accessFile.read(b, off, (int) (fEnd - fStart));//hot stuff
         }
         return 0;
     }
@@ -161,10 +188,10 @@ public class FileResource {
                 fStart = 0;
             }
 
-            raf.seek(raf.length());
-            raf.writeInt((int) p.pieceIndex);
-            long pt = raf.getFilePointer();
-            raf.write(p.finalPiece, offX, (int) (fEnd - fStart));
+            accessFile.seek(accessFile.length());
+            accessFile.writeInt((int) p.pieceIndex);
+            long pt = accessFile.getFilePointer();
+            accessFile.write(p.finalPiece, offX, (int) (fEnd - fStart));
             //check if complete. If it is change status.
             pieceIndexToOffSet.put((int) p.pieceIndex, pt);
             if (numPieces == pieceIndexToOffSet.size()) {
@@ -177,7 +204,7 @@ public class FileResource {
 
 
     public void close() throws IOException {
-        raf.close();
+        accessFile.close();
     }
 
     public boolean isComplete() {
@@ -217,25 +244,25 @@ public class FileResource {
             fStart = 0;
         }
 
-        raf.seek(fileOff);
+        accessFile.seek(fileOff);
         byte[] b = new byte[(int) (fEnd - fStart)];
-        raf.read(b);
+        accessFile.read(b);
         return b;// hot stuff
     }
 
     private void doCloseOut() throws IOException {
         isPartial = false;
         //check if some how the file exists. If does DELETE IT!
-        f = new File(topFolder + "\\" + pathAndName);
-        if (f.isFile()) {
-            f.delete();
+        myFile = new File(folder + "\\" + filename);
+        if (myFile.isFile()) {
+            myFile.delete();
         }
-        if (f.getParent() != null) {//Make dir's if needed
-            File dir = new File(f.getParent());
+        if (myFile.getParent() != null) {//Make dir's if needed
+            File dir = new File(myFile.getParent());
             dir.mkdirs();
         }
 
-        RandomAccessFile finalFile = new RandomAccessFile(f, "rw");//Open file
+        RandomAccessFile finalFile = new RandomAccessFile(myFile, "rw");//Open file
         long l = ((byteOffSet + length) % pieceLength);
         if (l == 0) {
             l = pieceLength;
@@ -248,8 +275,8 @@ public class FileResource {
             byte[] b = getPiece((int) s);
             finalFile.write(b);
         }
-        raf.close();
-        raf = finalFile;
+        accessFile.close();
+        accessFile = finalFile;
     }
 
     private long getIdeaFilePoint(int pieceNum) {
@@ -295,9 +322,9 @@ public class FileResource {
     }
 
     public void delete() throws IOException {
-        raf.close();
-        if (f != null) {
-            f.delete();
+        accessFile.close();
+        if (myFile != null) {
+            myFile.delete();
         }
     }
 
