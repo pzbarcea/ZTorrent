@@ -1,4 +1,4 @@
-package edu.umd.cs.ztorrent;
+package edu.umd.cs.ztorrent.message;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -159,47 +159,47 @@ public class MessageParser {
         PeerMessage PM;
         switch (buffer2[0]) {
             case 0:
-                return PM = new PeerMessage(PeerMessage.Type.CHOKE);
+                return PM = new PeerMessage(MessageType.CHOKE);
             case 1:
-                return PM = new PeerMessage(PeerMessage.Type.UNCHOKE);
+                return PM = new PeerMessage(MessageType.UNCHOKE);
             case 2:
-                return PM = new PeerMessage(PeerMessage.Type.INTERESTED);
+                return PM = new PeerMessage(MessageType.INTERESTED);
             case 3:
-                return PM = new PeerMessage(PeerMessage.Type.NOT_INTERESTED);
+                return PM = new PeerMessage(MessageType.NOT_INTERESTED);
             case 4:
-                PM = new PeerMessage(PeerMessage.Type.HAVE);
+                PM = new PeerMessage(MessageType.HAVE);
 
                 PM.piece = readUnsignedInt(buffer2, 1);
                 return PM;
             case 5:
-                PM = new PeerMessage(PeerMessage.Type.BIT_FILED);
+                PM = new PeerMessage(MessageType.BIT_FILED);
                 PM.bitfield = Arrays.copyOfRange(buffer2, 1, buffer2.length);
                 return PM;
             case 6:
-                PM = new PeerMessage(PeerMessage.Type.REQUEST);
+                PM = new PeerMessage(MessageType.REQUEST);
                 PM.index = readUnsignedInt(buffer2, 1);
                 PM.begin = readUnsignedInt(buffer2, 5);
                 PM.length = readUnsignedInt(buffer2, 9);
                 return PM;
             case 7:
-                PM = new PeerMessage(PeerMessage.Type.PIECE);
+                PM = new PeerMessage(MessageType.PIECE);
                 PM.index = readUnsignedInt(buffer2, 1);
                 PM.begin = readUnsignedInt(buffer2, 5);
                 PM.block = Arrays.copyOfRange(buffer2, 9, buffer2.length);
                 return PM;
             case 8:
-                PM = new PeerMessage(PeerMessage.Type.CANCEL);
+                PM = new PeerMessage(MessageType.CANCEL);
                 PM.index = readUnsignedInt(buffer2, 1);
                 PM.begin = readUnsignedInt(buffer2, 5);
                 PM.length = readUnsignedInt(buffer2, 9);
                 return PM;
             case 9:
-                PM = new PeerMessage(PeerMessage.Type.PORT);
+                PM = new PeerMessage(MessageType.PORT);
                 //TODO: WE SHALT SUPPORT
                 throw new RuntimeException("Not yet implemented: " + buffer2[0]);
             case 20:
                 //Extension message. We now support :-)
-                PM = new PeerMessage(PeerMessage.Type.EXTENSION);
+                PM = new PeerMessage(MessageType.EXTENSION);
                 PM.extensionID = buffer2[1];
                 PM.extension = Arrays.copyOfRange(buffer2, 2, buffer2.length);
                 return PM;
@@ -430,88 +430,4 @@ public class MessageParser {
             this.reserved = reserved;
         }
     }
-
-    public static class Response {
-        public final int index, begin;
-        public final byte[] block;
-
-        public Response(int index, int begin, byte[] block) {
-            this.index = index;
-            this.begin = begin;
-            this.block = block;
-        }
-
-        public Response(long index, long begin, byte[] block) {
-            this.index = (int) index;
-            this.begin = (int) begin;
-            this.block = block;
-        }
-    }
-
-    public static class Request {
-        public final int index, begin, len;
-        public final long creationTime = System.currentTimeMillis();
-        public long sentTime;
-        boolean sent = false;
-
-        public Request(int i, int b, int l) {
-            this.index = i;
-            this.begin = b;
-            this.len = l;
-        }
-
-        public Request(long i, long b, long l) {
-            this.index = (int) i;
-            this.begin = (int) b;
-            this.len = (int) l;
-        }
-
-        public boolean equals(Object o) {
-            if (o instanceof Request) {
-                Request r = (Request) o;
-                return r.index == index && begin == r.begin && len == r.len;
-            }
-            return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return index + begin + len;
-        }
-    }
-
-    //TODO: make Java appropriate.
-    public static class PeerMessage {
-        public final Type type;
-        ///UGHHHH. Bad. but not bad enough.
-        public byte[] bitfield;
-        public long piece;
-        public long index;
-        public long begin;
-        public long length;
-        public byte[] block;
-        public int port;
-        public int extensionID;
-        public byte[] extension;
-
-        public PeerMessage(Type t) {
-            type = t;
-        }
-
-        public enum Type {
-            CHOKE,
-            UNCHOKE,
-            INTERESTED,
-            NOT_INTERESTED,
-            HAVE,
-            BIT_FILED,
-            REQUEST,
-            PIECE,
-            CANCEL,
-            PORT,
-            EXTENSION
-        }
-    }
-
-    //TODO: Port.
 }

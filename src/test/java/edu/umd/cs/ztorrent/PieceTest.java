@@ -1,5 +1,6 @@
 package edu.umd.cs.ztorrent;
 
+import edu.umd.cs.ztorrent.message.MessageRequest;
 import org.junit.Test;
 
 import java.util.List;
@@ -9,7 +10,7 @@ public class PieceTest {
     public void testPiece() {
         //test the get blocks simple loop should confirm this thing as stable:
         Piece p = new Piece(0, 128 * 1024);
-        MessageParser.Request first = p.getNextBlock();
+        MessageRequest first = p.getNextBlock();
         boolean b;
         for (int i = 0; i < 8; i++) {
             b = p.addData(first.begin, new byte[first.len]);
@@ -21,8 +22,8 @@ public class PieceTest {
         //test our get all pieces function.
         p = new Piece(0, 128 * 1024);
         p.addData(64 * 1024, new byte[1024]);
-        List<MessageParser.Request> rList = p.getAllBlocksLeft();
-        for (MessageParser.Request r : rList) {
+        List<MessageRequest> rList = p.getAllBlocksLeft();
+        for (MessageRequest r : rList) {
             System.out.println("Block Size " + r.len);
             p.addData(r.begin, new byte[r.len]);
         }
@@ -32,7 +33,7 @@ public class PieceTest {
         p = new Piece(0, 128 * 1024);
         //p.addData(64*1024,new byte[1024]);
         rList = p.getAllBlocksLeft();
-        for (MessageParser.Request r : rList) {
+        for (MessageRequest r : rList) {
             System.out.println("Block Size " + r.len);
             p.addData(r.begin, new byte[r.len]);
         }
