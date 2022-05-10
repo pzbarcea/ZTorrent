@@ -238,7 +238,6 @@ public class DHTTracker extends Tracker {
 
         } catch (IOException e) {
             this.workingTracker = false;
-            this.error = "[WARNING] IOException: Can't'connect to host" + e.getMessage();
         }
 
     }

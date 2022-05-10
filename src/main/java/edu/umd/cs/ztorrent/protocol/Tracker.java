@@ -4,18 +4,7 @@ import edu.umd.cs.ztorrent.Torrent;
 
 import java.net.UnknownHostException;
 
-/**
- * Abstract torrent Tracker. Represents a tracker connection for a torrent.
- * <p>
- * 3 types of trackers:
- * UDP
- * DHT
- * HTTP
- *
- */
 public abstract class Tracker {
-    //wait time
-    protected String error;
     protected boolean workingTracker = true;
     private long time = 0;
 
@@ -27,21 +16,11 @@ public abstract class Tracker {
         return System.currentTimeMillis() - time;
     }
 
-    /**
-     * Internal call do find out if tracker can
-     * run.
-     *
-     * @return
-     */
     protected abstract long getWaitMS();
 
-    /**
-     * General call to tracker. May block, but usually not for too long.
-     */
     protected abstract void work();
 
     public void doWork() {
-//		System.out.println("Diff time: "+getTimeSinceWork());
         if (getTimeSinceWork() > getWaitMS() && workingTracker) {
             work();
             updateTimer();
@@ -50,51 +29,36 @@ public abstract class Tracker {
     }
 
     /**
-     * Adds newly found peers to the torrent.
-     *
-     * @param t
+     * Updates the peerlist to include newly discovered peers
      */
     public abstract void update(Torrent t);
 
     /***
-     * Called when torrent is no longer talking to
-     * peers
-     * @param t
+     * Closes the connection
      */
     public abstract void close(Torrent t);
 
     /***
-     * Called when torrent is completed downloading
-     * @param t
+     * Does the work to complete a torrent download
      */
     public void complete(Torrent t) {
     }
 
-    public void initialize(Torrent t) {
-    }
-    
     /**
-     * Error message will be set if
-     * isWorking is false
-     *
-     * @return
+     * Does the work needed to begin downloading a torrent
      */
-    public String getError() {
-        return error;
+    public void initialize(Torrent t) {
     }
 
     /**
-     * Makes UDP/HTTP/DHT-Tracker as url indicates.
-     *
-     * @param url
-     * @return
-     * @throws UnknownHostException
+     * Creates the proper type of Tracker, depending on the link inside the torrent file
+     * Tracker can be: HTTP, HTTPS, DHT, or UDP
+     * However, we currently do not support HTTPS (project spec doesn't require secured connections)
      */
     public static Tracker makeTracker(String url) throws UnknownHostException {
         if (url.startsWith("udp")) {
             return new UDPTracker(url);
         } else if (url.startsWith("magnet")) {
-            //doesnt matter we make regardless.
             return null;
         } else if (url.startsWith("http:")) {
             return new HTTPTracker(url);
@@ -104,5 +68,4 @@ public abstract class Tracker {
     }
 
     public abstract int totalPeersObtained();
-
 }

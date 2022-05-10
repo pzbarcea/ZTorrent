@@ -175,13 +175,12 @@ public class HTTPTracker extends Tracker {
                 System.out.println("Response: " + response.status);
                 System.out.println("ResponseOut:\n " + new String(response.body, StandardCharsets.UTF_8));
                 this.workingTracker = false;
-                this.error = new String(response.body, StandardCharsets.UTF_8);
             }
 
         } catch (Exception e) {
             this.workingTracker = false;
-            this.error = "[ERROR] " + e.getMessage();
         }
+
     }
 
     @Override
