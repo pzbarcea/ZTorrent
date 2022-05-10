@@ -16,19 +16,19 @@ public class UnitTests {
     @Test
     public void testBencoding() {
         String s = "4:spam";
-        Bencoding b0 = new Bencoding(s.getBytes(StandardCharsets.UTF_8));
+        Bencoder b0 = new Bencoder(s.getBytes(StandardCharsets.UTF_8));
         System.out.println("	Test0: " + "spam".equals(b0.getString()));
 
         String i = "i18296718e";
-        Bencoding b1 = new Bencoding(i.getBytes(StandardCharsets.UTF_8));
+        Bencoder b1 = new Bencoder(i.getBytes(StandardCharsets.UTF_8));
         System.out.println("	Test1: " + (18296718 == b1.integer));
 
         String l = "l4:spami42eli52eee";//List in list
-        Bencoding b2 = new Bencoding(l.getBytes(StandardCharsets.UTF_8));
+        Bencoder b2 = new Bencoder(l.getBytes(StandardCharsets.UTF_8));
         System.out.println("	Test2: " + ("spam".equals(b2.list.get(0).getString()) && 42 == b2.list.get(1).integer && 52 == b2.list.get(2).list.get(0).integer));
 //		
         String d = "d3:bar4:spam3:fooi42e5:listsl5:12345d3:foo3:fooeee";
-        Bencoding b3 = new Bencoding(d.getBytes(StandardCharsets.UTF_8));
+        Bencoder b3 = new Bencoder(d.getBytes(StandardCharsets.UTF_8));
         System.out.println("	Test3: " + ("spam".equals(b3.dictionary.get("bar").getString()) && 42 == b3.dictionary.get("foo").integer));
     }
 
@@ -142,7 +142,7 @@ public class UnitTests {
     @Test
     public void testMain() throws IOException {
         System.out.println("Dry-run tests (true = pass)");
-        System.out.println("Bencoding: ");
+        System.out.println("Bencoder: ");
         testBencoding();
         System.out.println("HTTP Response Parsing: ");
         parseHTTPResponse();

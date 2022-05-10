@@ -26,7 +26,7 @@ public class Torrent extends MetaTorrent {
     public final FileResource[] files;
     public long totalBytes;
     public final String name;
-    public final Bencoding pieceHash;
+    public final Bencoder pieceHash;
     private long downloaded;
     private final long uploaded;
     private final boolean haveFiles;
@@ -39,7 +39,7 @@ public class Torrent extends MetaTorrent {
 
 
     public Torrent(String name, int pieceLength, FileResource[] files,
-                   long totalBytes, byte[] byteStringHashInfo, String urlEncodedHash, Bencoding pieceHash, MetaData md, List<Tracker> trackers, String file) throws IOException {
+                   long totalBytes, byte[] byteStringHashInfo, String urlEncodedHash, Bencoder pieceHash, MetaData md, List<Tracker> trackers, String file) throws IOException {
         super(byteStringHashInfo, generateSessionKey(20).getBytes(StandardCharsets.UTF_8), md);
         this.numFiles = files.length;
         f = new File(file);

@@ -1,7 +1,7 @@
 package edu.umd.cs.ztorrent.protocol;
 
-import edu.umd.cs.ztorrent.Bencoding;
-import edu.umd.cs.ztorrent.Bencoding.Type;
+import edu.umd.cs.ztorrent.BencodeType;
+import edu.umd.cs.ztorrent.Bencoder;
 import edu.umd.cs.ztorrent.Torrent;
 
 import java.io.IOException;
@@ -58,7 +58,7 @@ public class DHTTracker extends Tracker {
                         clientSocket.receive(dp);
                         byte[] d = new byte[dp.getLength()];
                         System.arraycopy(dp.getData(), dp.getOffset(), d, 0, dp.getLength());
-                        Bencoding b = new Bencoding(d);
+                        Bencoder b = new Bencoder(d);
                         ID i = null;
                         if (b.dictionary.containsKey("r") && b.dictionary.get("r").dictionary.containsKey("id")) {
                             i = new ID(b.dictionary.get("r").dictionary.get("id").byteString);
@@ -260,24 +260,24 @@ public class DHTTracker extends Tracker {
      * @return
      * @throws UnsupportedEncodingException
      */
-    private Bencoding msgBase(ID id, String q, boolean r) throws UnsupportedEncodingException {
-        Bencoding b = new Bencoding();
-        b.type = Type.Dictionary;
-        b.dictionary = new HashMap<String, Bencoding>();
-        Bencoding a = new Bencoding();
-        a.type = Type.Dictionary;
-        a.dictionary = new HashMap<String, Bencoding>();
-        Bencoding i = new Bencoding();
+    private Bencoder msgBase(ID id, String q, boolean r) throws UnsupportedEncodingException {
+        Bencoder b = new Bencoder();
+        b.type = BencodeType.Dictionary;
+        b.dictionary = new HashMap<String, Bencoder>();
+        Bencoder a = new Bencoder();
+        a.type = BencodeType.Dictionary;
+        a.dictionary = new HashMap<String, Bencoder>();
+        Bencoder i = new Bencoder();
         i.byteString = id.id;
-        i.type = Type.String;
+        i.type = BencodeType.String;
 
 
-        b.dictionary.put("t", new Bencoding(q));
+        b.dictionary.put("t", new Bencoder(q));
         if (!r) {
-            b.dictionary.put("y", new Bencoding("q"));
+            b.dictionary.put("y", new Bencoder("q"));
             b.dictionary.put("a", a);
         } else {
-            b.dictionary.put("y", new Bencoding("r"));
+            b.dictionary.put("y", new Bencoder("r"));
             b.dictionary.put("r", a);
         }
         a.dictionary.put("id", i);
@@ -286,42 +286,42 @@ public class DHTTracker extends Tracker {
     }
 
     byte[] respondPing(ID n, String q) throws UnsupportedEncodingException {
-        Bencoding b = msgBase(id, q, true);
+        Bencoder b = msgBase(id, q, true);
         return b.toByteArray();
     }
 
     byte[] constructPing(ID id, String q) throws UnsupportedEncodingException {
-        Bencoding b = msgBase(id, q, false);
-        b.dictionary.put("q", new Bencoding("ping"));
+        Bencoder b = msgBase(id, q, false);
+        b.dictionary.put("q", new Bencoder("ping"));
         return b.toByteArray();
     }
 
     byte[] constructNodeResponse(ID id, String q, byte[] nodes) throws UnsupportedEncodingException {
-        Bencoding b = msgBase(id, q, true);
-        b.dictionary.get("r").dictionary.put("nodes", Bencoding.cBS(nodes));
+        Bencoder b = msgBase(id, q, true);
+        b.dictionary.get("r").dictionary.put("nodes", Bencoder.cBS(nodes));
         return b.toByteArray();
     }
 
     byte[] find_node(ID id, String q, byte[] target) throws UnsupportedEncodingException {
-        Bencoding b = msgBase(id, q, false);
-        b.dictionary.put("q", new Bencoding("find_node"));
-        Bencoding btarget = new Bencoding();
+        Bencoder b = msgBase(id, q, false);
+        b.dictionary.put("q", new Bencoder("find_node"));
+        Bencoder btarget = new Bencoder();
         btarget.byteString = target;
-        btarget.type = Type.String;
+        btarget.type = BencodeType.String;
         b.dictionary.get("a").dictionary.put("target", btarget);
         return b.toByteArray();
     }
 
     byte[] constructPeersResponseN(ID id, String q, byte[] nodes, byte[] token) throws UnsupportedEncodingException {
-        Bencoding b = msgBase(id, q, true);
-        b.dictionary.get("r").dictionary.put("token", Bencoding.cBS(token));
-        b.dictionary.get("r").dictionary.put("nodes", Bencoding.cBS(nodes));
+        Bencoder b = msgBase(id, q, true);
+        b.dictionary.get("r").dictionary.put("token", Bencoder.cBS(token));
+        b.dictionary.get("r").dictionary.put("nodes", Bencoder.cBS(nodes));
         return b.toByteArray();
     }
 
-    byte[] constructPeerResponseP(ID id, String q, Bencoding peers, byte[] token) throws UnsupportedEncodingException {
-        Bencoding b = msgBase(id, q, true);
-        b.dictionary.get("r").dictionary.put("token", Bencoding.cBS(token));
+    byte[] constructPeerResponseP(ID id, String q, Bencoder peers, byte[] token) throws UnsupportedEncodingException {
+        Bencoder b = msgBase(id, q, true);
+        b.dictionary.get("r").dictionary.put("token", Bencoder.cBS(token));
         b.dictionary.get("r").dictionary.put("values", peers);
         return b.toByteArray();
     }
@@ -331,37 +331,37 @@ public class DHTTracker extends Tracker {
     //The BitTorrent implementation uses the SHA1 hash of the IP address concatenated
     // onto a secret that changes every five minutes and tokens up to ten minutes old are accepted.
     byte[] get_peers(ID id, String q, byte[] infoHash) throws UnsupportedEncodingException {
-        Bencoding b = msgBase(id, q, false);
-        b.dictionary.put("q", new Bencoding("get_peers"));
-        Bencoding btarget = new Bencoding();
+        Bencoder b = msgBase(id, q, false);
+        b.dictionary.put("q", new Bencoder("get_peers"));
+        Bencoder btarget = new Bencoder();
         btarget.byteString = infoHash;
-        btarget.type = Type.String;
+        btarget.type = BencodeType.String;
         b.dictionary.get("a").dictionary.put("info_hash", btarget);
         System.out.println(new String(b.toByteArray(), StandardCharsets.UTF_8));
         return b.toByteArray();
     }
 
     byte[] constructAnnounceResponse(ID id, String q) throws UnsupportedEncodingException {
-        Bencoding b = msgBase(id, q, true);
+        Bencoder b = msgBase(id, q, true);
         return b.toByteArray();
     }
 
     byte[] announce_peer(ID id, String q, byte[] infoHash, byte[] token, boolean isport, int port) throws UnsupportedEncodingException {
-        Bencoding b = msgBase(id, q, false);
-        b.dictionary.put("q", new Bencoding("announce_peer"));
-        Bencoding btarget = new Bencoding();
+        Bencoder b = msgBase(id, q, false);
+        b.dictionary.put("q", new Bencoder("announce_peer"));
+        Bencoder btarget = new Bencoder();
         btarget.byteString = infoHash;
-        btarget.type = Type.String;
+        btarget.type = BencodeType.String;
         b.dictionary.get("a").dictionary.put("info_hash", btarget);
-        Bencoding btoken = new Bencoding();
+        Bencoder btoken = new Bencoder();
         btoken.byteString = token;
-        btoken.type = Type.String;
+        btoken.type = BencodeType.String;
         b.dictionary.get("a").dictionary.put("token", btoken);
-        b.dictionary.get("a").dictionary.put("port", new Bencoding("" + port));
+        b.dictionary.get("a").dictionary.put("port", new Bencoder("" + port));
         if (isport) {
-            b.dictionary.get("a").dictionary.put("implied_port", new Bencoding("1"));
+            b.dictionary.get("a").dictionary.put("implied_port", new Bencoder("1"));
         } else {
-            b.dictionary.get("a").dictionary.put("implied_port", new Bencoding("0"));
+            b.dictionary.get("a").dictionary.put("implied_port", new Bencoder("0"));
         }
         return b.toByteArray();
     }
@@ -457,10 +457,10 @@ public class DHTTracker extends Tracker {
                 if (rt.rt == RType.ping) {
                     actual.timeSinceLastRecv = System.currentTimeMillis();
                 } else if (rt.rt == RType.get_peers) {
-                    Bencoding r = p.b.dictionary.get("r");
+                    Bencoder r = p.b.dictionary.get("r");
                     if (r.dictionary.containsKey("values")) {
                         actual.gaveClients = true;
-                        for (Bencoding b : r.dictionary.get("values").list) {
+                        for (Bencoder b : r.dictionary.get("values").list) {
                             getPeers(b.byteString);
                         }
                         havePeers = true;
@@ -475,7 +475,7 @@ public class DHTTracker extends Tracker {
                     }
                 } else if (rt.rt == RType.find_node) {
                     actual.recved = true;
-                    Bencoding nodes = p.b.dictionary.get("nodes");
+                    Bencoder nodes = p.b.dictionary.get("nodes");
                     placeNodes(nodes.byteString);
                 } else if (rt.rt == RType.announce_peer) {
                     actual.recved = true;
@@ -509,7 +509,7 @@ public class DHTTracker extends Tracker {
                 if (!p.b.dictionary.containsKey("t")) {
                     continue;
                 }
-                Map<String, Bencoding> args = p.b.dictionary.get("a").dictionary;
+                Map<String, Bencoder> args = p.b.dictionary.get("a").dictionary;
                 String t = p.b.dictionary.get("t").getString();
 
                 byte[] d;
@@ -575,10 +575,10 @@ public class DHTTracker extends Tracker {
 
     private static class Packet {
 
-        Bencoding b;
+        Bencoder b;
         Node n;
 
-        public Packet(Bencoding b, Node n) {
+        public Packet(Bencoder b, Node n) {
             this.b = b;
             this.n = n;
         }

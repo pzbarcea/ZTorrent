@@ -39,7 +39,7 @@ public class PieceManager {
     int pieceLength;
     FileResource[] files;
     public final BitMap bitmap;
-    private final Bencoding shaPieces;
+    private final Bencoder shaPieces;
 
     /**
      * @param folderPath
@@ -49,7 +49,7 @@ public class PieceManager {
      * @param pieces
      * @throws FileNotFoundException
      */
-    public PieceManager(FileResource[] files, int cacheBytes, int pieceLength, long totalBytes, Bencoding b)
+    public PieceManager(FileResource[] files, int cacheBytes, int pieceLength, long totalBytes, Bencoder b)
             throws FileNotFoundException {
         this.shaPieces = b;
         this.pieceLength = pieceLength;

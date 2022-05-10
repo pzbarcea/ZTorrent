@@ -1,13 +1,8 @@
 package edu.umd.cs.ztorrent.protocol;
 
-import edu.umd.cs.ztorrent.Bencoding;
-import edu.umd.cs.ztorrent.Bencoding.Type;
-import edu.umd.cs.ztorrent.HttpResponse;
+import edu.umd.cs.ztorrent.*;
 import edu.umd.cs.ztorrent.HttpResponse.HeaderType;
-import edu.umd.cs.ztorrent.Torrent;
-import edu.umd.cs.ztorrent.TorrentParser;
 
-import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -125,9 +120,9 @@ public class HTTPTracker extends Tracker {
             System.out.println("Unknown:\n " + response.headerMap.get(HeaderType.UKNOWN));
             System.out.println("\n\n");
             if (response.status == 200) {
-                Bencoding b;
+                Bencoder b;
                 try {
-                    b = new Bencoding(response.body);
+                    b = new Bencoder(response.body);
                 } catch (Exception ex) {
                     System.out.println("Tracker Connected. But response Not BENCODED?!");
                     ex.printStackTrace();
@@ -139,7 +134,7 @@ public class HTTPTracker extends Tracker {
                 } else {
                     System.out.println("Tracker Results: ");
                     wait = b.dictionary.get("interval").integer * 1000;
-                    if (b.dictionary.get("peers").type == Type.String) {
+                    if (b.dictionary.get("peers").type == BencodeType.String) {
                         byte[] peers = b.dictionary.get("peers").byteString;
                         for (int i = 0; i < peers.length / 6; i++) {
                             byte[] addr = new byte[4];
@@ -151,9 +146,9 @@ public class HTTPTracker extends Tracker {
                             total++;
                         }
 
-                    } else if (b.dictionary.get("peers").type == Type.List) {
-                        List<Bencoding> list = b.dictionary.get("peers").list;
-                        for (Bencoding dict : list) {
+                    } else if (b.dictionary.get("peers").type == BencodeType.List) {
+                        List<Bencoder> list = b.dictionary.get("peers").list;
+                        for (Bencoder dict : list) {
                             InetAddress ip = InetAddress.getByName(new String(dict.dictionary.get("ip").byteString, StandardCharsets.UTF_8));
                             int port = new Integer(new String(dict.dictionary.get("ip").byteString, StandardCharsets.UTF_8));
                             torrent.addPeer(ip, port, null);

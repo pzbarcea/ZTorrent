@@ -70,9 +70,9 @@ public class TorrentParser {
         int len = (int) file.length();
         byte[] data = new byte[len];
         Files.newInputStream(file.toPath()).read(data);
-        Bencoding encoding = new Bencoding(data);
+        Bencoder encoding = new Bencoder(data);
 
-        Bencoding info = encoding.dictionary.get("info");
+        Bencoder info = encoding.dictionary.get("info");
         String name = info.dictionary.get("name").getString();
         byte[] byteStringHashInfo = SHAsum(info.toByteArray());
         String urlEncodedHash = urlEncode(byteStringHashInfo);
@@ -80,15 +80,15 @@ public class TorrentParser {
         int numFiles;
         FileResource[] dfiles;
         if (info.dictionary.containsKey("files")) {//multiple files
-            Bencoding files = info.dictionary.get("files");
+            Bencoder files = info.dictionary.get("files");
             numFiles = files.list.size();
             dfiles = new FileResource[numFiles];
             int i = 0;
-            for (Bencoding b : files.list) {
+            for (Bencoder b : files.list) {
                 long integ = b.dictionary.get("length").integer;
 
                 String dlFilePath = "";
-                for (Bencoding e : b.dictionary.get("path").list) {
+                for (Bencoder e : b.dictionary.get("path").list) {
                     dlFilePath += e.getString();
                 }
                 dfiles[i] = new FileResource(name, dlFilePath, new Long(integ), totalBytes);
@@ -110,7 +110,7 @@ public class TorrentParser {
         }
 
         if (encoding.dictionary.containsKey("announce-list")) {
-            for (Bencoding b : encoding.dictionary.get("announce-list").list) {
+            for (Bencoder b : encoding.dictionary.get("announce-list").list) {
                 t = Tracker.makeTracker(b.list.get(0).getString());
                 if (t != null) {
                     trackers.add(t);
@@ -119,7 +119,7 @@ public class TorrentParser {
         }
 
         int pieceLength = (int) ((long) (info.dictionary.get("piece length").integer));//TODO: Rofl! yeah why cant i just do new Integer()?
-        Bencoding pieceHashes = info.dictionary.get("pieces");
+        Bencoder pieceHashes = info.dictionary.get("pieces");
 
 
         Torrent torrent = new Torrent(name, pieceLength, dfiles, totalBytes, byteStringHashInfo, urlEncodedHash, pieceHashes, new MetaData(info), trackers, filePath);

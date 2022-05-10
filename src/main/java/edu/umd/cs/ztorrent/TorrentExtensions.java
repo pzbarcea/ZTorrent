@@ -1,7 +1,5 @@
 package edu.umd.cs.ztorrent;
 
-import edu.umd.cs.ztorrent.Bencoding.Type;
-
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 
@@ -28,21 +26,21 @@ public class TorrentExtensions {
 
     /////////////////// "Extension for Peers to Send Metadata Files" /////////////////////
     public final static byte[] getMetaDataPiece(byte id, int piece) {
-        Bencoding b = new Bencoding();
-        b.type = Type.Dictionary;
-        b.dictionary = new HashMap<String, Bencoding>();
-        b.dictionary.put("msg_type", new Bencoding(0));
-        b.dictionary.put("piece", new Bencoding(piece));
+        Bencoder b = new Bencoder();
+        b.type = BencodeType.Dictionary;
+        b.dictionary = new HashMap<String, Bencoder>();
+        b.dictionary.put("msg_type", new Bencoder(0));
+        b.dictionary.put("piece", new Bencoder(piece));
         return constructExtention(id, b.toByteArray());
     }
 
     public final static byte[] pushMetaDataPiece(byte id, int piece, byte[] block) {
-        Bencoding b = new Bencoding();
-        b.type = Type.Dictionary;
-        b.dictionary = new HashMap<String, Bencoding>();
-        b.dictionary.put("msg_type", new Bencoding(1));
-        b.dictionary.put("piece", new Bencoding(piece));
-        b.dictionary.put("total_size", new Bencoding(block.length));
+        Bencoder b = new Bencoder();
+        b.type = BencodeType.Dictionary;
+        b.dictionary = new HashMap<String, Bencoder>();
+        b.dictionary.put("msg_type", new Bencoder(1));
+        b.dictionary.put("piece", new Bencoder(piece));
+        b.dictionary.put("total_size", new Bencoder(block.length));
         byte[] dic = b.toByteArray();
         byte[] r = new byte[dic.length + block.length];
         System.arraycopy(dic, 0, r, 0, dic.length);
@@ -51,11 +49,11 @@ public class TorrentExtensions {
     }
 
     public final static byte[] rejectMetaDataPiece(byte id, int piece) {
-        Bencoding b = new Bencoding();
-        b.type = Type.Dictionary;
-        b.dictionary = new HashMap<String, Bencoding>();
-        b.dictionary.put("msg_type", new Bencoding(2));
-        b.dictionary.put("piece", new Bencoding(piece));
+        Bencoder b = new Bencoder();
+        b.type = BencodeType.Dictionary;
+        b.dictionary = new HashMap<String, Bencoder>();
+        b.dictionary.put("msg_type", new Bencoder(2));
+        b.dictionary.put("piece", new Bencoder(piece));
         return constructExtention(id, b.toByteArray());
     }
     //\\\\\\\\\\\\\\\\ "Extension for Peers to Send Metadata Files" \\\\\\\\\\\\\\\\\\\\

@@ -20,7 +20,7 @@ public class MetaData {
     boolean started = false;
     Random random = new Random();
 
-    public MetaData(Bencoding infoDic) throws FileNotFoundException {
+    public MetaData(Bencoder infoDic) throws FileNotFoundException {
         complete = true;
         metaData = infoDic.toByteArray();
     }

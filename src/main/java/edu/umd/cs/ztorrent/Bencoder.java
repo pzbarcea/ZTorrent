@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -13,55 +12,62 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * Functions used for
+ * From Bencode wikipedia page:
+ * Bencode (pronounced like Ben-code) is the encoding used by the peer-to-peer file sharing system BitTorrent for storing and transmitting loosely structured data.
+ *
+ * This class holds functions used for encoding and decoding(parsing) messages to and from torrent clients
+ * A lot of parsing is involved in processing the messages
+ *
+ * The format/algorithm is given in the wikipedia page
+ * <a href="https://en.wikipedia.org/wiki/Bencode">https://en.wikipedia.org/wiki/Bencode</a>
+ *
+ * References:
+ * https://github.com/dampcake/bencode
+ * https://wiki.theory.org/BitTorrentSpecification#Bencoding
+ * https://stackoverflow.com/questions/1664124/bencoding-binary-data-in-java-strings
  */
-//TODO: create toBytes() for completeness.
-//TODO CONVERT TO LONG
-public class Bencoding {
-    public enum Type {String, Dictionary, List, Integer}
-
-    public Type type;
-    public List<Bencoding> list;
-    public Map<String, Bencoding> dictionary;
+public class Bencoder {
+    public BencodeType type;
+    public List<Bencoder> list;
+    public Map<String, Bencoder> dictionary;
     public byte[] byteString;
     public Long integer;
     byte[] tmp;
 
-    public Bencoding() {
+    public Bencoder() {
     }
 
-	public Bencoding(String s) throws UnsupportedEncodingException {
-        this.type = Type.String;
+	public Bencoder(String s)  {
+        this.type = BencodeType.String;
         this.byteString = s.getBytes(StandardCharsets.UTF_8);
     }
 
-    public Bencoding(long i) {
-        this.type = Type.Integer;
+    public Bencoder(long i) {
+        this.type = BencodeType.Integer;
         this.integer = i;
     }
 
-    public static Bencoding cBS(byte[] b) {
-        Bencoding ben = new Bencoding();
+    public static Bencoder cBS(byte[] b) {
+        Bencoder ben = new Bencoder();
         ben.byteString = b;
-        ben.type = Bencoding.Type.String;
+        ben.type = BencodeType.String;
         return ben;
     }
 
-    public Bencoding(byte[] data) {
+    public Bencoder(byte[] data) {
         try {
             if (data.length < 2) {
-                throw new RuntimeException("Not valid b-encoding");
+                throw new RuntimeException("Data is not bencoded properly");
             }
 
 
             getBencoding(data, 0, data.length, this);
         } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
 
-    public static int getBencoding(byte[] data, int start, int len, Bencoding r) throws UnsupportedEncodingException {
+    public static int getBencoding(byte[] data, int start, int len, Bencoder r) throws UnsupportedEncodingException {
         if (data[start] == 'i') {
             int dist = -1;
             for (int i = start + 1; i < len; i++) {
@@ -71,14 +77,14 @@ public class Bencoding {
                 }
             }
             if (dist == -1) {
-                throw new RuntimeException("Beneconding failed on integer!");
+                throw new RuntimeException("Bencoding failed on integer!");
             }
             byte[] integer = new byte[dist - 1 - start];
             //src dst
             System.arraycopy(data, start + 1, integer, 0, dist - 1 - start);
             String str = new String(integer, 0, integer.length, StandardCharsets.UTF_8);
             r.integer = new Long(str);
-            r.type = Type.Integer;
+            r.type = BencodeType.Integer;
             r.tmp = new byte[dist + 1 - start];
             System.arraycopy(data, start, r.tmp, 0, dist + 1 - start);
             return dist + 1 - start;//distance 'consumed'
@@ -86,28 +92,28 @@ public class Bencoding {
 			/* List: l<item1><item2>e
 	           Dict: d<string1><item1><string2><item2>e*/
             boolean dict = false;
-            r.type = Type.List;
+            r.type = BencodeType.List;
             int cur = start + 1;
             if (data[start] == 'd') {
                 dict = true;
-                r.type = Type.Dictionary;
-                r.dictionary = new LinkedHashMap<String, Bencoding>();
+                r.type = BencodeType.Dictionary;
+                r.dictionary = new LinkedHashMap<String, Bencoder>();
             } else {
-                r.list = new LinkedList<Bencoding>();
+                r.list = new LinkedList<Bencoder>();
             }
 
             while (cur < len && data[cur] != 'e') {
                 if (dict) {
                     //get string
-                    Bencoding string = new Bencoding();
+                    Bencoder string = new Bencoder();
                     cur += getBencoding(data, cur, len, string);
                     //get element
-                    Bencoding elem = new Bencoding();
+                    Bencoder elem = new Bencoder();
                     cur += getBencoding(data, cur, len, elem);
                     //put!
                     r.dictionary.put(string.getString(), elem);
                 } else {
-                    Bencoding elem = new Bencoding();
+                    Bencoder elem = new Bencoder();
                     cur += getBencoding(data, cur, len, elem);
                     r.list.add(elem);
                 }
@@ -124,7 +130,7 @@ public class Bencoding {
                 }
             }
             if (dist == -1) {
-                throw new RuntimeException("Beneconding failed on String!");
+                throw new RuntimeException("Bencoding failed on String!");
             }
             byte[] integer = new byte[dist - start];
             //src dst
@@ -133,7 +139,7 @@ public class Bencoding {
             byte[] string = new byte[slen];
             System.arraycopy(data, dist + 1, string, 0, slen);
             r.byteString = string;
-            r.type = Type.String;
+            r.type = BencodeType.String;
             r.tmp = new byte[dist + slen + 1 - start];
             System.arraycopy(data, start, r.tmp, 0, dist + slen + 1 - start);
             return dist + slen + 1 - start;
@@ -146,9 +152,9 @@ public class Bencoding {
         try {
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             OutputStream baos = bo;
-            if (this.type == Type.Dictionary) {
+            if (this.type == BencodeType.Dictionary) {
                 baos.write('d');
-                for (Entry<String, Bencoding> s : dictionary.entrySet()) {
+                for (Entry<String, Bencoder> s : dictionary.entrySet()) {
                     byte[] bytes = s.getKey().getBytes(StandardCharsets.UTF_8);
                     String l = Long.toString(bytes.length);
                     baos.write(l.getBytes(StandardCharsets.UTF_8));
@@ -157,14 +163,14 @@ public class Bencoding {
                     baos.write(s.getValue().toByteArray());
                 }
                 baos.write('e');
-            } else if (this.type == Type.Integer) {
+            } else if (this.type == BencodeType.Integer) {
                 baos.write('i');
                 String s = integer.toString();
                 baos.write(s.getBytes(StandardCharsets.UTF_8));
                 baos.write('e');
-            } else if (this.type == Type.List) {
+            } else if (this.type == BencodeType.List) {
                 baos.write('l');
-                for (Bencoding b : list) {
+                for (Bencoder b : list) {
                     baos.write(b.toByteArray());
                 }
                 baos.write('e');

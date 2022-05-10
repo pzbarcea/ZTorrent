@@ -162,8 +162,8 @@ public class MetaConnection {
         try {
 
             if (id == 0) {
-                Bencoding b = new Bencoding(msg);
-                Bencoding m = b.dictionary.get("m");
+                Bencoder b = new Bencoder(msg);
+                Bencoder m = b.dictionary.get("m");
                 extensions = new HashMap<String, Integer>();
                 revExtensions = new HashMap<Integer, String>();
                 for (String s : m.dictionary.keySet()) {
@@ -193,8 +193,8 @@ public class MetaConnection {
                 String e = revExtensions.get(id);
                 if (e.equals("ut_metadata")) {
                     byte ourExtension = 3;
-                    Bencoding b = new Bencoding();
-                    int off = Bencoding.getBencoding(msg, 0, msg.length, b);
+                    Bencoder b = new Bencoder();
+                    int off = Bencoder.getBencoding(msg, 0, msg.length, b);
                     long i = b.dictionary.get("msg_type").integer;
                     int piece = (int) (long) b.dictionary.get("piece").integer;
                     byte[] left = new byte[msg.length - off];
