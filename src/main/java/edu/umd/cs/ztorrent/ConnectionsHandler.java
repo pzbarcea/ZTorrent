@@ -14,24 +14,45 @@ import java.util.*;
  * are completed
  */
 public class ConnectionsHandler {
+    /**
+     * Represents the status of a connection
+     * For each connection, we have a set of pieces that are currently queued (in use)
+     * and a list of pieces that are "buffered"
+     *
+     * Buffered pieces are stored as MessageRequests for specific pieces that we will send later, once we have
+     * more space in the queue to add these new pieces
+     */
     private class ConnectionStatus {
         Set<Piece> queuedPieces = new TreeSet<>();
         LinkedList<MessageRequest> requestsToSend = new LinkedList<>();
     }
 
-    //List of things disseminated
+    //Maps the specific connection to its connection status (the pieces it has queued, plus all the other piece requests it has queued)
     private final Map<PeerConnection, ConnectionStatus> clientToPieceSet = new HashMap<>();
+
+    //Maps a piece to all the clients that have requested it. Useful because we need to know who to transfer a piece to
     private final Map<Piece, List<PeerConnection>> pieceToClients = new HashMap<>();
-    private final Set<Piece> currentQueue = new TreeSet<>();//Queued up pieces. But none given out.
-    private final Map<Integer, Piece> disseminatedPiecesToCompete = new HashMap<>();//pieces that are given to at least 1 connection
-    private final Map<Integer, Piece> otherPiecesGettingComplete = new HashMap<>();//(why? well we don't exactly know.)
+
+    //The set of pieces that need to be added eventually (we have a maximum number of piece requested at a time)
+    private final Set<Piece> currentQueue = new TreeSet<>();
+
+    //Maps the pieces that are currently in use by >= 1 connection
+    private final Map<Integer, Piece> disseminatedPiecesToCompete = new HashMap<>();
+
+    //Maps the pieces that are finished or finishing
+    private final Map<Integer, Piece> otherPiecesGettingComplete = new HashMap<>();
+
+    //Represents the set of pieces that have finished. Used by the PeerWorker to track which pieces finished (and also for the
+    // CLI and GUI to print out which pieces finished so we know we are progressing in the download)
+    // TODO: Can we use this to update the download bar in the GUI?
     private List<Piece> recentlyCompleted = new ArrayList<>();
 
-    public void connectionCleanUp(PeerConnection mc) {
+    public void destroyConnection(PeerConnection mc) {
         Piece[] ps = clientToPieceSet.get(mc).queuedPieces.toArray(new Piece[0]);
         for (Piece p : ps) {
             cancelPieceForConnection(mc, (int) p.pieceIndex);
         }
+
         clientToPieceSet.remove(mc);
     }
 
@@ -47,16 +68,24 @@ public class ConnectionsHandler {
      * @param maxPieces
      * @param mc
      */
-    public void enqueuePieces(int maxPieces, PeerConnection mc) {
+
+    /**
+     *
+     * Continues to add pieces from the current ongoing pieces queue to the
+     *
+     * @param maxPieces - the maximum size of the queue. We should not exceed this size to maintain some efficiency
+     * @param connection - the connection to a specific Peer that we need to communicate with
+     */
+    public void enqueuePieces(int maxPieces, PeerConnection connection) {
         Iterator<Piece> iter = currentQueue.iterator();
-        ConnectionStatus cstatus = clientToPieceSet.get(mc);
+        ConnectionStatus cstatus = clientToPieceSet.get(connection);
         while (iter.hasNext()) {
             Piece p = iter.next();
             if (cstatus.queuedPieces.size() + 1 > maxPieces) {
                 break;
             }
 
-            if (mc.getPeerBitmap().hasPiece((int) p.pieceIndex)) {
+            if (connection.getPeerBitmap().hasPiece((int) p.pieceIndex)) {
                 //TO ENSURE SAME PIECE IS SHARED IN MULTI-QUE CASES
                 Piece piece = disseminatedPiecesToCompete.get((int) p.pieceIndex);
                 if (piece == null) {
@@ -66,7 +95,7 @@ public class ConnectionsHandler {
                 if (lMC == null) {
                     lMC = new ArrayList<>();
                 }
-                lMC.add(mc);
+                lMC.add(connection);
                 pieceToClients.put(piece, lMC);
                 cstatus.queuedPieces.add(piece);
                 cstatus.requestsToSend.addAll(piece.getAllBlocksLeft());
@@ -127,6 +156,7 @@ public class ConnectionsHandler {
         if (recentlyCompleted.size() == 0) {
             return null;
         }
+
         List<Piece> plist = recentlyCompleted;
         recentlyCompleted = new ArrayList<>();
         return plist;

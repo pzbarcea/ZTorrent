@@ -33,11 +33,12 @@ public class PeerWorker implements Torrentable {
     private final Set<Integer> cleaningList = new HashSet<Integer>();
     private final long start = System.currentTimeMillis();
 
-    private void connectionCleanUp(PeerConnection mc) {
-        connectionsHandler.connectionCleanUp(mc);
+    private void destroyConnection(PeerConnection mc) {
+        connectionsHandler.destroyConnection(mc);
         try {
-            mc.shutDown();
+            mc.tearDown();
         } catch (IOException e) {
+            System.out.println("[ERROR] Could not tear down connection. Got IOException on socket close.");
         }
     }
 
@@ -262,7 +263,7 @@ public class PeerWorker implements Torrentable {
 
     private void close(Torrent t, Iterator<PeerConnection> itor, PeerConnection mc) {
         itor.remove();
-        connectionCleanUp(mc);
+        destroyConnection(mc);
         haveAccumulator = 1;//just set so can recalculate.
         t.pm.bitmap.removePeerMap(mc.getPeerBitmap());
     }

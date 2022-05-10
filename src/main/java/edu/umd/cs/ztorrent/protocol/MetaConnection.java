@@ -319,7 +319,7 @@ public class MetaConnection {
         }
     }
 
-    public void shutDown() throws IOException {
+    public void tearDown() throws IOException {
         sock.close();
         conState = ConnectionState.closed;
     }
