@@ -22,9 +22,9 @@ public class TorrentUI extends JFrame implements ActionListener {
     JFileChooser filePicker;
     JButton resumeButton;
     JButton pauseButton;
-    JButton openButton;
+    JButton addButton;
     JButton deleteButton;
-    JSplitPane mainPane;
+    JPanel mainPane;
 
     public TorrentUI(TorrentClient client) {
         this.client = client;
@@ -38,14 +38,13 @@ public class TorrentUI extends JFrame implements ActionListener {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> client.on = false));
 
-        setSize(600, 450);
-        openButton = new JButton("Open");
+        addButton = new JButton("Add");
         resumeButton = new JButton("Resume");
         pauseButton = new JButton("Pause");
         deleteButton = new JButton("Remove");
 
         JPanel topPanel = new JPanel(new GridLayout(1, 5));
-        topPanel.add(openButton);
+        topPanel.add(addButton);
         topPanel.add(resumeButton);
         topPanel.add(pauseButton);
         topPanel.add(deleteButton);
@@ -63,18 +62,14 @@ public class TorrentUI extends JFrame implements ActionListener {
         torrentList.setGridColor(Color.GRAY);
         torrentList.setFillsViewportHeight(true);
         torrentList.setPreferredSize(new Dimension(500, 300));
-
-        JPanel bottom = new JPanel();
-        bottom.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        torrentList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        torrentList.getColumnModel().getColumn(0).setPreferredWidth(200);
 
         GridBagLayout experimentLayout = new GridBagLayout();
         this.setLayout(experimentLayout);
 
         GridBagConstraints c = new GridBagConstraints();
-        mainPane = new JSplitPane();
-        mainPane.setTopComponent(scrollPane);
-        mainPane.setBottomComponent(bottom);
-        mainPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
+        mainPane = new JPanel();
 
         c.fill = GridBagConstraints.HORIZONTAL;
         c.anchor = GridBagConstraints.PAGE_START;
@@ -90,14 +85,13 @@ public class TorrentUI extends JFrame implements ActionListener {
         c.weighty = 1;
         c.gridx = 0;
         c.gridy = 1;
-        this.add(mainPane, c);
-        openButton.addActionListener(this);
+        this.add(scrollPane, c);
+        addButton.addActionListener(this);
         pauseButton.addActionListener(this);
         deleteButton.addActionListener(this);
         resumeButton.addActionListener(this);
 
         filePicker = new JFileChooser();
-        mainPane.setDividerLocation(265); //TODO: CHANGE
         this.pack();
         setTitle("zTorrent Client");
         setLocationRelativeTo(null);
@@ -107,7 +101,7 @@ public class TorrentUI extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
 
-        if (e.getSource() == openButton) {
+        if (e.getSource() == addButton) {
             int returnVal = filePicker.showOpenDialog(TorrentUI.this);
 
             if (returnVal == JFileChooser.APPROVE_OPTION) {
@@ -154,8 +148,10 @@ public class TorrentUI extends JFrame implements ActionListener {
 
         TorrentClient client = new TorrentClient();
         final TorrentUI ex = new TorrentUI(client);
+        ex.setSize(1000, 300);
         SwingUtilities.invokeLater(() -> ex.setVisible(true));
 
         client.mainLoop();
     }
+
 }

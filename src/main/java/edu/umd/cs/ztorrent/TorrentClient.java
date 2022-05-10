@@ -141,16 +141,22 @@ public class TorrentClient extends AbstractTableModel {
                 name = "Size";
                 break;
             case 2:
-                name = "Status";
+                name = "Downloaded";
                 break;
             case 3:
-                name = "Down Speed";
+                name = "Status";
                 break;
             case 4:
-                name = "Up Speed";
+                name = "Down Speed";
                 break;
             case 5:
+                name = "Up Speed";
+                break;
+            case 6:
                 name = "Peers";
+                break;
+            case 7:
+                name = "Uploaded";
                 break;
         }
         return name;
@@ -159,7 +165,7 @@ public class TorrentClient extends AbstractTableModel {
     @Override
     public int getColumnCount() {
         // TODO Auto-generated method stub
-        return 6;
+        return 8;
     }
 
     @Override
@@ -204,17 +210,21 @@ public class TorrentClient extends AbstractTableModel {
             case 1:
                 return byteCountToDisplaySize(t.totalBytes);
             case 2:
+                return byteCountToDisplaySize(t.getDownloaded());
+            case 3:
                 String progress = ratioPercentageToDisplay(t.totalBytes, t.getLeftToDownload());
                 if (t.getStatus().equals("Checking files")) {
                     progress = "Checking files " + progress;
                 }
                 return progress;
-            case 3:
-                return t.getRecentDownRate();// (bytes/ms)=kb/s
             case 4:
-                return t.getRecentUpRate();
+                return byteCountToDisplaySize(t.getRecentDownRate() * 1000) + "/s";// (bytes/ms)=kb/s
             case 5:
+                return t.getRecentUpRate();
+            case 6:
                 return t.getPeers().size();
+            case 7:
+                return t.getUploaded();
         }
         return null;
     }
