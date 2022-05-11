@@ -1,7 +1,7 @@
 package edu.umd.cs.ztorrent.protocol;
 
 import edu.umd.cs.ztorrent.*;
-import edu.umd.cs.ztorrent.HttpResponse.HeaderType;
+import edu.umd.cs.ztorrent.HTTPResponse.HeaderType;
 
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
@@ -110,7 +110,7 @@ public class HTTPTracker extends Tracker {
             osw.write(getRequest);
             osw.flush();
 
-            HttpResponse response = new HttpResponse(socket.getInputStream());
+            HTTPResponse response = new HTTPResponse(socket.getInputStream());
             socket.close();
 
             System.out.println("Response Status: " + response.status);
