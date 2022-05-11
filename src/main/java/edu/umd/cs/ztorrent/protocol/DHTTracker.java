@@ -166,7 +166,7 @@ public class DHTTracker extends Tracker {
             if (closest != null && closest.canTalkToNode()) {
                 closest.lastQuery = nextFromLast(closest.lastQuery);
                 byte[] findNode = get_peers(id, closest.lastQuery, infoHash);
-                System.out.println("Asking: " + closest);
+                System.out.println("[STATUS] Asking: " + closest);
                 DatagramPacket dp0 = new DatagramPacket(findNode, findNode.length, closest.ip, closest.port);
                 clientSocket.send(dp0);
                 closest.timeSinceLastSent = System.currentTimeMillis();
@@ -186,7 +186,7 @@ public class DHTTracker extends Tracker {
                 }
             }
             for (Node n : connectionCleaner) {
-                System.out.println("Dropping: " + n.toString());
+                System.out.println("[STATUS] Dropping: " + n.toString());
                 idToNode.remove(n.nodeId);
                 idToRequestsO.remove(n.nodeId);
             }
@@ -210,10 +210,9 @@ public class DHTTracker extends Tracker {
 
             for (Node n : connectionCleaner) {
                 if (n.gaveClients) {
-                    System.out.println("Tried to drop a special one! " + n);
                     continue;
                 }
-                System.out.println("Dropping: " + n + " lower then top 40.");
+                System.out.println("[STATUS] Dropping: " + n + " < top 40.");
                 idToNode.remove(n.nodeId);
                 idToRequestsO.remove(n.nodeId);
             }
@@ -226,7 +225,7 @@ public class DHTTracker extends Tracker {
                     for (String s : rMap.keySet()) {
                         //If we have exceeded 30 seconds timeout, then we drop the request
                         if (System.currentTimeMillis() - rMap.get(s).timeCreated > 30 * 1000) {
-                            System.out.println("Dropping Request " + s + " on connection " + conId.toString());
+                            System.out.println("[STATUS] Dropping Request " + s + " on connection " + conId.toString());
                             packetCleaner.add(s);
                         }
                     }
@@ -337,7 +336,6 @@ public class DHTTracker extends Tracker {
         btarget.byteString = infoHash;
         btarget.type = BencodeType.String;
         b.dictionary.get("a").dictionary.put("info_hash", btarget);
-        System.out.println(new String(b.toByteArray(), StandardCharsets.UTF_8));
         return b.toByteArray();
     }
 
@@ -381,7 +379,7 @@ public class DHTTracker extends Tracker {
                 count++;
             }
         }
-        System.out.println("Added " + count + " nodes");
+        System.out.println("[STATUS] Added " + count + " nodes");
     }
 
     private void getPeers(byte[] peers) throws UnknownHostException {
@@ -390,7 +388,7 @@ public class DHTTracker extends Tracker {
             System.arraycopy(peers, i * 6, addr, 0, 4);
             InetAddress ip = InetAddress.getByAddress(addr);
             int port = ((peers[i * 6 + 4] & 0xFF) << 8 | (peers[i * 6 + 5] & 0xFF));
-            System.out.println("Peer: " + ip.getHostAddress() + ":" + port);
+            System.out.println("[PEER] " + ip.getHostAddress() + ":" + port);
             if (!Arrays.equals(ip.getAddress(), new byte[]{0, 0, 0, 0})) {
                 potentialPeers.add(new TorrentConnection(ip, port));
             }
@@ -451,7 +449,7 @@ public class DHTTracker extends Tracker {
                 Request rt = rMap.remove(s);
                 actual.drops = 0;
                 if (rt == null) {
-                    System.out.println("Got response but no matching request?");
+                    System.out.println("[WARNING] Got response, but no matching request");
                     continue;
                 }
                 if (rt.rt == RType.ping) {
@@ -484,10 +482,10 @@ public class DHTTracker extends Tracker {
 
             } else {
                 if (!idToNode.containsKey(p.n.nodeId)) {
-                    System.out.println("Got new node!");
+                    System.out.println("[STATUS] Got new node");
                     idToNode.put(p.n.nodeId, p.n);
                 } else {
-                    System.out.println("INVALID response (unsupported tracker)");
+                    System.out.println("[ERROR] Invalid response (unsupported tracker)");
                 }
                 p.n.timeSinceLastRecv = System.currentTimeMillis();
             }

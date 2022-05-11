@@ -248,57 +248,51 @@ public class PeerConnection extends TorrentConnection {
     protected void doDataIn(PeerMessage pm) {
         if (pm.type == MessageType.CHOKE) {
             this.peer_choking = true;
-            System.out.println(this + " choked us.");
+            System.out.println("[STATUS] " + this + " choked us.");
             ourRequests.clear();
         } else if (pm.type == MessageType.UNCHOKE) {
-            System.out.println(this + " unchoked us.");
+            System.out.println("[STATUS] " + this + " unchoked us.");
             this.peer_choking = false;
         } else if (pm.type == MessageType.INTERESTED) {
-            System.out.println(this + " intrested in us.");
+            System.out.println("[STATUS] " + this + " intrested in us.");
             this.peer_interested = true;
         } else if (pm.type == MessageType.NOT_INTERESTED) {
-            System.out.println(this + " not intrested in us.");
+            System.out.println("[STATUS] " + this + " not intrested in us.");
             this.peer_interested = false;
         } else if (pm.type == MessageType.HAVE) {
-            System.out.println(this + " has " + pm.piece);
-            if (!am_interested) {
-                System.out.println("Client sent us have! But WE AIN'T EVEN interested.");
-            }
+            System.out.println("[STATUS] " + this + " has " + pm.piece);
             if (!peerPieceOrganizer.hasPiece((int) pm.piece)) {
                 peerPieceOrganizer.addPieceComplete(pm.piece);
                 have++;
-            } else {
-                System.out.println("Bugs. Maybe it was " + pm.piece);
             }
 
         } else if (pm.type == MessageType.BIT_FILED) {
-            System.out.println("Got bitmap from " + this);
+            System.out.println("[STATUS] Got bitmap from " + this);
             if (peerPieceOrganizer.getCompletedPieces() == 0) {
                 peerPieceOrganizer.setBitMap(pm.bitfield);
                 have = peerPieceOrganizer.getCompletedPieces();
-                System.out.println("Has " + have + " of " + peerPieceOrganizer.getNumberOfPieces());
+                System.out.println("[STATUS] Has " + have + " of " + peerPieceOrganizer.getNumberOfPieces());
             } else {
                 peerPieceOrganizer.setBitMap(pm.bitfield);
-                System.out.println("This wasn't first time. Playing games?" + this);
             }
 
         } else if (pm.type == MessageType.REQUEST) {
             peerRequests.add(new MessageRequest(pm.index, pm.begin, pm.length));
             if (am_choking) {
-                System.out.println("Recieved request but choking request!");
+                System.out.println("[STATUS] Received choking request");
             }
 
         } else if (pm.type == MessageType.CANCEL) {
             peerRequests.remove(new MessageRequest(pm.index, pm.begin, pm.length));
         } else if (pm.type == MessageType.PIECE) {
-            System.out.println("Got piece " + pm.index + " from " + this);
+            System.out.println("[STATUS] Got piece " + pm.index + " from " + this);
             MessageRequest r = new MessageRequest(pm.index, pm.begin, pm.block.length);
             MessageResponse rs = new MessageResponse(pm.index, pm.begin, pm.block);
             if (ourRequests.remove(r)) {
                 historySize++;
                 download += pm.block.length;
             } else {
-                System.out.println("Recieved Piece " + pm.index + "," + pm.begin + "," + pm.length + " but didnt send request!");
+                System.out.println("[STATUS] Recieved Piece " + pm.index + "," + pm.begin + "," + pm.length + " but didnt send request!");
             }
             peerSentBlocks.add(rs);
         } else if (pm.type == MessageType.EXTENSION) {

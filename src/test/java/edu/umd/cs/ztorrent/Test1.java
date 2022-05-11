@@ -14,7 +14,6 @@ public class Test1 {
     public void testDHTTracker() throws InterruptedException, NoSuchAlgorithmException, IOException {
 
         byte[] b = hexStringToByteArray("ffffffffffffffffffffffffffffffffffffffff");
-        System.out.println(b.length);
         BigInteger big = new BigInteger(1, b);
         System.out.println(String.format("%0" + (b.length << 1) + "X", big));
 

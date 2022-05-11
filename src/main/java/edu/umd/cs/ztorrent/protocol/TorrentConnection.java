@@ -110,7 +110,7 @@ public class TorrentConnection {
             if (!sentHandShake) {
                 sentHandShake = true;
                 mp.sendHandShake(sockOut, t.hashInfo, t.peerID);
-                System.out.println("Sent hand shake");
+                System.out.println("[STATUS] Sent hand shake");
             }
 
             if (!recvHandShake) {
@@ -118,7 +118,7 @@ public class TorrentConnection {
                 HandShake hs = mp.readHandShake(sockIn);
                 if (hs != null) {
                     if (peerID != null && !Arrays.equals(hs.peerID, peerID)) {
-                        System.out.println("WARNING: PRE CONNECTION PEER-ID MISMATCH!");
+                        System.out.println("[WARNING] Pre-connection peer ID mismatch");
                     }
 
                     infoHash = hs.hashInfo;
@@ -127,7 +127,7 @@ public class TorrentConnection {
 
 
                     if (!Arrays.equals(hs.hashInfo, t.hashInfo)) {
-                        System.out.println("INFO HASH DONT MATCH!");
+                        System.out.println("[WARNING] Info hash doesn't match");
                         conState = ConnectionState.closed;
                         sock.close();
                         return;
@@ -144,7 +144,7 @@ public class TorrentConnection {
                         mp.bitfield(sockOut, announcedMap);
                     }
                     recvHandShake = true;
-                    System.out.println("GOT HAND SHAKE!");
+                    System.out.println("[STATIS] Got handshake");
                 }
             } else {
                 mp.parseMessages(sockIn);
@@ -169,7 +169,6 @@ public class TorrentConnection {
                 extensions = new HashMap<String, Integer>();
                 revExtensions = new HashMap<Integer, String>();
                 for (String s : m.dictionary.keySet()) {
-                    System.out.println(s + ":" + (int) (long) m.dictionary.get(s).integer);
                     extensions.put(s, (int) (long) m.dictionary.get(s).integer);
                     revExtensions.put((int) (long) m.dictionary.get(s).integer, s);
                 }
@@ -220,12 +219,12 @@ public class TorrentConnection {
                         connectionSupportsMetaMeta = false;
                     }
                 } else {
-                    System.out.println("Unsupported protocol message: " + e);
+                    System.out.println("[WARNING] Unsupported protocol message: " + e);
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Couldnt decode bencoded dictionary!");
+            System.out.println("[ERROR] Couldn't decode bencoded dictionary!");
         }
 
     }
@@ -233,15 +232,15 @@ public class TorrentConnection {
     protected void doDataIn(PeerMessage pm) {
         if (pm.type == MessageType.CHOKE) {
             this.peer_choking = true;
-            System.out.println(this + " choked us.");
+            System.out.println("[STATUS]" + this + " choked us.");
         } else if (pm.type == MessageType.UNCHOKE) {
-            System.out.println(this + " unchoked us.");
+            System.out.println("[STATUS]" + this + " unchoked us.");
             this.peer_choking = false;
         } else if (pm.type == MessageType.INTERESTED) {
-            System.out.println(this + " interested in us.");
+            System.out.println("[STATUS]" + this + " interested in us.");
             this.peer_interested = true;
         } else if (pm.type == MessageType.NOT_INTERESTED) {
-            System.out.println(this + " not interested in us.");
+            System.out.println("[STATUS]" + this + " not interested in us.");
             this.peer_interested = false;
         } else if (pm.type == MessageType.EXTENSION) {
             doExtension(pm.extensionID, pm.extension);

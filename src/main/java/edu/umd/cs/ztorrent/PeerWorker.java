@@ -208,7 +208,7 @@ public class PeerWorker {
         }
 
         for (Integer p : toRemove) {
-            System.out.println("Time expired. " + p + " on " + mc);
+            System.out.println("[STATUS] Time expired. " + p + " on " + mc);
             mc.resetHistory();
             connectionsHandler.removePiece(mc, p);
         }
@@ -222,7 +222,7 @@ public class PeerWorker {
                 i = 1;
             }
             mc.setMaxRequests(i);
-            System.out.println("Dropping max queue for " + mc + " to " + i);
+            System.out.println("[WARNING] Dropping max queue for " + mc + " to " + i);
         }
     }
 
