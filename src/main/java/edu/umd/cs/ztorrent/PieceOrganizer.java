@@ -2,7 +2,7 @@ package edu.umd.cs.ztorrent;
 
 import java.util.*;
 
-/***
+/**
  * Keeps track of things related to our pieces, such as the total data, the size of each piece,
  * the number of total pieces there are, and the rarity of each individual piece
  */

@@ -322,9 +322,6 @@ public class TorrentConnection {
     }
 
     @Override
-    /***
-     * Returns a string representation of the connection, depending on if we have a peerID
-     */
     public String toString() {
         if (peerID != null) {
             BigInteger bi = new BigInteger(1, peerID);

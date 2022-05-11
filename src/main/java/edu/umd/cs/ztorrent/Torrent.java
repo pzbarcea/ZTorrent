@@ -12,11 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
-
-/****
- * Base class. Contains all the information of the torrent
- * @author pzbarcea
- */
 public class Torrent {
     public byte[] hashInfo;
     public byte[] peerID;

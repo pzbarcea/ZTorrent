@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 
-/***
+/**
  * zTorrent GUI
  */
 public class TorrentUI extends JFrame implements ActionListener {

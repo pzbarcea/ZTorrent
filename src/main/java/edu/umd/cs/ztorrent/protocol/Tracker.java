@@ -28,12 +28,12 @@ public abstract class Tracker {
 
     }
 
-    /**
+    /*
      * Updates the peerlist to include newly discovered peers
      */
     public abstract void update(Torrent t);
 
-    /***
+    /**
      * Closes the connection
      */
     public abstract void close(Torrent t);

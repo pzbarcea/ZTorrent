@@ -41,12 +41,12 @@ public class HTTPTracker extends Tracker {
     @Override
     public void initialize(Torrent t) {
         this.t = t;
-        work(t, Event.started);
+        process(t, Event.started);
     }
 
     @Override
     public void work() {
-        work(t, e);
+        process(t, e);
     }
 
     @Override
@@ -61,26 +61,21 @@ public class HTTPTracker extends Tracker {
 
     @Override
     public void close(Torrent t) {
-        work(t, Event.stopped);
+        process(t, Event.stopped);
     }
 
     @Override
     public void complete(Torrent t) {
-        work(t, Event.completed);
+        process(t, Event.completed);
     }
 
-    /***
-     * Updates torrent file with results from tracker
-     *
-     * Generates a GET request,
-     */
-    private void work(Torrent torrent, Event event) {
+    private void process(Torrent torrent, Event event) {
         try {
-            String gq = url.getQuery();
-            if (gq == null) {
-                gq = "?";
+            String query = url.getQuery();
+            if (query == null) {
+                query = "?";
             } else {
-                gq = "?" + gq + "&";
+                query = "?" + query + "&";
             }
 
             String e;
@@ -96,11 +91,11 @@ public class HTTPTracker extends Tracker {
                 e = "";
             }
 
-            String getRequest = "GET " + url.getPath() + gq + "info_hash="
+            String getRequest = "GET " + url.getPath() + query + "info_hash="
                     + ParserTorrentFile.urlEncode(torrent.hashInfo) + "&peer_id=" + ParserTorrentFile.urlEncode(torrent.peerID)
                     + "&uploaded=" + torrent.getUploaded() + "&downloaded="
                     + torrent.getDownloaded() + "&left=" + torrent.getLeftToDownload()
-                    + "&compact=1" + "&port=" + torrent.uPnP_Port + e + " HTTP/1.1\r\nHost: " + url.getHost() + "\r\n\r\n";
+                    + "&compact=1" + "&port=" + torrent.uPnP_Port + e + " HTTP/1.1\nHost: " + url.getHost() + "\n\n";
 
             Socket socket = new Socket();
             socket.setSoTimeout(8 * 1000);
