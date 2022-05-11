@@ -1,6 +1,6 @@
 package edu.umd.cs.ztorrent;
 
-import edu.umd.cs.ztorrent.HttpResponse.HeaderType;
+import edu.umd.cs.ztorrent.HTTPResponse.HeaderType;
 import edu.umd.cs.ztorrent.message.MessageParser;
 import edu.umd.cs.ztorrent.message.MessageParser.HandShake;
 import edu.umd.cs.ztorrent.message.PeerMessage;
@@ -42,7 +42,7 @@ public class UnitTests {
         String sampleHTTPResponse = "HTTP/1.0 200 OK\r\nContent-Length: 6\r\nContent-Type: text/plain\r\nPragma: no-cache\r\n\r\nTEAS";
         byte[] input = sampleHTTPResponse.getBytes(StandardCharsets.UTF_8);
         InputStream in = new ByteArrayInputStream(input);
-        HttpResponse phr = new HttpResponse(in);
+        HTTPResponse phr = new HTTPResponse(in);
         System.out.println("	Test ContentSize: " + (phr.headerMap.get(HeaderType.ContentLength).equals("6")));
         System.out.println("	Test ContentActualSize: " + (phr.body.length == 4));
         System.out.println("	Test Out: " + new String(phr.body, 0, phr.body.length, StandardCharsets.UTF_8).equals("TEAS"));
