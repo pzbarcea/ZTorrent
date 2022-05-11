@@ -67,7 +67,7 @@ public class Torrent {
             throw new RuntimeException("IO-Problems on piecemanager init.");
         }
         for (FileResource resource : files) {
-            resource.setup(pieceLength, pm.bitmap);
+            resource.setup(pieceLength, pm.pieceOrganizer);
         }
         this.status = "Checking files";
         pm.checkFiles();

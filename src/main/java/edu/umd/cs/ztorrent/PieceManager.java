@@ -38,17 +38,9 @@ public class PieceManager {
     int cacheSize;
     int pieceLength;
     FileResource[] files;
-    public final PieceOrganizer bitmap;
+    public final PieceOrganizer pieceOrganizer;
     private final Bencoder shaPieces;
 
-    /**
-     * @param folderPath
-     * @param files
-     * @param cacheSize
-     * @param pieceLength
-     * @param pieces
-     * @throws FileNotFoundException
-     */
     public PieceManager(FileResource[] files, int cacheBytes, int pieceLength, long totalBytes, Bencoder b)
             throws FileNotFoundException {
         this.shaPieces = b;
@@ -59,7 +51,7 @@ public class PieceManager {
             actualChunks = 2;
         }
 
-        bitmap = new PieceOrganizer(totalBytes, pieceLength);
+        pieceOrganizer = new PieceOrganizer(totalBytes, pieceLength);
         writeToDisk = new ArrayList<Piece>();
         readsFromDisk = new ArrayList<Integer>();
 
@@ -83,7 +75,7 @@ public class PieceManager {
      * @return
      */
     public boolean hasPiece(int pieceIndex) {
-        return bitmap.hasPiece(pieceIndex);
+        return pieceOrganizer.hasPiece(pieceIndex);
     }
 
     /***
@@ -93,10 +85,10 @@ public class PieceManager {
      *
      */
     public boolean putPiece(Piece p) {
-        boolean b = !bitmap.hasPiece((int) p.pieceIndex);
+        boolean b = !pieceOrganizer.hasPiece((int) p.pieceIndex);
         if (b && validPiece(p)) {
             indexToPiece.put(p.pieceIndex, p);
-            bitmap.addPieceComplete(p.pieceIndex);
+            pieceOrganizer.addPieceComplete(p.pieceIndex);
             writeToDisk.add(p);
         }
         return b;
@@ -116,7 +108,7 @@ public class PieceManager {
     public Piece getPiece(long pieceIndex) {
         //get piece must do puts so we can keep
         //stuff being used at top
-        if (!bitmap.hasPiece((int) pieceIndex)) {
+        if (!pieceOrganizer.hasPiece((int) pieceIndex)) {
             throw new RuntimeException("Cant get piece that hasnt been completed.");
         }
         if (indexToPiece.containsKey(pieceIndex)) {
@@ -146,7 +138,7 @@ public class PieceManager {
         }
 
         for (Integer pIndex : readsFromDisk) {
-            byte[] p = FileResource.pieceFromFile(files, pIndex, bitmap.getPieceLength(pIndex));
+            byte[] p = FileResource.pieceFromFile(files, pIndex, pieceOrganizer.getPieceLength(pIndex));
             Piece piece = new Piece(pIndex, p);
             indexToPiece.put(piece.pieceIndex, piece);
         }
@@ -158,7 +150,7 @@ public class PieceManager {
 
     //TODO:  counter?
     public long getCompletedBytes() {
-        return bitmap.getCompletedPieces() * pieceLength;
+        return pieceOrganizer.getCompletedPieces() * pieceLength;
     }
 
     public void checkFiles() throws IOException {
@@ -166,9 +158,9 @@ public class PieceManager {
         //Files already loaded up them selves in the bitmap
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
-            for (int i = 0; i < bitmap.getNumberOfPieces(); i++) {
-                if (bitmap.hasPiece(i)) {
-                    byte[] p = FileResource.pieceFromFile(files, i, bitmap.getPieceLength(i));
+            for (int i = 0; i < pieceOrganizer.getNumberOfPieces(); i++) {
+                if (pieceOrganizer.hasPiece(i)) {
+                    byte[] p = FileResource.pieceFromFile(files, i, pieceOrganizer.getPieceLength(i));
                     byte[] sha = Arrays.copyOfRange(shaPieces.byteString, i * 20, i * 20 + 20);
                     byte[] b = md.digest(p);
                     if (!Arrays.equals(b, sha)) {

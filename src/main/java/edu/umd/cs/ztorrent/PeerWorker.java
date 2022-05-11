@@ -28,6 +28,7 @@ public class PeerWorker {
     private boolean waitIteration = false;
     private long callCounter;
 
+    //TODO: What if we made this bigger? 50 seems to be fine
     private int maxQueueSize = 50;
 
     private void destroyConnection(PeerConnection mc) {
@@ -43,102 +44,100 @@ public class PeerWorker {
     private long up = 0;
     private long down = 0;
 
-    public void process(Torrent t) throws IOException {
+    public void process(Torrent torrent) throws IOException {
         long now = System.currentTimeMillis();
 
         connectionCounter = 0;
-        Set<PeerConnection> connections = t.getPeers();
+        Set<PeerConnection> connections = torrent.getPeers();
         Iterator<PeerConnection> iterator = connections.iterator();
         while (iterator.hasNext()) {
-            PeerConnection mc = iterator.next();
+            PeerConnection connection = iterator.next();
 
-            if (mc.getConnectionState() == ConnectionState.uninitialized) {
-                start(t, mc);
-            } else if (mc.getConnectionState() == ConnectionState.closed) {
-                close(t, iterator, mc);
+            if (connection.getConnectionState() == ConnectionState.uninitialized) {
+                start(torrent, connection);
+            } else if (connection.getConnectionState() == ConnectionState.closed) {
+                close(torrent, iterator, connection);
             } else {
-                process(t, mc);
+                process(torrent, connection);
             }
 
-            if (mc.getConnectionState() == ConnectionState.connected) {
+            if (connection.getConnectionState() == ConnectionState.connected) {
                 //Add a new connection
                 connectionCounter++;
 
-                callCounter += mc.haveSinceLastCall();
+                callCounter += connection.haveSinceLastCall();
 
-                if (mc.amChoking()) {
-                    mc.setAmChoking(false);
+                if (connection.amChoking()) {
+                    connection.setAmChoking(false);
                 }
-                if (!mc.amInterested()) {
-                    mc.setAmInterested(true);
+                if (!connection.amInterested()) {
+                    connection.setAmInterested(true);
                 }
-                long bytesRead = connectionsHandler.readData(mc, t.pm.bitmap);
+                long bytesRead = connectionsHandler.readData(connection, torrent.pm.pieceOrganizer);
                 down += bytesRead;
-                t.addDownloaded(bytesRead);
+                torrent.addDownloaded(bytesRead);
 
-                if (!mc.peerChoking()) {
-                    for (MessageRequest r : mc.getPeerRequests()) {
-                        if (t.pm.hasPiece(r.index)) {
-                            Piece piece = t.pm.getPiece(r.index);
+                if (!connection.peerChoking()) {
+                    for (MessageRequest r : connection.getPeerRequests()) {
+                        if (torrent.pm.hasPiece(r.index)) {
+                            Piece piece = torrent.pm.getPiece(r.index);
                             if (piece != null) {
                                 System.out.println("[SENDING] Piece #" + r.index + " of size "+  r.len);
-                                mc.pushRequestResponse(r, piece.getFromComplete(r.begin, r.len));
-                                t.addUploaded(r.len);
+                                connection.pushRequestResponse(r, piece.getFromComplete(r.begin, r.len));
+                                torrent.addUploaded(r.len);
                                 up += r.len;
                             }
                         }
                     }
 
-                    if (mc.getMaxRequests() < maxQueueSize) {
-                        mc.resetHistory();
+                    if (connection.getMaxRequests() < maxQueueSize) {
+                        connection.resetHistory();
 
-                        mc.setMaxRequests(maxQueueSize);
+                        connection.setMaxRequests(maxQueueSize);
                     }
 
-                    //write requests
-                    Iterator<MessageRequest> rlist = connectionsHandler.getPendingRequests(mc).iterator();
-                    while (rlist.hasNext()) {
-                        MessageRequest r = rlist.next();
-                        if (mc.getMaxRequests() >= mc.activeRequests() + 1) {
-                            System.out.println("SENT Request " + r.index + "," + r.begin + "," + r.len + " to " + mc);
+                    //Send MessageRequests
+                    Iterator<MessageRequest> requestIterator = connectionsHandler.getPendingRequests(connection).iterator();
+                    while (requestIterator.hasNext()) {
+                        MessageRequest request = requestIterator.next();
+                        if (connection.getMaxRequests() >= connection.activeRequests() + 1) {
+                            System.out.println("[SENDING] Request for piece #" + request.index + " to " + connection);
                             try {
-                                r.timeSent = System.currentTimeMillis();
-                                mc.pushRequest(r);
+                                request.timeSent = System.currentTimeMillis();
+                                connection.pushRequest(request);
                             } catch (Exception e) {
+                                System.out.println("[ERROR] Failed to write request");
                                 break;
                             }
-                            rlist.remove();
+                            requestIterator.remove();
                         } else {
                             break;
                         }
                     }
 
-
-                    //enqueue some requests if not fully filled.
-                    connectionsHandler.addPieces(maxQueueSize + 3, mc);
+                    connectionsHandler.addPieces(maxQueueSize + 3, connection);
 
                 } else {
-                    //Dequeue im choked lists are dropped.
-                    mc.resetHistory();
-                    Piece[] ps = connectionsHandler.getQueuedPieces(mc);
+                    connection.resetHistory();
+
+                    Piece[] ps = connectionsHandler.getQueuedPieces(connection);
                     for (Piece p : ps) {
                         waitIteration = false;
-                        connectionsHandler.removePiece(mc, (int) p.pieceIndex);
+                        connectionsHandler.removePiece(connection, (int) p.pieceIndex);
                     }
                 }
 
 
-                //check if any requests have timed out...
-                processTimedoutRequests(mc);
+                //If any requests died (timed out) then we need to process these separately (remove them as active)
+                processTimedoutRequests(connection);
 
-                if (mc.peerInterested()) {
+                if (connection.peerInterested()) {
                     for (Piece piece : recentlyFinished) {
-                        mc.pushHave((int) piece.pieceIndex);
+                        //Send a have message notifying our peers that we have the piece
+                        connection.pushHave((int) piece.pieceIndex);
                     }
                 }
             }
-
-
         }
 
         recentlyFinished.clear();
@@ -146,65 +145,57 @@ public class PeerWorker {
         if (piecesCompleted != null) {
             for (Piece p : piecesCompleted) {
                 recentlyFinished.add(p);
-                t.pm.putPiece(p);
+                torrent.pm.putPiece(p);
             }
         }
 
 
-        //TODO: something about not write values being thrown in loop
-        //TODO: check for recently called. We may just have everything that we can get.
-        //TODO: timer, delta have's
-        //Recomputes rarity based on time and new have's
+        //If timeout is large enough, we can determine the rarity
         if ((System.currentTimeMillis() - timeout) > 1000 && (callCounter > 0)) {
-            t.pm.bitmap.recomputeRarity();//TODO: Dont recompute so often too cpu intensive.
+            torrent.pm.pieceOrganizer.recomputeRarity();
             callCounter = 0;
             timeout = System.currentTimeMillis();
             waitIteration = false;
         }
 
 
-        //Sets Completion queue by rarity.
-        //TODO: client may leave, access to piece might disapear..
         Set<Piece> workingQueue = connectionsHandler.getQueue();
-        if (workingQueue.size() == 0 && !t.pm.bitmap.isComplete() && !waitIteration) {
+        if (workingQueue.size() == 0 && !torrent.pm.pieceOrganizer.isComplete() && !waitIteration) {
             workingQueue.clear();
-            List<Rarity> rList = t.pm.bitmap.getRarityList();
+            List<Rarity> rList = torrent.pm.pieceOrganizer.getRarityList();
             boolean addedOnce = false;
-            for (Rarity rar : rList) {
+            for (Rarity rarity : rList) {
                 if (workingQueue.size() >= 5 * connectionCounter || workingQueue.size() >= 50) {
                     addedOnce = true;
                     break;
                 }
-                //if some one has it and we don't and were not working to get it yet.
-                if (rar.getValue() > 0 && !t.pm.hasPiece(rar.index) && !connectionsHandler.getActivePieces().contains(rar.index)) {
-                    System.out.println("Queued " + rar.index);
-                    workingQueue.add(t.pm.bitmap.createPiece(rar.index));
+
+                if (rarity.getValue() > 0 && !torrent.pm.hasPiece(rarity.index) && !connectionsHandler.getActivePieces().contains(rarity.index)) {
+                    System.out.println("[QUEUEING] Queued Piece #" + rarity.index);
+                    workingQueue.add(torrent.pm.pieceOrganizer.createPiece(rarity.index));
                     addedOnce = true;
-                } else if (rar.getValue() == 0) {
-                    System.out.println("No one has " + rar.index);
+                } else if (rarity.getValue() == 0) {
+                    System.out.println("[MISSING] Couldn't find any peer with piece #" + rarity.index);
                 }
             }
             waitIteration = !addedOnce;
-            if (waitIteration) {
-                System.out.println("Exhausted");
-            }
         }
 
 
         if (System.currentTimeMillis() % 10000 == 0) {
-            System.out.println("Active Connections: " + connectionCounter);
-            System.out.println("Average dl: " + (t.getDownloaded() / (System.currentTimeMillis() - this.startTime)) + " KB/s");
+            System.out.println("[CONNECTIONS] " + connectionCounter + " currently active");
+            System.out.println("[DOWNLOAD RATE] " + (torrent.getDownloaded() / (System.currentTimeMillis() - this.startTime)) + " KB/s");
         }
 
         if (now - lastTime > 10 * 1000) {
-            t.setRecentDown(down / (now - lastTime));
-            t.setRecentUp(up / (now - lastTime));
+            torrent.setRecentDown(down / (now - lastTime));
+            torrent.setRecentUp(up / (now - lastTime));
             lastTime = System.currentTimeMillis();
             down = up = 0;
         }
 
 
-        t.pm.doBlockingWork(); // TODO: remove from here. set to threaded process.
+        torrent.pm.doBlockingWork();
     }
 
     private void processTimedoutRequests(PeerConnection mc) {
@@ -243,13 +234,13 @@ public class PeerWorker {
         itor.remove();
         destroyConnection(mc);
         callCounter = 1;//just set so can recalculate.
-        t.pm.bitmap.removePeerMap(mc.getPeerBitmap());
+        t.pm.pieceOrganizer.removePeerMap(mc.getPeerBitmap());
     }
 
     private void start(Torrent t, PeerConnection mc) {
-        mc.initializeConnection(t.pm.bitmap.getMapCopy(), t);
+        mc.initializeConnection(t.pm.pieceOrganizer.getMapCopy(), t);
         connectionsHandler.beginConnection(mc);
-        t.pm.bitmap.addPeerMap(mc.getPeerBitmap());//adds
+        t.pm.pieceOrganizer.addPeerMap(mc.getPeerBitmap());//adds
     }
 
 }
