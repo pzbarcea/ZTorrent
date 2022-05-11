@@ -122,7 +122,7 @@ public class TorrentParser {
         Bencoder pieceHashes = info.dictionary.get("pieces");
 
 
-        Torrent torrent = new Torrent(name, pieceLength, dfiles, totalBytes, byteStringHashInfo, urlEncodedHash, pieceHashes, new MetaData(info), trackers, filePath);
+        Torrent torrent = new Torrent(name, pieceLength, dfiles, totalBytes, byteStringHashInfo, urlEncodedHash, pieceHashes, new TorrentInfo(info), trackers, filePath);
         return torrent;
     }
 

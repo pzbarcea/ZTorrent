@@ -45,7 +45,7 @@ public class PeerConnection extends TorrentConnection {
 
     public void initializeConnection(byte[] announcedMap, Torrent t) {
         peerPieceOrganizer = new PieceOrganizer(t.totalBytes, t.pieceLength);
-        metaData = t.meta;
+        torrentInfo = t.meta;
         if (conState != ConnectionState.uninitialized) {
             throw new RuntimeException("Invalid State Exception");
         }
@@ -102,7 +102,7 @@ public class PeerConnection extends TorrentConnection {
     }
 
     @Override
-    public void blindInitialize(MetaData md) {
+    public void blindInitialize(TorrentInfo md) {
         throw new RuntimeException("[ERROR] Not allowed blindInitialize on PeerConnection.");
     }
 

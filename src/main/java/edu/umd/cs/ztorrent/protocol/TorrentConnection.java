@@ -46,7 +46,7 @@ public class TorrentConnection {
     protected String name = "Unknown";
     protected boolean connectionSupportsMeta = false;
     protected boolean connectionSupportsMetaMeta = false;
-    protected MetaData metaData;
+    protected TorrentInfo torrentInfo;
     protected int max_reported = -1;
     private boolean isMetaConnection = false;
     private final Set<Integer> metaMetaRequests = new HashSet<Integer>();
@@ -61,8 +61,8 @@ public class TorrentConnection {
         maintenance = 0;
     }
 
-    public void blindInitialize(MetaData md) {
-        this.metaData = md;
+    public void blindInitialize(TorrentInfo md) {
+        this.torrentInfo = md;
         isMetaConnection = true;
         conState = ConnectionState.pending;
         sock = new Socket();
@@ -180,7 +180,7 @@ public class TorrentConnection {
                         metaSize = -1;
                     } else {
                         connectionSupportsMetaMeta = true;
-                        metaData.setSize(metaSize);
+                        torrentInfo.setSize(metaSize);
                     }
                 }
                 if (extensions.containsKey("v")) {
@@ -204,8 +204,8 @@ public class TorrentConnection {
 
                     //Represents a request
                     if (i == 0) {
-                        if (metaData.isComplete()) {
-                            byte[] p = metaData.getPiece(piece);
+                        if (torrentInfo.isComplete()) {
+                            byte[] p = torrentInfo.getPiece(piece);
                             maintenance += p.length;
                             mp.extension(sockOut, TorrentExtensions.pushMetaDataPiece(ourExtension, piece, p));
                         } else {
@@ -215,7 +215,7 @@ public class TorrentConnection {
                     //Represents a response
                     } else if (i == 1) {
                         metaMetaRequests.remove(piece);
-                        metaData.add(piece, left);
+                        torrentInfo.add(piece, left);
                     } else {
                         connectionSupportsMetaMeta = false;
                     }
