@@ -27,9 +27,9 @@ public class PeerConnection extends TorrentConnection {
         super(ip, port);
         download = upload = maintenance = 0;
         mp = new MessageParser();
-        peerRequests = new HashSet<MessageRequest>();
-        ourRequests = new HashSet<MessageRequest>();
-        peerSentBlocks = new ArrayList<MessageResponse>();
+        peerRequests = new HashSet<>();
+        ourRequests = new HashSet<>();
+        peerSentBlocks = new ArrayList<>();
         recvHandShake = false;
         conState = ConnectionState.uninitialized;
     }
@@ -47,7 +47,7 @@ public class PeerConnection extends TorrentConnection {
         peerPieceOrganizer = new PieceOrganizer(t.totalBytes, t.pieceLength);
         torrentInfo = t.meta;
         if (conState != ConnectionState.uninitialized) {
-            throw new RuntimeException("Invalid State Exception");
+            throw new RuntimeException("[ERROR] Currently Uninitialized");
         }
         conState = ConnectionState.pending;
         if (sock == null) {
@@ -112,15 +112,15 @@ public class PeerConnection extends TorrentConnection {
 
     public boolean pushRequest(MessageRequest r) {
         if (conState != ConnectionState.connected) {
-            throw new RuntimeException("Can only send requests on 'connected' connections");
+            throw new RuntimeException("[ERROR] Cannot send if not connected");
         } else if (peer_choking) {
-            throw new RuntimeException("Can only send requests on unchoked connections");
+            throw new RuntimeException("[ERROR] Cannot send to choked connection");
         }
         if (ourRequests.contains(r.index)) {
             return false;
         }
         if (ourRequests.size() + 1 > max_queued) {
-            throw new RuntimeException("Over enqued max size set to: " + max_queued);
+            throw new RuntimeException("[ERROR] Queue too big ");
         }
 
         ourRequests.add(r);
@@ -135,7 +135,7 @@ public class PeerConnection extends TorrentConnection {
 
     public void cancelPiece(Piece p) {
         if (conState != ConnectionState.connected) {
-            throw new RuntimeException("Can only send requests on 'connected' connections");
+            throw new RuntimeException("[ERROR] Cant send request if not connected");
         } else if (peer_choking) {
             return;
         }
@@ -156,11 +156,11 @@ public class PeerConnection extends TorrentConnection {
 
     public void pushRequestResponse(MessageRequest r, byte[] block) {
         if (!peerRequests.remove(r)) {
-            throw new RuntimeException("Giving unrequested block! But whyyyy! =(");
+            throw new RuntimeException("[ERROR] Unrequested Block");
         } else if (conState != ConnectionState.connected) {
-            throw new RuntimeException("This is invalid connection state isn't in connected mode!");
+            throw new RuntimeException("[ERROR] Invalid Connection");
         } else if (peer_choking) {
-            throw new RuntimeException("We are being choked! Not valid to send silly!");
+            throw new RuntimeException("[ERROR] Peer Choking");
         }
         try {
             maintenance += 13;
@@ -173,9 +173,9 @@ public class PeerConnection extends TorrentConnection {
 
     public void pushHave(int index) {
         if (conState != ConnectionState.connected) {
-            throw new RuntimeException("Can only send have on 'connected' connections");
+            throw new RuntimeException("[ERROR] Trying to send on unconnected");
         } else if (!peer_interested) {
-            throw new RuntimeException("Can only send have on interested connections");
+            throw new RuntimeException("[ERROR] Trying to send to uninterested peer");
         }
         try {
             maintenance += 10;
@@ -248,16 +248,16 @@ public class PeerConnection extends TorrentConnection {
     protected void doDataIn(PeerMessage pm) {
         if (pm.type == MessageType.CHOKE) {
             this.peer_choking = true;
-            System.out.println("[STATUS] " + this + " choked us.");
+            System.out.println("[STATUS] " + this + " has choked us");
             ourRequests.clear();
         } else if (pm.type == MessageType.UNCHOKE) {
-            System.out.println("[STATUS] " + this + " unchoked us.");
+            System.out.println("[STATUS] " + this + " has unchoked us");
             this.peer_choking = false;
         } else if (pm.type == MessageType.INTERESTED) {
-            System.out.println("[STATUS] " + this + " intrested in us.");
+            System.out.println("[STATUS] " + this + " is interested");
             this.peer_interested = true;
         } else if (pm.type == MessageType.NOT_INTERESTED) {
-            System.out.println("[STATUS] " + this + " not intrested in us.");
+            System.out.println("[STATUS] " + this + " is NOT interested");
             this.peer_interested = false;
         } else if (pm.type == MessageType.HAVE) {
             System.out.println("[STATUS] " + this + " has " + pm.piece);
@@ -267,7 +267,7 @@ public class PeerConnection extends TorrentConnection {
             }
 
         } else if (pm.type == MessageType.BIT_FILED) {
-            System.out.println("[STATUS] Got bitmap from " + this);
+            System.out.println("[STATUS] Got PieceOrganizer from " + this);
             if (peerPieceOrganizer.getCompletedPieces() == 0) {
                 peerPieceOrganizer.setBitMap(pm.bitfield);
                 have = peerPieceOrganizer.getCompletedPieces();
@@ -285,14 +285,14 @@ public class PeerConnection extends TorrentConnection {
         } else if (pm.type == MessageType.CANCEL) {
             peerRequests.remove(new MessageRequest(pm.index, pm.begin, pm.length));
         } else if (pm.type == MessageType.PIECE) {
-            System.out.println("[STATUS] Got piece " + pm.index + " from " + this);
+            System.out.println("[RECEIVED] Got piece #" + pm.index + " from " + this);
             MessageRequest r = new MessageRequest(pm.index, pm.begin, pm.block.length);
             MessageResponse rs = new MessageResponse(pm.index, pm.begin, pm.block);
             if (ourRequests.remove(r)) {
                 historySize++;
                 download += pm.block.length;
             } else {
-                System.out.println("[STATUS] Recieved Piece " + pm.index + "," + pm.begin + "," + pm.length + " but didnt send request!");
+                System.out.println("[STATUS] Received Piece #" + pm.index + " without request");
             }
             peerSentBlocks.add(rs);
         } else if (pm.type == MessageType.EXTENSION) {

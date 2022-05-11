@@ -53,11 +53,9 @@ public class TorrentClient extends AbstractTableModel {
 
             Thread.sleep(10);
             this.fireTableRowsUpdated(0, allTorrents.size() - 1);
-            //this.fireTableRowsUpdated(0,allTorrents.size());
             for (PeerConnection mc : tss.getNewConnections()) {
                 for (Torrent a : allTorrents) {
                     if (Arrays.equals(mc.getInfoHash(), a.hashInfo)) {
-                        //add connection to torrent.
                         a.addConnection(mc);
                     }
                 }
@@ -65,8 +63,7 @@ public class TorrentClient extends AbstractTableModel {
 
 
         }
-        //Shut everything down.
-        System.out.println("[SHUTDOWN] Shutting down.");
+        System.out.println("[SHUTDOWN] Finalizing and then Closing zTorrent");
         for (Torrent t : allTorrents) {
             t.shutdown();
         }
@@ -77,15 +74,12 @@ public class TorrentClient extends AbstractTableModel {
         newTorrents.add(t);
     }
 
-    //--------------------------------
     public void setTorrentInactive(Torrent t) throws IOException {
         activeTorrents.remove(t);
         inactiveTorrents.add(t);
 
-        //Drop connections
         t.shutdown();
 
-        // closeFile files
         for (FileResource f : t.files) {
             f.closeFile();
         }
@@ -153,7 +147,6 @@ public class TorrentClient extends AbstractTableModel {
 
     @Override
     public int getColumnCount() {
-        // TODO Auto-generated method stub
         return 8;
     }
 
@@ -167,13 +160,6 @@ public class TorrentClient extends AbstractTableModel {
         dg.setMaximumFractionDigits(3);
     }
 
-    /**
-     * based on apache.commons.io
-     *   more: https://commons.apache.org/proper/commons-io/javadocs/api-2.5/org/apache/commons/io/FileUtils.html#byteCountToDisplaySize(long)
-     *
-     * @param size
-     * @return
-     */
     private static String byteCountToDisplaySize(long size) {
         if (size / 1024 < 999) {
             return "" + dg.format(size / 1024.0) + " KB";
@@ -206,7 +192,7 @@ public class TorrentClient extends AbstractTableModel {
                 }
                 return progress;
             case 4:
-                return byteCountToDisplaySize(t.getRecentDownRate() * 1024) + "/s";// (bytes/ms)=kb/s
+                return byteCountToDisplaySize(t.getRecentDownRate() * 1024) + "/s";
             case 5:
                 return t.getRecentUpRate();
             case 6:
@@ -219,7 +205,7 @@ public class TorrentClient extends AbstractTableModel {
 
     public Torrent getTorrent(int i) {
         if (i < allTorrents.size()) {
-            System.out.println("[STATUS] Get: " + i + " from all: " + allTorrents.size());
+            System.out.println("[GETTING] Get: " + i + " from all: " + allTorrents.size());
             return allTorrents.toArray(new Torrent[0])[i];
         }
 

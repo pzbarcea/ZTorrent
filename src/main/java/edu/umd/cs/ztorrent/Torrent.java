@@ -24,8 +24,8 @@ public class Torrent {
     public String name;
     public String status = "";
 
-    public static int STANDARD_CACHE_SIZE = 1024 * 1024 * 20;//20MB
-    private Set<PeerConnection> peerList = new HashSet<>();//TODO: keep only peers with valid connections?
+    public static int STANDARD_CACHE_SIZE = 1024 * 1024 * 20;
+    private Set<PeerConnection> peerList = new HashSet<>();
     public PieceManager pm;
     public int numFiles;
     public int pieceLength;
@@ -38,8 +38,8 @@ public class Torrent {
     private long recentDownRate;
     private long recentUpRate;
     private List<Tracker> trackers;
-    private long left;//TODO: associate with files.
-    public int uPnP_Port = 1010;//TODO
+    private long left;
+    public int uPnP_Port = 1010;
     private File f;
 
 
@@ -77,7 +77,7 @@ public class Torrent {
         for (Tracker t : trackers) {
             this.trackers.add(t);
         }
-        this.trackers.add(new DHTTracker(hashInfo, peerID));//We're always in DHT!
+        this.trackers.add(new DHTTracker(hashInfo, peerID));
     }
 
     public String getStatus() {

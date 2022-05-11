@@ -5,16 +5,6 @@ import java.util.HashMap;
 
 public class TorrentExtensions {
 
-    /**
-     * Fast Peers Extensions
-     * <len:0002 + X><id=20><extensionId=id><block>
-     * capacity: 4 + 1 + 1
-     *
-     * @param id
-     * @param block
-     * @return
-     * @TODO: Test Extension
-     */
     public static byte[] constructExtention(byte id, byte[] block) {
         ByteBuffer b = ByteBuffer.allocate(6 + block.length);
         b.putInt(block.length + 2);
@@ -46,6 +36,4 @@ public class TorrentExtensions {
         b.dictionary.put("piece", new Bencoder(piece));
         return constructExtention(id, b.toByteArray());
     }
-
-
 }

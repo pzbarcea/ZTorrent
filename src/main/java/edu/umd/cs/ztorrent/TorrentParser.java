@@ -11,12 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
-
-/**
- * @author pzbarcea
- */
 public class TorrentParser {
-    //TODO: ERROR CHECKING!!! OMG. Seriously.
     private static String hex = "0123456789ABCDEF";
 
     protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
@@ -57,15 +52,13 @@ public class TorrentParser {
         return s.trim();
     }
 
-
-    //Hash to string
     public static byte[] SHAsum(byte[] convertme) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("SHA-1");
         return md.digest(convertme);
     }
 
     public static Torrent parseTorrentFile(String filePath) throws IOException, NoSuchAlgorithmException {
-        //get file
+
         File file = new File(filePath);
         int len = (int) file.length();
         byte[] data = new byte[len];
@@ -79,7 +72,7 @@ public class TorrentParser {
         long totalBytes = 0;
         int numFiles;
         FileResource[] dfiles;
-        if (info.dictionary.containsKey("files")) {//multiple files
+        if (info.dictionary.containsKey("files")) {
             Bencoder files = info.dictionary.get("files");
             numFiles = files.list.size();
             dfiles = new FileResource[numFiles];
@@ -102,7 +95,7 @@ public class TorrentParser {
             dfiles[0] = new FileResource(name, name, totalBytes, 0);
         }
 
-        List<Tracker> trackers = new ArrayList<Tracker>();
+        List<Tracker> trackers = new ArrayList<>();
         String primaryTracker = encoding.dictionary.get("announce").getString();
         Tracker t = Tracker.makeTracker(primaryTracker);
         if (t != null) {
@@ -118,9 +111,8 @@ public class TorrentParser {
             }
         }
 
-        int pieceLength = (int) ((long) (info.dictionary.get("piece length").integer));//TODO: Rofl! yeah why cant i just do new Integer()?
+        int pieceLength = (int) ((long) (info.dictionary.get("piece length").integer));
         Bencoder pieceHashes = info.dictionary.get("pieces");
-
 
         Torrent torrent = new Torrent(name, pieceLength, dfiles, totalBytes, byteStringHashInfo, urlEncodedHash, pieceHashes, new TorrentInfo(info), trackers, filePath);
         return torrent;
