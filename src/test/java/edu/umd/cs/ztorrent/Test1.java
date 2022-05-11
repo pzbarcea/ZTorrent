@@ -8,24 +8,22 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 
-public class DHTTrackerTest {
+public class Test1 {
 
     @Test
     public void testDHTTracker() throws InterruptedException, NoSuchAlgorithmException, IOException {
 
-        byte[] b = hexStringToByteArray("00599b501d8713640be4f481433dd0848a592ef3");
+        byte[] b = hexStringToByteArray("ffffffffffffffffffffffffffffffffffffffff");
         System.out.println(b.length);
         BigInteger big = new BigInteger(1, b);
         System.out.println(String.format("%0" + (b.length << 1) + "X", big));
 
         DHTTracker dht = new DHTTracker(b, Torrent.genRandomSessionKey(20).getBytes(StandardCharsets.UTF_8));
 
-        // run test for 500 cycles.
-        int i = 500;
-        while (i > 0) {
+
+        for (int i = 0; i < 200; i++) {
             dht.doWork();
             Thread.sleep(10);
-            --i;
         }
 
         System.out.println("[TEST] Complete");

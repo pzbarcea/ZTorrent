@@ -11,7 +11,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Parses an HTTP Response
+ * Parses an HTTP response.
+ * Tutorialspoint: HTTP responses consist of:
+ * - A Status-line
+ * - Zero or more header (General|Response|Entity) fields followed by CRLF
+ * - An empty line (i.e., a line with nothing preceding the CRLF) indicating the end of the header fields
+ * - Optionally a message-body
  */
 public class HTTPResponse {
     public enum HeaderType {HTTP, Date, Server, LastModified, Etag, ContentType, ContentLength, Connection, Pragma, TransferEncoding, UNKNOWN}
@@ -30,7 +35,7 @@ public class HTTPResponse {
         boolean emptyFound = false;
         byte[] dataIn;
         while (!emptyFound) {
-            dataIn = readRawHeaderLine(in);
+            dataIn = readHeader(in);
             String p = new String(dataIn, StandardCharsets.UTF_8);
 
             if (p == null) {
@@ -83,19 +88,25 @@ public class HTTPResponse {
         if (contentSize == -1 && !transferEncoding) {
             System.out.println("[WARNING]: Reading MAX_VALUE bytes");
             contentSize = Integer.MAX_VALUE;
-            body = readBytes(in, contentSize, false);
+            body = readBody(in, contentSize, false);
         } else if (transferEncoding) {
             if (headerMap.get(HeaderType.TransferEncoding).equals("chunked")) {
-                body = readBytes(in, contentSize, true);
+                body = readBody(in, contentSize, true);
             } else {
                 throw new RuntimeException("[ERROR]: RuntimeException in HttpResponse");
             }
         } else {
-            body = readBytes(in, contentSize, false);
+            body = readBody(in, contentSize, false);
         }
     }
 
-    public static byte[] readRawHeaderLine(InputStream inputStream) throws IOException {
+    /**
+     * Reads in the response header fields (General|Response|Entity) followed by CRLF.
+     * @param inputStream
+     * @return
+     * @throws IOException
+     */
+    public static byte[] readHeader(InputStream inputStream) throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         int ch;
         int lastCh = 0;
@@ -115,7 +126,20 @@ public class HTTPResponse {
         return buf.toByteArray();
     }
 
-    public static byte[] readBytes(InputStream inputStream, long bytes, boolean chunked) throws IOException {
+    /**
+     * Reads in an HTTP response body.  Boolean option for chunked transfer encoding.
+     * Wikipedia: Chunked transfer encoding is a streaming data transfer mechanism available in version 1.1 of the Hypertext Transfer Protocol (HTTP).
+     * In chunked transfer encoding, the data stream is divided into a series of non-overlapping "chunks".
+     * The chunks are sent out and received independently of one another. No knowledge of the data stream outside the currently-being-processed chunk is necessary for both the sender and the receiver at any given time.
+     * Each chunk is preceded by its size in bytes. The transmission ends when a zero-length chunk is received.
+     *
+     * @param inputStream
+     * @param bytes
+     * @param chunked
+     * @return
+     * @throws IOException
+     */
+    public static byte[] readBody(InputStream inputStream, long bytes, boolean chunked) throws IOException {
         int ch;
         long bytesRead = 0;
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
