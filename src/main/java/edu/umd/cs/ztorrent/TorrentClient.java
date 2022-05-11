@@ -1,6 +1,7 @@
 package edu.umd.cs.ztorrent;
 
 import edu.umd.cs.ztorrent.protocol.PeerConnection;
+import edu.umd.cs.ztorrent.protocol.Tracker;
 
 import javax.swing.table.AbstractTableModel;
 import java.io.IOException;
@@ -21,7 +22,7 @@ public class TorrentClient extends AbstractTableModel {
     public boolean on = true;
 
     final Set<Torrent> allTorrents = Collections.synchronizedSet(new HashSet<Torrent>());
-    final Map<Torrent, TorrentTransmitter> activeTorrents = new ConcurrentHashMap<Torrent, TorrentTransmitter>();//Seeding or leeching states
+    final Map<Torrent, TorrentWorker> activeTorrents = new ConcurrentHashMap<Torrent, TorrentWorker>();//Seeding or leeching states
     final Set<Torrent> inactiveTorrents = Collections.synchronizedSet(new HashSet<Torrent>());//Completed or inactive
 
     final Queue<Torrent> newTorrents = new ConcurrentLinkedQueue<Torrent>();
@@ -37,7 +38,7 @@ public class TorrentClient extends AbstractTableModel {
 
     public void mainLoop() throws IOException, InterruptedException {
         while (on) {
-            for (TorrentTransmitter tt : activeTorrents.values()) {
+            for (TorrentWorker tt : activeTorrents.values()) {
                 tt.work();
             }
 
@@ -53,7 +54,7 @@ public class TorrentClient extends AbstractTableModel {
 
                 if (!has) {
                     allTorrents.add(t);
-                    activeTorrents.put(t, new TorrentTransmitter(new PeerWorker(), t));
+                    activeTorrents.put(t, new TorrentWorker(new PeerWorker(), t));
                 }
             }
 
@@ -123,7 +124,7 @@ public class TorrentClient extends AbstractTableModel {
     public void reActivate(Torrent t) throws NoSuchAlgorithmException, IOException {
         if (!activeTorrents.containsKey(t)) {
             t.reload();
-            activeTorrents.put(t, new TorrentTransmitter(new PeerWorker(), t));
+            activeTorrents.put(t, new TorrentWorker(new PeerWorker(), t));
             inactiveTorrents.remove(t);
         } else {
             System.out.println("Do nothing already active");
@@ -236,5 +237,32 @@ public class TorrentClient extends AbstractTableModel {
         }
 
         return null;
+    }
+
+    public static class TorrentWorker {
+        private PeerWorker worker;
+        private final Torrent us;
+
+        public TorrentWorker(PeerWorker worker, Torrent torr) {
+            this.worker = worker;
+            this.us = torr;
+            for (Tracker tracker : us.getTrackers()) {
+                tracker.initialize(torr);
+            }
+        }
+
+        public void work() throws IOException {
+            worker.doWork(us);
+            for (Tracker t : us.getTrackers()) {
+                t.doWork();
+            }
+
+        }
+
+        public void close() {
+            for (Tracker tr : us.getTrackers()) {
+                tr.close(us);
+            }
+        }
     }
 }
