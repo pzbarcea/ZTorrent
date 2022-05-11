@@ -97,7 +97,7 @@ public class HTTPTracker extends Tracker {
             }
 
             String getRequest = "GET " + url.getPath() + gq + "info_hash="
-                    + TorrentParser.urlEncode(torrent.hashInfo) + "&peer_id=" + TorrentParser.urlEncode(torrent.peerID)
+                    + ParserTorrentFile.urlEncode(torrent.hashInfo) + "&peer_id=" + ParserTorrentFile.urlEncode(torrent.peerID)
                     + "&uploaded=" + torrent.getUploaded() + "&downloaded="
                     + torrent.getDownloaded() + "&left=" + torrent.getLeftToDownload()
                     + "&compact=1" + "&port=" + torrent.uPnP_Port + e + " HTTP/1.1\r\nHost: " + url.getHost() + "\r\n\r\n";

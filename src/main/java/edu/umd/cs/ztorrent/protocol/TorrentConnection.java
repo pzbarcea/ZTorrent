@@ -15,6 +15,7 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.*;
 
 public class TorrentConnection {
@@ -203,10 +204,10 @@ public class TorrentConnection {
                         if (torrentInfo.isComplete()) {
                             byte[] p = torrentInfo.getPiece(piece);
                             maintenance += p.length;
-                            mp.extension(sockOut, TorrentExtensions.pushMetaDataPiece(ourExtension, piece, p));
+                            mp.extension(sockOut, TorrentHelper.pushPiece(ourExtension, piece, p));
                         } else {
                             maintenance += 20;
-                            mp.extension(sockOut, TorrentExtensions.rejectMetaDataPiece(ourExtension, piece));
+                            mp.extension(sockOut, TorrentHelper.rejectPiece(ourExtension, piece));
                         }
                     //Represents a response
                     } else if (i == 1) {
@@ -330,6 +331,39 @@ public class TorrentConnection {
             return String.format("%0" + (peerID.length << 1) + "X", bi);
         } else {
             return (ip.toString() + ":" + port);
+        }
+    }
+
+    public static class TorrentHelper {
+        public static byte[] pushPiece(byte id, int piece, byte[] block) {
+            Bencoder b = new Bencoder();
+            b.type = BencodeType.Dictionary;
+            b.dictionary = new HashMap<String, Bencoder>();
+            b.dictionary.put("msg_type", new Bencoder(1));
+            b.dictionary.put("piece", new Bencoder(piece));
+            b.dictionary.put("total_size", new Bencoder(block.length));
+            byte[] dic = b.toByteArray();
+            byte[] r = new byte[dic.length + block.length];
+            System.arraycopy(dic, 0, r, 0, dic.length);
+            System.arraycopy(block, 0, r, dic.length, block.length);
+            return buildExtension(id, b.toByteArray());//quite wasteful. but im lazy :-)
+        }
+
+        public static byte[] rejectPiece(byte id, int piece) {
+            Bencoder b = new Bencoder();
+            b.type = BencodeType.Dictionary;
+            b.dictionary = new HashMap<String, Bencoder>();
+            b.dictionary.put("msg_type", new Bencoder(2));
+            b.dictionary.put("piece", new Bencoder(piece));
+            return buildExtension(id, b.toByteArray());
+        }
+        public static byte[] buildExtension(byte id, byte[] block) {
+            ByteBuffer b = ByteBuffer.allocate(6 + block.length);
+            b.putInt(block.length + 2);
+            b.put((byte) 20);
+            b.put(id);
+            b.put(block);
+            return b.array();
         }
     }
 }

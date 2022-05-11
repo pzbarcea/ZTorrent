@@ -11,24 +11,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TorrentParser {
-    private static String hex = "0123456789ABCDEF";
+public class ParserTorrentFile {
+    private static String hexAlphabet = "0123456789ABCDEF";
 
-    protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
-
-    public static String bytesToHex(byte[] bytes) {
-        char[] hexChars = new char[bytes.length * 2];
-        int v;
-        for (int j = 0; j < bytes.length; j++) {
-            v = bytes[j] & 0xFF;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-        }
-        return new String(hexChars);
-    }
-
-    static char to_hex(byte code) {
-        return hex.charAt(code & 15);
+    public static byte[] SHAsum(byte[] convertme) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("SHA-1");
+        return md.digest(convertme);
     }
 
     public static String urlEncode(byte[] array) {
@@ -52,11 +40,11 @@ public class TorrentParser {
         return s.trim();
     }
 
-    public static byte[] SHAsum(byte[] convertme) throws NoSuchAlgorithmException {
-        MessageDigest md = MessageDigest.getInstance("SHA-1");
-        return md.digest(convertme);
-    }
 
+
+    static char to_hex(byte code) {
+        return hexAlphabet.charAt(code & 15);
+    }
     public static Torrent parseTorrentFile(String filePath) throws IOException, NoSuchAlgorithmException {
 
         File file = new File(filePath);

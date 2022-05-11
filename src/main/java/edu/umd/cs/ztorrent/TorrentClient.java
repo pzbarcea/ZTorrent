@@ -19,11 +19,11 @@ public class TorrentClient extends AbstractTableModel {
     Set<Torrent> inactiveTorrents = Collections.synchronizedSet(new HashSet<>());
     Map<Torrent, TorrentWorker> activeTorrents = new ConcurrentHashMap<>();
     Queue<Torrent> newTorrents = new ConcurrentLinkedQueue<>();
-    TorrentSocket tss;
+    TorrentSocket tSocket;
 
     public TorrentClient() {
         try {
-            tss = new TorrentSocket(6881);
+            tSocket = new TorrentSocket(6881);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -53,7 +53,7 @@ public class TorrentClient extends AbstractTableModel {
 
             Thread.sleep(10);
             this.fireTableRowsUpdated(0, allTorrents.size() - 1);
-            for (PeerConnection mc : tss.getNewConnections()) {
+            for (PeerConnection mc : tSocket.getNewConnections()) {
                 for (Torrent a : allTorrents) {
                     if (Arrays.equals(mc.getInfoHash(), a.hashInfo)) {
                         a.addConnection(mc);
@@ -67,7 +67,7 @@ public class TorrentClient extends AbstractTableModel {
         for (Torrent t : allTorrents) {
             t.shutdown();
         }
-        tss.close();
+        tSocket.close();
     }
 
     public void addTorrent(Torrent t) {
@@ -205,7 +205,7 @@ public class TorrentClient extends AbstractTableModel {
 
     public Torrent getTorrent(int i) {
         if (i < allTorrents.size()) {
-            System.out.println("[GETTING] Get: " + i + " from all: " + allTorrents.size());
+            System.out.println("[GETTING] Get Piece #" + i + " from " + allTorrents.size() + " number of peers");
             return allTorrents.toArray(new Torrent[0])[i];
         }
 

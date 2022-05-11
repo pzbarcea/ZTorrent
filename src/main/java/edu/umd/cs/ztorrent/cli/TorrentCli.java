@@ -2,7 +2,7 @@ package edu.umd.cs.ztorrent.cli;
 
 import edu.umd.cs.ztorrent.Torrent;
 import edu.umd.cs.ztorrent.TorrentClient;
-import edu.umd.cs.ztorrent.TorrentParser;
+import edu.umd.cs.ztorrent.ParserTorrentFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,7 +52,7 @@ public class TorrentCli {
             System.out.println("Using .torrent file: " + fileName);
             File file = new File(fileName);
 
-            Torrent t = TorrentParser.parseTorrentFile(file.getAbsolutePath());
+            Torrent t = ParserTorrentFile.parseTorrentFile(file.getAbsolutePath());
             client.addTorrent(t);
 
             client.mainLoop();

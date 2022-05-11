@@ -2,7 +2,7 @@ package edu.umd.cs.ztorrent.ui;
 
 import edu.umd.cs.ztorrent.Torrent;
 import edu.umd.cs.ztorrent.TorrentClient;
-import edu.umd.cs.ztorrent.TorrentParser;
+import edu.umd.cs.ztorrent.ParserTorrentFile;
 
 import javax.swing.*;
 import java.awt.*;
@@ -130,7 +130,7 @@ public class TorrentUI extends JFrame implements ActionListener {
                 //This is where a real application would open the file.
                 System.out.println("[STATUS] Opening Torrent File: " + file.getName());
                 try {
-                    Torrent t = TorrentParser.parseTorrentFile(file.getAbsolutePath());
+                    Torrent t = ParserTorrentFile.parseTorrentFile(file.getAbsolutePath());
                     client.addTorrent(t);
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(mainPane, "Could not open torrent file");

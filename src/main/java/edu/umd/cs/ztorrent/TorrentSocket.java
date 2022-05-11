@@ -11,17 +11,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
-/***
- * While initially created for testing purposes. This class
- * will eventually be used for incoming torrent connection
- * bound on the upnp port.
- *
- * Passes out managed connection with incoming handshake filled out.
- * This is then matched against torrent list. 
- *
- *
- * @author pzbarcea
- */
 public class TorrentSocket {
     private List<PeerConnection> connections;
     private ServerSocket tcpServer;
@@ -54,7 +43,7 @@ public class TorrentSocket {
                     clientsLock.unlock();
                 } catch (Exception e) {
                     e.printStackTrace();
-                }//TODO: log error.
+                }
 
 
             } catch (Exception e) {
@@ -72,7 +61,7 @@ public class TorrentSocket {
         List<PeerConnection> r;
         clientsLock.lock();
         r = connections;
-        connections = new LinkedList<PeerConnection>();
+        connections = new LinkedList<>();
         clientsLock.unlock();
         return r;
     }

@@ -96,7 +96,7 @@ public class Torrent {
     }
 
     public void reload() throws NoSuchAlgorithmException, IOException {
-        Torrent t = TorrentParser.parseTorrentFile(f.getAbsolutePath());
+        Torrent t = ParserTorrentFile.parseTorrentFile(f.getAbsolutePath());
         this.trackers = t.trackers;
         int i = 0;
         for (FileResource f : t.files) {
