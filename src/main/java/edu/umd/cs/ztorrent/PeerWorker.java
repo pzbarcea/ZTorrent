@@ -195,7 +195,7 @@ public class PeerWorker {
         }
 
 
-        torrent.pm.doBlockingWork();
+        torrent.pm.processBlocking();
     }
 
     private void processTimedoutRequests(PeerConnection mc) {

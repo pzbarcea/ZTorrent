@@ -125,7 +125,7 @@ public class PieceManager {
      *
      * @throws IOException
      */
-    public void doBlockingWork() throws IOException {
+    public void processBlocking() throws IOException {
         //do all our writes and reads here.
         //for now we will store into our own .Partial format
         //Write then open for read
