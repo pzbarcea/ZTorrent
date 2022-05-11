@@ -73,7 +73,7 @@ public class PieceOrganizer {
             if (hasPiece(i)) {
                 piecesComplete++;
             } else {
-                System.out.println("Missing Piece #" + i);
+                System.out.println("[STATUS] Missing Piece #" + i);
             }
         }
     }

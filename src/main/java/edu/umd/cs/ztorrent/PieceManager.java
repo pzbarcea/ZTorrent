@@ -172,7 +172,7 @@ public class PieceManager {
                     byte[] sha = Arrays.copyOfRange(shaPieces.byteString, i * 20, i * 20 + 20);
                     byte[] b = md.digest(p);
                     if (!Arrays.equals(b, sha)) {
-                        System.out.println("CURRUPTION! index:" + i);
+                        System.out.println("[ERROR] Corruption detected, index:" + i);
                     }
                 }
             }

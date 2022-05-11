@@ -73,7 +73,7 @@ public class TorrentClient extends AbstractTableModel {
 
         }
         //Shut everything down.
-        System.out.println("Shutting down.");
+        System.out.println("[SHUTDOWN] Shutting down.");
         for (Torrent t : allTorrents) {
             t.shutdown();
         }
@@ -122,7 +122,7 @@ public class TorrentClient extends AbstractTableModel {
             activeTorrents.put(t, new TorrentWorker(new PeerWorker(), t));
             inactiveTorrents.remove(t);
         } else {
-            System.out.println("Do nothing already active");
+            System.out.println("[STATUS] Already active");
         }
     }
 
@@ -226,7 +226,7 @@ public class TorrentClient extends AbstractTableModel {
 
     public Torrent getTorrent(int i) {
         if (i < allTorrents.size()) {
-            System.out.println("get: " + i + " from all: " + allTorrents.size());
+            System.out.println("[STATUS] Get: " + i + " from all: " + allTorrents.size());
             return allTorrents.toArray(new Torrent[0])[i];
         }
 
