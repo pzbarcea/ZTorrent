@@ -17,7 +17,7 @@ import java.security.NoSuchAlgorithmException;
  * zTorrent GUI
  */
 public class TorrentUI extends JFrame implements ActionListener {
-    JTable torrentList;
+    JTable allTorrents;
     TorrentClient client;
     JFileChooser filePicker;
     JButton resumeButton;
@@ -49,24 +49,25 @@ public class TorrentUI extends JFrame implements ActionListener {
         buttonPanel.add(pauseButton);
         buttonPanel.add(deleteButton);
 
-        torrentList = new JTable(client);
-        JScrollPane scrollPane = new JScrollPane(torrentList);
+        allTorrents = new JTable(client);
+        JScrollPane scrollPane = new JScrollPane(allTorrents);
 
-        torrentList.setFillsViewportHeight(true);
+        allTorrents.setFont(new Font("Serif", Font.PLAIN, 16));
+        allTorrents.setFillsViewportHeight(true);
         scrollPane.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 
-        torrentList.setShowGrid(true);
-        torrentList.setShowHorizontalLines(true);
-        torrentList.setShowVerticalLines(true);
-        torrentList.setGridColor(Color.GRAY);
-        torrentList.setFillsViewportHeight(true);
-        torrentList.setPreferredSize(new Dimension(1000, 400));
-        torrentList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        torrentList.getColumnModel().getColumn(0).setPreferredWidth(200);
+        allTorrents.setShowGrid(true);
+        allTorrents.setShowHorizontalLines(true);
+        allTorrents.setShowVerticalLines(true);
+        allTorrents.setGridColor(Color.GRAY);
+        allTorrents.setFillsViewportHeight(true);
+        allTorrents.setPreferredSize(new Dimension(1000, 400));
+        allTorrents.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        allTorrents.getColumnModel().getColumn(0).setPreferredWidth(200);
 
         buttonPanel.setBackground(Color.darkGray);
-        torrentList.setBackground(Color.darkGray);
-        torrentList.setForeground(Color.WHITE);
+        allTorrents.setBackground(Color.darkGray);
+        allTorrents.setForeground(Color.WHITE);
         scrollPane.setBackground(Color.darkGray);
 
         JPanel banner = new JPanel();
@@ -139,20 +140,20 @@ public class TorrentUI extends JFrame implements ActionListener {
                 System.out.println("Aborted torrent open");
             }
         } else if (e.getSource() == deleteButton) {
-            System.out.println("Deleted " + torrentList.getSelectedRow());
-            client.deleteTorrentData(client.getTorrent(torrentList.getSelectedRow()));
+            System.out.println("Deleted " + allTorrents.getSelectedRow());
+            client.deleteTorrentData(client.getTorrent(allTorrents.getSelectedRow()));
 
         } else if (e.getSource() == pauseButton) {
-            System.out.println("Stopped " + torrentList.getSelectedRow());
+            System.out.println("Stopped " + allTorrents.getSelectedRow());
             try {
-                client.setTorrentInactive(client.getTorrent(torrentList.getSelectedRow()));
+                client.setTorrentInactive(client.getTorrent(allTorrents.getSelectedRow()));
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
         } else if (e.getSource() == resumeButton) {
-            System.out.println("Resumed " + torrentList.getSelectedRow());
+            System.out.println("Resumed " + allTorrents.getSelectedRow());
             try {
-                client.reActivate(client.getTorrent(torrentList.getSelectedRow()));
+                client.reActivate(client.getTorrent(allTorrents.getSelectedRow()));
             } catch (IOException | NoSuchAlgorithmException e1) {
                 e1.printStackTrace();
             }

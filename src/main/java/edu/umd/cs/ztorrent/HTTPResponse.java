@@ -76,7 +76,7 @@ public class HTTPResponse {
                 transferEncoding = true;
                 headerMap.put(HeaderType.TransferEncoding, p.substring(18).trim());
             } else {
-                System.out.println("Unknown Header: \"" + p.substring(0, p.length() - 2) + "\"");
+                System.out.println("[ERROR] Unknown header \"" + p.substring(0, p.length() - 2) + "\"");
                 String o = p;
                 if (headerMap.containsKey(HeaderType.UNKNOWN)) {
                     o = headerMap.get(HeaderType.UNKNOWN) + p;
@@ -86,7 +86,7 @@ public class HTTPResponse {
         }
 
         if (contentSize == -1 && !transferEncoding) {
-            System.out.println("[WARNING]: Reading MAX_VALUE bytes");
+            System.out.println("[WARNING] Reading MAX_VALUE bytes");
             contentSize = Integer.MAX_VALUE;
             body = readBody(in, contentSize, false);
         } else if (transferEncoding) {
@@ -174,7 +174,7 @@ public class HTTPResponse {
                     ch = inputStream.read();
                 }
             } catch (SocketTimeoutException STE) {
-                System.out.println("[ERROR]: SocketTimeoutException");
+                System.out.println("[ERROR] SocketTimeoutException");
             }
 
         } else {
@@ -184,7 +184,7 @@ public class HTTPResponse {
                     bytesRead++;
                 }
             } catch (SocketTimeoutException STE) {
-                System.out.println("[ERROR]: SocketTimeoutException");
+                System.out.println("[ERROR] SocketTimeoutException");
             }
 
         }

@@ -65,20 +65,20 @@ public class DHTTracker extends Tracker {
                         } else if (b.dictionary.containsKey("a") && b.dictionary.get("a").dictionary.containsKey("id")) {
                             i = new ID(b.dictionary.get("a").dictionary.get("id").byteString);
                         } else {
-                            System.out.println("Invalid in message");
+                            System.out.println("[ERROR] Invalid in message");
                             return;
                         }
 
                         Node n = new Node(i, dp.getPort(), dp.getAddress());
                         String s = b.dictionary.get("y").getString();
                         if (s.equals("e")) {
-                            System.out.println("Got error");
+                            System.out.println("[ERROR] Invalid dictionary get");
                             return;
                         } else if (s.equals("r")) {
-                            System.out.println("Response from " + n);
+                            System.out.println("[RESPONSE] Response from " + n);
                             responses.add(new Packet(b, n));
                         } else if (s.equals("a")) {
-                            System.out.println("Request from " + n);
+                            System.out.println("[REQUEST] Request from " + n);
                             requests.add(new Packet(b, n));
                         } else {
                             continue;
@@ -88,7 +88,7 @@ public class DHTTracker extends Tracker {
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (RuntimeException r) {
-                        System.out.println("Got packet. Couldnt decode bencoding");
+                        System.out.println("[ERROR] RuntimeException DHTTracker");
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                         on = false;

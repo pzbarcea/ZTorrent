@@ -256,7 +256,7 @@ public class MessageParser {
         os.write(o);
     }
 
-    /*
+    /**
      *
      * All of the remaining messages in the protocol take the form of <length prefix><message ID><payload>.
      * The length prefix is a four byte big-endian value.
