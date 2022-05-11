@@ -246,7 +246,7 @@ public class TorrentClient extends AbstractTableModel {
         }
 
         public void work() throws IOException {
-            worker.doWork(us);
+            worker.process(us);
             for (Tracker t : us.getTrackers()) {
                 t.doWork();
             }

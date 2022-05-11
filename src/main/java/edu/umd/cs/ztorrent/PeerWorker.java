@@ -8,28 +8,27 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * This is the implementation of peer logic
- * This is probably the most basic form of a client.
- * <p>
- * It follows the following rules:
- * -if some one requests something that we can give:
- * *give it to them
- * -collect list of rarity pieces we dont have and disseminate get requests for them
- * amoung our connections
- *
- * @author pzbarcea
+ * Worker for a single peer. It handles all the processing that is needed to make a single peer function including
+ * sending data that others request, and passing forward requests for data that we don't get have
  */
 public class PeerWorker {
-    int activeConnections = 0;
-    private static final int MAX_QUEUED = 32;
-    private boolean exhausted = false;
-    private long rarityTimer = System.currentTimeMillis();
-    private long haveAccumulator = 0;
-    private final long MIN_RARITY_TIME = 1000;
+    //Store the time that we start the program, since we will need this both to use as a timeout mechanism for checking
+    // the rarity as well as a way to calculate the download rate (Bytes downloaded / difference in time)
+    private final long startTime = System.currentTimeMillis();
+    private long timeout = System.currentTimeMillis();
+
+    //This will handle all of our connections for us, including storing the state of each connection
     private final ConnectionsHandler connectionsHandler = new ConnectionsHandler();
-    private final List<Piece> completedLast = new ArrayList<>();
-    private final Set<Integer> cleaningList = new HashSet<>();
-    private final long start = System.currentTimeMillis();
+
+    //The list of pieces that have finished
+    private final List<Piece> recentlyFinished = new ArrayList<>();
+    //A set of Piece indices that need to be removed (eventually)
+    private final Set<Integer> toRemove = new HashSet<>();
+    int connectionCounter = 0;
+    private boolean waitIteration = false;
+    private long callCounter;
+
+    private int maxQueueSize = 50;
 
     private void destroyConnection(PeerConnection mc) {
         connectionsHandler.destroyConnection(mc);
@@ -44,31 +43,28 @@ public class PeerWorker {
     private long up = 0;
     private long down = 0;
 
-    public void doWork(Torrent t) throws IOException {
-
-        // save time
+    public void process(Torrent t) throws IOException {
         long now = System.currentTimeMillis();
 
-        activeConnections = 0;
-        Set<PeerConnection> pList = t.getPeers();
-        Iterator<PeerConnection> itor = pList.iterator();
-        while (itor.hasNext()) {
-            PeerConnection mc = itor.next();
+        connectionCounter = 0;
+        Set<PeerConnection> connections = t.getPeers();
+        Iterator<PeerConnection> iterator = connections.iterator();
+        while (iterator.hasNext()) {
+            PeerConnection mc = iterator.next();
 
             if (mc.getConnectionState() == ConnectionState.uninitialized) {
-                initialize(t, mc);
+                start(t, mc);
             } else if (mc.getConnectionState() == ConnectionState.closed) {
-                close(t, itor, mc);
+                close(t, iterator, mc);
             } else {
                 process(t, mc);
             }
 
             if (mc.getConnectionState() == ConnectionState.connected) {
-                //Read state.
-                //Push requests (if allowed)
-                //Push blocks (if allowed)
-                activeConnections++;
-                haveAccumulator += mc.haveSinceLastCall();
+                //Add a new connection
+                connectionCounter++;
+
+                callCounter += mc.haveSinceLastCall();
 
                 if (mc.amChoking()) {
                     mc.setAmChoking(false);
@@ -76,17 +72,16 @@ public class PeerWorker {
                 if (!mc.amInterested()) {
                     mc.setAmInterested(true);
                 }
-                long l = connectionsHandler.readData(mc, t.pm.bitmap);
-                down += l;
-                t.addDownloaded(l);
+                long bytesRead = connectionsHandler.readData(mc, t.pm.bitmap);
+                down += bytesRead;
+                t.addDownloaded(bytesRead);
 
                 if (!mc.peerChoking()) {
-                    //Give them whatever they want.
                     for (MessageRequest r : mc.getPeerRequests()) {
                         if (t.pm.hasPiece(r.index)) {
-                            Piece piece = t.pm.getPiece(r.index);//can return null.
+                            Piece piece = t.pm.getPiece(r.index);
                             if (piece != null) {
-                                System.out.println("SENT RESPONSE " + r.index + "," + r.begin + "," + r.len);
+                                System.out.println("[SENDING] Piece #" + r.index + " of size "+  r.len);
                                 mc.pushRequestResponse(r, piece.getFromComplete(r.begin, r.len));
                                 t.addUploaded(r.len);
                                 up += r.len;
@@ -94,28 +89,14 @@ public class PeerWorker {
                         }
                     }
 
-
-                    //If the connection has been good (queue size < 50% full and track history >3*queue size)
-                    //reset history value
-                    //the queue will reset.
-                    //TODO: time must be a factor of the equation x complete over y time
-                    if (mc.getHistorySize() > 3 * mc.getMaxRequests() && mc.getActiveRequest().length < mc.getMaxRequests() / 2.0 && mc.getMaxRequests() < MAX_QUEUED) {//less then 50%
+                    if (mc.getMaxRequests() < maxQueueSize) {
                         mc.resetHistory();
-                        int i = mc.getMaxRequests();
-                        i *= 1.5;//3*1.5 =
-                        if (i > MAX_QUEUED) {
-                            i = MAX_QUEUED;
-                        }
-                        mc.setMaxRequests(i);
-                        System.out.println("" + mc + " has new max limit " + i);
-                    }
 
+                        mc.setMaxRequests(maxQueueSize);
+                    }
 
                     //write requests
                     Iterator<MessageRequest> rlist = connectionsHandler.getPendingRequests(mc).iterator();
-                    if (connectionsHandler.getPendingRequests(mc).size() > 0) {
-//						System.out.println("Something could.");
-                    }
                     while (rlist.hasNext()) {
                         MessageRequest r = rlist.next();
                         if (mc.getMaxRequests() >= mc.activeRequests() + 1) {
@@ -134,14 +115,14 @@ public class PeerWorker {
 
 
                     //enqueue some requests if not fully filled.
-                    connectionsHandler.addPieces(MAX_QUEUED + 3, mc);
+                    connectionsHandler.addPieces(maxQueueSize + 3, mc);
 
                 } else {
                     //Dequeue im choked lists are dropped.
                     mc.resetHistory();
                     Piece[] ps = connectionsHandler.getQueuedPieces(mc);
                     for (Piece p : ps) {
-                        exhausted = false;
+                        waitIteration = false;
                         connectionsHandler.removePiece(mc, (int) p.pieceIndex);
                     }
                 }
@@ -151,7 +132,7 @@ public class PeerWorker {
                 processTimedoutRequests(mc);
 
                 if (mc.peerInterested()) {
-                    for (Piece piece : completedLast) {
+                    for (Piece piece : recentlyFinished) {
                         mc.pushHave((int) piece.pieceIndex);
                     }
                 }
@@ -160,11 +141,11 @@ public class PeerWorker {
 
         }
 
-        completedLast.clear();
+        recentlyFinished.clear();
         List<Piece> piecesCompleted = connectionsHandler.getCompletedPieces();
         if (piecesCompleted != null) {
             for (Piece p : piecesCompleted) {
-                completedLast.add(p);
+                recentlyFinished.add(p);
                 t.pm.putPiece(p);
             }
         }
@@ -174,23 +155,23 @@ public class PeerWorker {
         //TODO: check for recently called. We may just have everything that we can get.
         //TODO: timer, delta have's
         //Recomputes rarity based on time and new have's
-        if ((System.currentTimeMillis() - rarityTimer) > MIN_RARITY_TIME && (haveAccumulator > 0)) {
+        if ((System.currentTimeMillis() - timeout) > 1000 && (callCounter > 0)) {
             t.pm.bitmap.recomputeRarity();//TODO: Dont recompute so often too cpu intensive.
-            haveAccumulator = 0;
-            rarityTimer = System.currentTimeMillis();
-            exhausted = false;
+            callCounter = 0;
+            timeout = System.currentTimeMillis();
+            waitIteration = false;
         }
 
 
         //Sets Completion queue by rarity.
         //TODO: client may leave, access to piece might disapear..
         Set<Piece> workingQueue = connectionsHandler.getQueue();
-        if (workingQueue.size() == 0 && !t.pm.bitmap.isComplete() && !exhausted) {//&&!exhausted
+        if (workingQueue.size() == 0 && !t.pm.bitmap.isComplete() && !waitIteration) {
             workingQueue.clear();
             List<Rarity> rList = t.pm.bitmap.getRarityList();
             boolean addedOnce = false;
             for (Rarity rar : rList) {
-                if (workingQueue.size() >= 5 * activeConnections || workingQueue.size() >= 50) {
+                if (workingQueue.size() >= 5 * connectionCounter || workingQueue.size() >= 50) {
                     addedOnce = true;
                     break;
                 }
@@ -203,16 +184,16 @@ public class PeerWorker {
                     System.out.println("No one has " + rar.index);
                 }
             }
-            exhausted = !addedOnce;
-            if (exhausted) {
+            waitIteration = !addedOnce;
+            if (waitIteration) {
                 System.out.println("Exhausted");
             }
         }
 
 
         if (System.currentTimeMillis() % 10000 == 0) {
-            System.out.println("Active Connections: " + activeConnections);
-            System.out.println("Average dl: " + (t.getDownloaded() / (System.currentTimeMillis() - start)) + " KB/s");
+            System.out.println("Active Connections: " + connectionCounter);
+            System.out.println("Average dl: " + (t.getDownloaded() / (System.currentTimeMillis() - this.startTime)) + " KB/s");
         }
 
         if (now - lastTime > 10 * 1000) {
@@ -228,22 +209,22 @@ public class PeerWorker {
 
     private void processTimedoutRequests(PeerConnection mc) {
 
-        cleaningList.clear();
+        toRemove.clear();
         for (MessageRequest r : mc.getActiveRequest()) {
             if (System.currentTimeMillis() - r.timeSent > 1000 * 10) {//10 second timeout
-                cleaningList.add(r.index);
+                toRemove.add(r.index);
             }
         }
 
-        for (Integer p : cleaningList) {
+        for (Integer p : toRemove) {
             System.out.println("Time expired. " + p + " on " + mc);
             mc.resetHistory();
             connectionsHandler.removePiece(mc, p);
         }
 
-        if (cleaningList.size() > 0) {
+        if (toRemove.size() > 0) {
             //drop max queue size.
-            exhausted = false;
+            waitIteration = false;
             int i = mc.getMaxRequests();
             i *= .5;
             if (i < 1) {
@@ -261,11 +242,11 @@ public class PeerWorker {
     private void close(Torrent t, Iterator<PeerConnection> itor, PeerConnection mc) {
         itor.remove();
         destroyConnection(mc);
-        haveAccumulator = 1;//just set so can recalculate.
+        callCounter = 1;//just set so can recalculate.
         t.pm.bitmap.removePeerMap(mc.getPeerBitmap());
     }
 
-    private void initialize(Torrent t, PeerConnection mc) {
+    private void start(Torrent t, PeerConnection mc) {
         mc.initializeConnection(t.pm.bitmap.getMapCopy(), t);
         connectionsHandler.beginConnection(mc);
         t.pm.bitmap.addPeerMap(mc.getPeerBitmap());//adds

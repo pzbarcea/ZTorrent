@@ -24,7 +24,7 @@ public class SeedTest {
         PeerWorker bpl = new PeerWorker();
         t.addPeer(InetAddress.getByName("127.0.0.1"), 6881, null);
         while (true) {
-            bpl.doWork(t);
+            bpl.process(t);
             Thread.sleep(10);
         }
     }
