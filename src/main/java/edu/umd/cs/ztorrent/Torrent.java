@@ -20,7 +20,7 @@ import java.util.*;
 public class Torrent {
     public final byte[] hashInfo;
     public final byte[] peerID;
-    public final MetaData meta;
+    public final TorrentInfo meta;
     public String name;
     public String status = "";
 
@@ -44,7 +44,7 @@ public class Torrent {
 
 
     public Torrent(String name, int pieceLength, FileResource[] files, long totalBytes, byte[] byteStringHashInfo, String urlEncodedHash,
-                   Bencoder pieceHash, MetaData md, List<Tracker> trackers, String file) throws IOException {
+                   Bencoder pieceHash, TorrentInfo md, List<Tracker> trackers, String file) throws IOException {
 
         this.hashInfo = byteStringHashInfo;
         this.peerID = genRandomSessionKey(20).getBytes(StandardCharsets.UTF_8);

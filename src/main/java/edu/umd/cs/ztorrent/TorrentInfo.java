@@ -2,32 +2,31 @@ package edu.umd.cs.ztorrent;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Random;
 import java.util.Set;
 
-public class MetaData {
+public class TorrentInfo {
 
     boolean complete;
+    boolean started = false;
     Piece p;
     long size;
     int pieces;
     byte[] metaData;
     Set<Integer> piecesLeft;
-    boolean started = false;
-    Random random = new Random();
 
-    public MetaData(Bencoder infoDic) throws FileNotFoundException {
+    public TorrentInfo() {
+        complete = false;
+        size = -1;
+    }
+
+    public TorrentInfo(Bencoder infoDic) throws FileNotFoundException {
         complete = true;
         metaData = infoDic.toByteArray();
     }
 
-    public MetaData() {
-        complete = false;
-        size = -1;
+    public boolean isComplete() {
+        return complete;
     }
 
     public void setSize(int bytes) {
@@ -38,7 +37,7 @@ public class MetaData {
             size = bytes;
             pieces = (int) Math.ceil(size / (1024 * 16.0));
             metaData = new byte[(int) size];
-            piecesLeft = new HashSet<Integer>();
+            piecesLeft = new HashSet<>();
             for (int i = 0; i < pieces; i++) {
                 piecesLeft.add(i);
             }
@@ -64,34 +63,9 @@ public class MetaData {
 
     public void add(int piece, byte[] data) {
         if (!complete) {
-            p.addData(1024 * 16 * piece, data);
+            p.addData(1024L * 16 * piece, data);
             piecesLeft.remove(piece);
         }
     }
 
-    /**
-     * Ideally one not already given out. but we ain't picky.
-     *
-     * @return
-     */
-    public int getOpenPiece() {
-        if (piecesLeft.size() > 0) {
-            int i = random.nextInt(piecesLeft.size());
-            return piecesLeft.toArray(new Integer[0])[i];//Hawt.
-        } else {
-            return -1;
-        }
-    }
-
-    public boolean isComplete() {
-        return complete;
-    }
-
-    public boolean shaMatch(byte[] infoHash) throws NoSuchAlgorithmException {
-        if (complete) {
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
-            return Arrays.equals(infoHash, md.digest(metaData));
-        }
-        return false;
-    }
 }
