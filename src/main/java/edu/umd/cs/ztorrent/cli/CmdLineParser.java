@@ -161,7 +161,7 @@ public class CmdLineParser {
         }
 
         /**
-         * Tells whether or not this option wants a value
+         * Tells whether this option wants a value
          */
         public boolean wantsValue() {
             return this.wantsValue;

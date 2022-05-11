@@ -6,34 +6,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
-/**
- * Class that manages files and pieces.
- * Should manage piece and file interactions.
- * Cache-ing?
- * <p>
- * Working with big files can get complicated....
- * #files = pieces / 3k
- * for reference # pieces for huge torrent[120GB with 64KB piece]:
- * ~1.8 million pieces
- * ~600 files
- * Ok so thats bad. Instead we will keep map
- * of piece to file offset. This will have to be enough.
- * <p>
- * Goal here is to beable to fit on 256MB of ram fyi.
- * Maps in worse case[1.8 mil] will use 6.2% of this
- * <p>
- * Our cache is LRU cahce
- * from LinkedHashMap java doc:
- * "This kind of map is well-suited to building LRU caches."
- * :-) ^.^ ^_^ O_o !! woot.
- * <p>
- * So either we have the completed files
- * Or we the "partial" version of the file
- */
 public class PieceManager {
-    //TODO: private Set<Long> skippedPieces;, actually should keeps chunks of this.
-    LinkedHashMap<Long, Piece> indexToPiece;//Subset of completed pieces, quick LRU cache
-    List<Piece> writeToDisk;//set that still needs to be written to disk.
+    LinkedHashMap<Long, Piece> indexToPiece;
+    List<Piece> writeToDisk;
     List<Integer> readsFromDisk;
     int cacheSize;
     int pieceLength;
@@ -58,7 +33,6 @@ public class PieceManager {
         this.cacheSize = actualChunks;
         this.files = files;
 
-        //Java's pretty awesome....
         indexToPiece = new LinkedHashMap<Long, Piece>(actualChunks + 2, 1, true) {//true->access order
             private static final long serialVersionUID = -1418159831489090492L;
 
@@ -106,8 +80,6 @@ public class PieceManager {
      * @return
      */
     public Piece getPiece(long pieceIndex) {
-        //get piece must do puts so we can keep
-        //stuff being used at top
         if (!pieceOrganizer.hasPiece((int) pieceIndex)) {
             throw new RuntimeException("Cant get piece that hasnt been completed.");
         }
@@ -126,11 +98,6 @@ public class PieceManager {
      * @throws IOException
      */
     public void processBlocking() throws IOException {
-        //do all our writes and reads here.
-        //for now we will store into our own .Partial format
-        //Write then open for read
-        //RandomAccessFile raf = new RandomAccessFile(partialFile,"rw");
-        //Awesome ^.^ -> raf.getFilePointer()
         for (Piece p : writeToDisk) {
             for (FileResource d : files) {
                 d.writePieceToFile(p);
@@ -154,8 +121,6 @@ public class PieceManager {
     }
 
     public void checkFiles() throws IOException {
-        //for every piece that we have......
-        //Files already loaded up them selves in the bitmap
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
             for (int i = 0; i < pieceOrganizer.getNumberOfPieces(); i++) {

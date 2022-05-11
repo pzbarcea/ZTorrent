@@ -70,7 +70,7 @@ public class HTTPTracker extends Tracker {
     }
 
     /***
-     * REWORD: Updates torrent file with results from tracker
+     * Updates torrent file with results from tracker
      *
      * Generates a GET request,
      */
