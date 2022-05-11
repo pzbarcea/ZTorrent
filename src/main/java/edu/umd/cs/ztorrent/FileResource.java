@@ -37,21 +37,21 @@ public class FileResource {
     //String representing the filepath that comes before the filename, in case we want to write or read to a directory
     // that is different than the one we are in (useful bc our Maven will generate a target directory that gets wiped and
     // rebuilt anyway, so storing stuff there is bad)
-    private final String folder;
+    private String folder;
 
     //String representing the filename (what comes after the folder path) this then gets appended with the folder to
     // create the entire filepath to use for the file object (myFile
-    private final String filename;
+    private String filename;
 
     //Represents if the file is a temporary (partially completed) file or not (if it is a temp file, we need to only write some bytes and
     // manipulate the file pointer, so this matters a lot)
     private boolean isTemp;
 
     //Represents the length of file in Bytes (stored as Long bc this can be very large for big torrents)
-    private final long length;
+    private long length;
 
     //Represents the byte offset to use for writing to the file
-    private final long offset;
+    private long offset;
 
     //Represents the index of the leftmost piece to write to the file (the next piece)
     private int leftmostPiece;
@@ -67,7 +67,7 @@ public class FileResource {
     // with some formula, where the piecenumber is multiplied by the piece length, then added to the
     // byte offset (but this is more error prone, so we elected to just store it in memory)
     //TODO: consider improving storage efficiency by calculating this each time (but this will reduce time efficiency)
-    private final Map<Integer, Long> pieceNumberToByteOffSet;
+    private Map<Integer, Long> pieceNumberToByteOffSet;
 
     /**
      * Constructor that takes in what was parsed from the information contained in the torrent file

@@ -11,21 +11,14 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-/***
- * Manages connection between torrent states.
- * TODO: On initialization looks for user data.
- *
- * @author pzbarcea
- */
 public class TorrentClient extends AbstractTableModel {
-    private static final long serialVersionUID = -143709093895815620L;
+    private static long serialVersionUID = -143709093895815620L;
     public boolean on = true;
 
-    final Set<Torrent> allTorrents = Collections.synchronizedSet(new HashSet<>());
-    final Map<Torrent, TorrentWorker> activeTorrents = new ConcurrentHashMap<>();
-    final Set<Torrent> inactiveTorrents = Collections.synchronizedSet(new HashSet<>());
-
-    final Queue<Torrent> newTorrents = new ConcurrentLinkedQueue<>();
+    Set<Torrent> allTorrents = Collections.synchronizedSet(new HashSet<>());
+    Set<Torrent> inactiveTorrents = Collections.synchronizedSet(new HashSet<>());
+    Map<Torrent, TorrentWorker> activeTorrents = new ConcurrentHashMap<>();
+    Queue<Torrent> newTorrents = new ConcurrentLinkedQueue<>();
     TorrentSocket tss;
 
     public TorrentClient() {
@@ -169,7 +162,7 @@ public class TorrentClient extends AbstractTableModel {
         return allTorrents.size();
     }
 
-    private static final DecimalFormat dg = new DecimalFormat();
+    private static DecimalFormat dg = new DecimalFormat();
     {
         dg.setMaximumFractionDigits(3);
     }
@@ -235,7 +228,7 @@ public class TorrentClient extends AbstractTableModel {
 
     public static class TorrentWorker {
         private PeerWorker worker;
-        private final Torrent us;
+        private Torrent us;
 
         public TorrentWorker(PeerWorker worker, Torrent torr) {
             this.worker = worker;

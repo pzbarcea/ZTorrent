@@ -1,8 +1,8 @@
 package edu.umd.cs.ztorrent.message;
 
 public class MessageResponse {
-    public final int index, begin;
-    public final byte[] block;
+    public int index, begin;
+    public byte[] block;
 
     public MessageResponse(int index, int begin, byte[] block) {
         this.index = index;

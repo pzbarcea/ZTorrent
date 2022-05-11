@@ -17,39 +17,36 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.*;
 
-/**
- * Connection for sending metadata across peers
- */
 public class TorrentConnection {
-    public final int port;
-    public final InetAddress ip;
-    protected boolean am_choking = true;
-    protected boolean am_interested = false;
-    protected boolean peer_choking = true;
-    protected boolean peer_interested = false;
-    protected byte[] peerID;
-    protected byte[] version;
-    protected byte[] infoHash;
-    protected ConnectionState conState;
-    protected boolean recvHandShake;
-    protected boolean sentHandShake;
-    protected MessageParser mp;
-    protected OutputStream sockOut;
-    protected InputStream sockIn;
-    protected Socket sock;
-    protected long maintenance;
-    protected byte[] announcedMap;
-    protected Set<MessageRequest> peerRequests;
-    protected Map<String, Integer> extensions;
-    protected Map<Integer, String> revExtensions;
-    protected int metaSize = -1;
-    protected String name = "Unknown";
-    protected boolean connectionSupportsMeta = false;
-    protected boolean connectionSupportsMetaMeta = false;
-    protected TorrentInfo torrentInfo;
-    protected int max_reported = -1;
+    public int port;
+    public InetAddress ip;
+    public boolean am_choking = true;
+    public boolean am_interested = false;
+    public boolean peer_choking = true;
+    public boolean peer_interested = false;
+    public byte[] peerID;
+    public byte[] version;
+    public byte[] infoHash;
+    public ConnectionState conState;
+    public boolean recvHandShake;
+    public boolean sentHandShake;
+    public MessageParser mp;
+    public OutputStream sockOut;
+    public InputStream sockIn;
+    public Socket sock;
+    public long maintenance;
+    public byte[] announcedMap;
+    public Set<MessageRequest> peerRequests;
+    public Map<String, Integer> extensions;
+    public Map<Integer, String> revExtensions;
+    public int metaSize = -1;
+    public String name = "STRANGER";
+    public boolean connectionSupportsMeta = false;
+    public boolean connectionSupportsMetaMeta = false;
+    public TorrentInfo torrentInfo;
+    public int max_reported = -1;
     private boolean isMetaConnection = false;
-    private final Set<Integer> metaMetaRequests = new HashSet<Integer>();
+    private Set<Integer> mRequests = new HashSet<>();
 
     public TorrentConnection(InetAddress ip, int port) {
         this.ip = ip;
@@ -214,7 +211,7 @@ public class TorrentConnection {
                         }
                     //Represents a response
                     } else if (i == 1) {
-                        metaMetaRequests.remove(piece);
+                        mRequests.remove(piece);
                         torrentInfo.add(piece, left);
                     } else {
                         connectionSupportsMetaMeta = false;

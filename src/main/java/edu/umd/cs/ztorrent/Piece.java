@@ -4,10 +4,10 @@ import edu.umd.cs.ztorrent.message.MessageRequest;
 import java.util.*;
 
 public class Piece implements Comparable<Piece> {
-    boolean complete;
-    public final static int idealSize = 16 * 1024;
-    public final long pieceIndex;
-    final byte[] finalPiece;
+    public boolean complete;
+    public static int idealSize = 16 * 1024;
+    public long pieceIndex;
+    public byte[] finalPiece;
     Set<Fragment> data;
 
     public Piece(long index, int size) {
@@ -43,9 +43,6 @@ public class Piece implements Comparable<Piece> {
 
     /**
      * Adds a block to a piece.  Returns true if the piece is now complete, false otherwise.
-     *
-     * @param begin
-     * @param block
      */
     public boolean addData(long begin, byte[] block) {
         if (complete) {

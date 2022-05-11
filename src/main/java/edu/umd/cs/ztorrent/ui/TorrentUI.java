@@ -161,10 +161,9 @@ public class TorrentUI extends JFrame implements ActionListener {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        // @TODO: open the client with a specific torrent
 
         TorrentClient client = new TorrentClient();
-        final TorrentUI ex = new TorrentUI(client);
+        TorrentUI ex = new TorrentUI(client);
         ex.setSize(1000, 485);
         SwingUtilities.invokeLater(() -> ex.setVisible(true));
 

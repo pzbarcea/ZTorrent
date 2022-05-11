@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
  */
 public class HTTPResponse {
     public enum HeaderType {HTTP, Date, Server, LastModified, Etag, ContentType, ContentLength, Connection, Pragma, TransferEncoding, UNKNOWN}
-    public final Map<HeaderType, String> headerMap;
+    public Map<HeaderType, String> headerMap;
     public int status = -1;
     public String version;
     public int contentSize = -1;

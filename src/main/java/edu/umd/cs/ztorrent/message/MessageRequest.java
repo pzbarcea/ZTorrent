@@ -1,7 +1,7 @@
 package edu.umd.cs.ztorrent.message;
 
 public class MessageRequest {
-    public final int index, begin, len;
+    public int index, begin, len;
     public long timeSent;
 
     public MessageRequest(long i, long b, long l) {

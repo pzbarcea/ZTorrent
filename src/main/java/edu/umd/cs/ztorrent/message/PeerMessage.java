@@ -1,7 +1,7 @@
 package edu.umd.cs.ztorrent.message;
 
 public class PeerMessage {
-    public final MessageType type;
+    public MessageType type;
     public byte[] bitfield;
     public long piece;
     public long index;

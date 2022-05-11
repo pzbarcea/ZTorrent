@@ -8,11 +8,11 @@ public abstract class Tracker {
     protected boolean workingTracker = true;
     private long time = 0;
 
-    private final void updateTimer() {
+    private void updateTimer() {
         time = System.currentTimeMillis();
     }
 
-    private final long getTimeSinceWork() {
+    private long getTimeSinceWork() {
         return System.currentTimeMillis() - time;
     }
 

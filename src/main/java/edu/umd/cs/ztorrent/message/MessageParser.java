@@ -12,12 +12,12 @@ import java.util.Queue;
 
 public class MessageParser {
 
-    private static final int UNINITIALIZED = -1;
-    private static final int KEEPALIVE = 0;
-    private static final int LENGTH_PREFIX_SIZE = 4;
+    private static int UNINITIALIZED = -1;
+    private static int KEEPALIVE = 0;
+    private static int LENGTH_PREFIX_SIZE = 4;
 
     byte[] sizeBuf = new byte [LENGTH_PREFIX_SIZE];
-    private final Queue<PeerMessage> queue = new LinkedList<>();
+    private Queue<PeerMessage> queue = new LinkedList<>();
     private byte[] buffer;
     private int off;
     private int size = UNINITIALIZED;
@@ -413,7 +413,7 @@ public class MessageParser {
     }
 
     public static class HandShake {
-        public final byte[] peerID, hashInfo, version, reserved;
+        public byte[] peerID, hashInfo, version, reserved;
 
         public HandShake(byte[] peerID, byte[] hashInfo, byte[] version, byte[] reserved) {
             this.peerID = peerID;

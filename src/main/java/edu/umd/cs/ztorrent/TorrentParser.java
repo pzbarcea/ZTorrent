@@ -17,9 +17,9 @@ import java.util.List;
  */
 public class TorrentParser {
     //TODO: ERROR CHECKING!!! OMG. Seriously.
-    private static final String hex = "0123456789ABCDEF";
+    private static String hex = "0123456789ABCDEF";
 
-    final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
+    protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];

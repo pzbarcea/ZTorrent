@@ -33,11 +33,11 @@ public class DHTTracker extends Tracker {
     int total = 0;
     private long lastRoot = 0;
     private boolean havePeers = false;
-    private final byte[] infoHash;
-    private final List<Node> connectionCleaner = new ArrayList<Node>(0);
-    private final List<String> packetCleaner = new ArrayList<String>(0);
+    private byte[] infoHash;
+    private List<Node> connectionCleaner = new ArrayList<Node>(0);
+    private List<String> packetCleaner = new ArrayList<String>(0);
     private List<TorrentConnection> potentialPeers = new ArrayList<TorrentConnection>();
-    private final long startTime = System.currentTimeMillis();
+    private long startTime = System.currentTimeMillis();
 
     public DHTTracker(byte[] infoHash, byte[] PeerID) throws SocketException {
         this.infoHash = infoHash;
@@ -48,7 +48,7 @@ public class DHTTracker extends Tracker {
         responses = new ConcurrentLinkedQueue<Packet>();
         id = new ID(PeerID);
         recv = new Thread() {
-            final DatagramPacket dp = new DatagramPacket(new byte[65000], 65000);
+            DatagramPacket dp = new DatagramPacket(new byte[65000], 65000);
             boolean on = true;
 
             @Override
@@ -519,7 +519,7 @@ public class DHTTracker extends Tracker {
                     if (!args.containsKey("target")) {
                         continue;
                     }
-                    final byte[] target = args.get("target").byteString;
+                    byte[] target = args.get("target").byteString;
 
                     byte[] nodes = getEightClosest(target);
                     d = constructNodeResponse(id, t, nodes);
@@ -527,7 +527,7 @@ public class DHTTracker extends Tracker {
                     if (!args.containsKey("info_hash")) {
                         continue;
                     }
-                    final byte[] target = args.get("info_hash").byteString;
+                    byte[] target = args.get("info_hash").byteString;
                     byte[] nodes = getEightClosest(target);
                     d = constructPeersResponseN(id, t, nodes, new byte[]{65, 65, 65, 65});
 
@@ -594,8 +594,8 @@ public class DHTTracker extends Tracker {
     }
 
     private class ID {
-        public final int hash;
-        public final byte[] id;
+        public int hash;
+        public byte[] id;
 
         public ID(byte[] id) {
             this.id = id;
@@ -628,9 +628,9 @@ public class DHTTracker extends Tracker {
     }
 
     private class Node {
-        final ID nodeId;
-        final int port;
-        final InetAddress ip;
+        ID nodeId;
+        int port;
+        InetAddress ip;
         long timeSinceLastRecv = System.currentTimeMillis();
         long timeSinceLastSent = 0;
         byte[] lastToken;

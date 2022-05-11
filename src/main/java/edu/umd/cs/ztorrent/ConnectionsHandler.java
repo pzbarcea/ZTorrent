@@ -16,19 +16,19 @@ import java.util.*;
 public class ConnectionsHandler {
 
     //Maps the specific connection to its connection status (the pieces it has queued, plus all the other piece requests it has queued)
-    private final Map<PeerConnection, ConnectionStatus> clientToPieceSet = new HashMap<>();
+    private Map<PeerConnection, ConnectionStatus> clientToPieceSet = new HashMap<>();
 
     //Maps a piece to all the clients that have requested it. Useful because we need to know who to transfer a piece to
-    private final Map<Piece, List<PeerConnection>> pieceToClients = new HashMap<>();
+    private Map<Piece, List<PeerConnection>> pieceToClients = new HashMap<>();
 
     //The set of pieces that need to be added eventually (we have a maximum number of piece requested at a time)
-    private final Set<Piece> currentQueue = new TreeSet<>();
+    private Set<Piece> currentQueue = new TreeSet<>();
 
     //Maps the pieces that are currently in use by >= 1 connection that we need to finish
-    private final Map<Integer, Piece> piecesToFinish = new HashMap<>();
+    private Map<Integer, Piece> piecesToFinish = new HashMap<>();
 
     //Maps the pieces that are finished or finishing
-    private final Map<Integer, Piece> otherFinishedPieces = new HashMap<>();
+    private Map<Integer, Piece> otherFinishedPieces = new HashMap<>();
 
     //Represents the set of pieces that have finished. Used by the PeerWorker to track which pieces finished (and also for the
     // CLI and GUI to print out which pieces finished so we know we are progressing in the download)

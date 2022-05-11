@@ -2,7 +2,7 @@ package edu.umd.cs.ztorrent;
 
 public class Rarity implements Comparable<Rarity> {
     private short value;
-    public final int index;
+    public int index;
 
     public Rarity(int index) {
         this.index = index;

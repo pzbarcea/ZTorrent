@@ -24,8 +24,8 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class TorrentSocket {
     private List<PeerConnection> connections;
-    private final ServerSocket tcpServer;
-    private final ReentrantLock clientsLock = new ReentrantLock();
+    private ServerSocket tcpServer;
+    private ReentrantLock clientsLock = new ReentrantLock();
     boolean alive = true;
     Thread th;
 

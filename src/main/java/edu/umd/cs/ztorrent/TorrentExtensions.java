@@ -15,7 +15,7 @@ public class TorrentExtensions {
      * @return
      * @TODO: Test Extension
      */
-    public final static byte[] constructExtention(byte id, byte[] block) {
+    public static byte[] constructExtention(byte id, byte[] block) {
         ByteBuffer b = ByteBuffer.allocate(6 + block.length);
         b.putInt(block.length + 2);
         b.put((byte) 20);
@@ -24,17 +24,7 @@ public class TorrentExtensions {
         return b.array();
     }
 
-    /////////////////// "Extension for Peers to Send Metadata Files" /////////////////////
-    public final static byte[] getMetaDataPiece(byte id, int piece) {
-        Bencoder b = new Bencoder();
-        b.type = BencodeType.Dictionary;
-        b.dictionary = new HashMap<String, Bencoder>();
-        b.dictionary.put("msg_type", new Bencoder(0));
-        b.dictionary.put("piece", new Bencoder(piece));
-        return constructExtention(id, b.toByteArray());
-    }
-
-    public final static byte[] pushMetaDataPiece(byte id, int piece, byte[] block) {
+    public static byte[] pushMetaDataPiece(byte id, int piece, byte[] block) {
         Bencoder b = new Bencoder();
         b.type = BencodeType.Dictionary;
         b.dictionary = new HashMap<String, Bencoder>();
@@ -48,7 +38,7 @@ public class TorrentExtensions {
         return constructExtention(id, b.toByteArray());//quite wasteful. but im lazy :-)
     }
 
-    public final static byte[] rejectMetaDataPiece(byte id, int piece) {
+    public static byte[] rejectMetaDataPiece(byte id, int piece) {
         Bencoder b = new Bencoder();
         b.type = BencodeType.Dictionary;
         b.dictionary = new HashMap<String, Bencoder>();
@@ -56,7 +46,6 @@ public class TorrentExtensions {
         b.dictionary.put("piece", new Bencoder(piece));
         return constructExtention(id, b.toByteArray());
     }
-    //\\\\\\\\\\\\\\\\ "Extension for Peers to Send Metadata Files" \\\\\\\\\\\\\\\\\\\\
 
 
 }

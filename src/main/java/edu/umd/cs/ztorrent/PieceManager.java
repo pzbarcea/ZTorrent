@@ -38,8 +38,8 @@ public class PieceManager {
     int cacheSize;
     int pieceLength;
     FileResource[] files;
-    public final PieceOrganizer pieceOrganizer;
-    private final Bencoder shaPieces;
+    public PieceOrganizer pieceOrganizer;
+    private Bencoder shaPieces;
 
     public PieceManager(FileResource[] files, int cacheBytes, int pieceLength, long totalBytes, Bencoder b)
             throws FileNotFoundException {

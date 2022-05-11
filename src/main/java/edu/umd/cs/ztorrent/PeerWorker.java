@@ -14,16 +14,16 @@ import java.util.*;
 public class PeerWorker {
     //Store the time that we start the program, since we will need this both to use as a timeout mechanism for checking
     // the rarity as well as a way to calculate the download rate (Bytes downloaded / difference in time)
-    private final long startTime = System.currentTimeMillis();
+    private long startTime = System.currentTimeMillis();
     private long timeout = System.currentTimeMillis();
 
     //This will handle all of our connections for us, including storing the state of each connection
-    private final ConnectionsHandler connectionsHandler = new ConnectionsHandler();
+    private ConnectionsHandler connectionsHandler = new ConnectionsHandler();
 
     //The list of pieces that have finished
-    private final List<Piece> recentlyFinished = new ArrayList<>();
+    private List<Piece> recentlyFinished = new ArrayList<>();
     //A set of Piece indices that need to be removed (eventually)
-    private final Set<Integer> toRemove = new HashSet<>();
+    private Set<Integer> toRemove = new HashSet<>();
     int connectionCounter = 0;
     private boolean waitIteration = false;
     private long callCounter;

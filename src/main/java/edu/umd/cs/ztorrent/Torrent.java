@@ -18,29 +18,29 @@ import java.util.*;
  * @author pzbarcea
  */
 public class Torrent {
-    public final byte[] hashInfo;
-    public final byte[] peerID;
-    public final TorrentInfo meta;
+    public byte[] hashInfo;
+    public byte[] peerID;
+    public TorrentInfo meta;
     public String name;
     public String status = "";
 
     public static int STANDARD_CACHE_SIZE = 1024 * 1024 * 20;//20MB
-    private final Set<PeerConnection> peerList = new HashSet<>();//TODO: keep only peers with valid connections?
-    public final PieceManager pm;
-    public final int numFiles;
-    public final int pieceLength;
-    public final FileResource[] files;
+    private Set<PeerConnection> peerList = new HashSet<>();//TODO: keep only peers with valid connections?
+    public PieceManager pm;
+    public int numFiles;
+    public int pieceLength;
+    public FileResource[] files;
     public long totalBytes;
-    public final Bencoder pieceHash;
+    public Bencoder pieceHash;
     private long downloaded;
-    private final long uploaded;
-    private final boolean haveFiles;
+    private long uploaded;
+    private boolean haveFiles;
     private long recentDownRate;
     private long recentUpRate;
     private List<Tracker> trackers;
     private long left;//TODO: associate with files.
     public int uPnP_Port = 1010;//TODO
-    private final File f;
+    private File f;
 
 
     public Torrent(String name, int pieceLength, FileResource[] files, long totalBytes, byte[] byteStringHashInfo, String urlEncodedHash,

@@ -44,7 +44,7 @@ public class CmdLineParser {
             return this.optionName;
         }
 
-        private final String optionName;
+        private String optionName;
     }
 
     /**
@@ -123,8 +123,8 @@ public class CmdLineParser {
         public String getValue() {
             return this.value;
         }
-        private final Option<?> option;
-        private final String value;
+        private Option<?> option;
+        private String value;
     }
 
     /**
@@ -167,7 +167,7 @@ public class CmdLineParser {
             return this.wantsValue;
         }
 
-        public final T getValue( String arg, Locale locale )
+        public T getValue( String arg, Locale locale )
                 throws IllegalOptionValueException {
             if ( this.wantsValue ) {
                 if ( arg == null ) {
@@ -197,9 +197,9 @@ public class CmdLineParser {
             return null;
         }
 
-        private final String shortForm;
-        private final String longForm;
-        private final boolean wantsValue;
+        private String shortForm;
+        private String longForm;
+        private boolean wantsValue;
 
 
 
@@ -314,7 +314,7 @@ public class CmdLineParser {
     /**
      * Add the specified Option to the list of accepted options
      */
-    public final <T> Option<T> addOption( Option<T> opt ) {
+    public <T> Option<T> addOption( Option<T> opt ) {
         if ( opt.shortForm() != null ) {
             this.options.put("-" + opt.shortForm(), opt);
         }
@@ -326,7 +326,7 @@ public class CmdLineParser {
      * Convenience method for adding a string option.
      * @return the new Option
      */
-    public final Option<String> addStringOption( char shortForm, String longForm ) {
+    public Option<String> addStringOption( char shortForm, String longForm ) {
         return addOption(new Option.StringOption(shortForm, longForm));
     }
 
@@ -334,7 +334,7 @@ public class CmdLineParser {
      * Convenience method for adding a string option.
      * @return the new Option
      */
-    public final Option<String> addStringOption( String longForm ) {
+    public Option<String> addStringOption( String longForm ) {
         return addOption(new Option.StringOption(longForm));
     }
 
@@ -342,7 +342,7 @@ public class CmdLineParser {
      * Convenience method for adding an integer option.
      * @return the new Option
      */
-    public final Option<Integer> addIntegerOption( char shortForm, String longForm ) {
+    public Option<Integer> addIntegerOption( char shortForm, String longForm ) {
         return addOption(new Option.IntegerOption(shortForm, longForm));
     }
 
@@ -350,7 +350,7 @@ public class CmdLineParser {
      * Convenience method for adding an integer option.
      * @return the new Option
      */
-    public final Option<Integer> addIntegerOption( String longForm ) {
+    public Option<Integer> addIntegerOption( String longForm ) {
         return addOption(new Option.IntegerOption(longForm));
     }
 
@@ -358,7 +358,7 @@ public class CmdLineParser {
      * Convenience method for adding a long integer option.
      * @return the new Option
      */
-    public final Option<Long> addLongOption( char shortForm, String longForm ) {
+    public Option<Long> addLongOption( char shortForm, String longForm ) {
         return addOption(new Option.LongOption(shortForm, longForm));
     }
 
@@ -366,7 +366,7 @@ public class CmdLineParser {
      * Convenience method for adding a long integer option.
      * @return the new Option
      */
-    public final Option<Long> addLongOption( String longForm ) {
+    public Option<Long> addLongOption( String longForm ) {
         return addOption(new Option.LongOption(longForm));
     }
 
@@ -374,7 +374,7 @@ public class CmdLineParser {
      * Convenience method for adding a double option.
      * @return the new Option
      */
-    public final Option<Double> addDoubleOption( char shortForm, String longForm ) {
+    public Option<Double> addDoubleOption( char shortForm, String longForm ) {
         return addOption(new Option.DoubleOption(shortForm, longForm));
     }
 
@@ -382,7 +382,7 @@ public class CmdLineParser {
      * Convenience method for adding a double option.
      * @return the new Option
      */
-    public final Option<Double> addDoubleOption( String longForm ) {
+    public Option<Double> addDoubleOption( String longForm ) {
         return addOption(new Option.DoubleOption(longForm));
     }
 
@@ -390,7 +390,7 @@ public class CmdLineParser {
      * Convenience method for adding a boolean option.
      * @return the new Option
      */
-    public final Option<Boolean> addBooleanOption( char shortForm, String longForm ) {
+    public Option<Boolean> addBooleanOption( char shortForm, String longForm ) {
         return addOption(new Option.BooleanOption(shortForm, longForm));
     }
 
@@ -398,7 +398,7 @@ public class CmdLineParser {
      * Convenience method for adding a boolean option.
      * @return the new Option
      */
-    public final Option<Boolean> addBooleanOption( String longForm ) {
+    public Option<Boolean> addBooleanOption( String longForm ) {
         return addOption(new Option.BooleanOption(longForm));
     }
 
@@ -406,7 +406,7 @@ public class CmdLineParser {
      * Equivalent to {@link #getOptionValue(Option, Object) getOptionValue(o,
      * null)}.
      */
-    public final <T> T getOptionValue( Option<T> o ) {
+    public <T> T getOptionValue( Option<T> o ) {
         return getOptionValue(o, null);
     }
 
@@ -415,7 +415,7 @@ public class CmdLineParser {
      * @return the parsed value of the given Option, or the given default 'def'
      * if the option was not set
      */
-    public final <T> T getOptionValue( Option<T> o, T def ) {
+    public <T> T getOptionValue( Option<T> o, T def ) {
         List<?> v = values.get(o.longForm());
 
         if (v == null) {
@@ -438,7 +438,7 @@ public class CmdLineParser {
      * @return A Collection giving the parsed values of all the occurrences of
      * the given Option, or an empty Collection if the option was not set.
      */
-    public final <T> Collection<T> getOptionValues(Option<T> option) {
+    public <T> Collection<T> getOptionValues(Option<T> option) {
         Collection<T> result = new ArrayList<T>();
 
         while (true) {
@@ -456,7 +456,7 @@ public class CmdLineParser {
     /**
      * @return the non-option arguments
      */
-    public final String[] getRemainingArgs() {
+    public String[] getRemainingArgs() {
         return this.remainingArgs;
     }
 
@@ -465,7 +465,7 @@ public class CmdLineParser {
      * list of command-line arguments. The default locale is used for
      * parsing options whose values might be locale-specific.
      */
-    public final void parse( String[] argv ) throws OptionException {
+    public void parse( String[] argv ) throws OptionException {
         parse(argv, Locale.getDefault());
     }
 
@@ -474,7 +474,7 @@ public class CmdLineParser {
      * list of command-line arguments. The specified locale is used for
      * parsing options whose values might be locale-specific.
      */
-    public final void parse( String[] argv, Locale locale )
+    public void parse( String[] argv, Locale locale )
             throws OptionException {
 
         ArrayList<Object> otherArgs = new ArrayList<Object>();
