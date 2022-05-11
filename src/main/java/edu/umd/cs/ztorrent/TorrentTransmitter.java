@@ -12,20 +12,19 @@ import java.io.IOException;
  *
  */
 public class TorrentTransmitter {
-    private Torrentable logic;
+    private PeerWorker worker;
     private final Torrent us;
 
-    public TorrentTransmitter(Torrentable pl, Torrent t) {
-        this.logic = pl;
-        this.us = t;
-        for (Tracker tr : us.getTrackers()) {
-            tr.initialize(t);
+    public TorrentTransmitter(PeerWorker pl, Torrent torr) {
+        this.worker = pl;
+        this.us = torr;
+        for (Tracker tracker : us.getTrackers()) {
+            tracker.initialize(torr);
         }
-
     }
 
     public void work() throws IOException {
-        logic.doWork(us);
+        worker.doWork(us);
         for (Tracker t : us.getTrackers()) {
             t.doWork();
         }

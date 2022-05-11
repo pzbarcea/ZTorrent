@@ -19,11 +19,9 @@ import java.util.*;
  *
  * @author pzbarcea
  */
-public class PeerWorker implements Torrentable {
-    int recvPieces = 0;
+public class PeerWorker {
     int activeConnections = 0;
-    private static final int MAX_ENQEUED = 32;//20*1024*16 =
-    private static final int MAX_ACTIVE_PIECES = 2;
+    private static final int MAX_QUEUED = 32;
     private boolean exhausted = false;
     private long rarityTimer = System.currentTimeMillis();
     private long haveAccumulator = 0;
@@ -46,7 +44,6 @@ public class PeerWorker implements Torrentable {
     private long up = 0;
     private long down = 0;
 
-    @Override
     public void doWork(Torrent t) throws IOException {
 
         // save time
@@ -102,12 +99,12 @@ public class PeerWorker implements Torrentable {
                     //reset history value
                     //the queue will reset.
                     //TODO: time must be a factor of the equation x complete over y time
-                    if (mc.getHistorySize() > 3 * mc.getMaxRequests() && mc.getActiveRequest().length < mc.getMaxRequests() / 2.0 && mc.getMaxRequests() < MAX_ENQEUED) {//less then 50%
+                    if (mc.getHistorySize() > 3 * mc.getMaxRequests() && mc.getActiveRequest().length < mc.getMaxRequests() / 2.0 && mc.getMaxRequests() < MAX_QUEUED) {//less then 50%
                         mc.resetHistory();
                         int i = mc.getMaxRequests();
                         i *= 1.5;//3*1.5 =
-                        if (i > MAX_ENQEUED) {
-                            i = MAX_ENQEUED;
+                        if (i > MAX_QUEUED) {
+                            i = MAX_QUEUED;
                         }
                         mc.setMaxRequests(i);
                         System.out.println("" + mc + " has new max limit " + i);
@@ -137,7 +134,7 @@ public class PeerWorker implements Torrentable {
 
 
                     //enqueue some requests if not fully filled.
-                    connectionsHandler.addPieces(MAX_ENQEUED + 3, mc);
+                    connectionsHandler.addPieces(MAX_QUEUED + 3, mc);
 
                 } else {
                     //Dequeue im choked lists are dropped.
