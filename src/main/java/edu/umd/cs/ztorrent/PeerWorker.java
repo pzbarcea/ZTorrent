@@ -44,6 +44,12 @@ public class PeerWorker {
     private long up = 0;
     private long down = 0;
 
+    private void start(Torrent t, PeerConnection mc) {
+        mc.initializeConnection(t.pm.pieceOrganizer.getMapCopy(), t);
+        connectionsHandler.beginConnection(mc);
+        t.pm.pieceOrganizer.addPeerMap(mc.getPeerBitmap());
+    }
+
     public void process(Torrent torrent) throws IOException {
         long now = System.currentTimeMillis();
 
@@ -198,31 +204,33 @@ public class PeerWorker {
         torrent.pm.processBlocking();
     }
 
-    private void processTimedoutRequests(PeerConnection mc) {
+    private void processTimedoutRequests(PeerConnection connection) {
 
         toRemove.clear();
-        for (MessageRequest r : mc.getActiveRequest()) {
-            if (System.currentTimeMillis() - r.timeSent > 1000 * 10) {//10 second timeout
-                toRemove.add(r.index);
+
+        for (MessageRequest request : connection.getActiveRequest()) {
+            if (System.currentTimeMillis() - request.timeSent > 1000 * 10) {
+                toRemove.add(request.index);
             }
         }
 
         for (Integer p : toRemove) {
-            System.out.println("Time expired. " + p + " on " + mc);
-            mc.resetHistory();
-            connectionsHandler.removePiece(mc, p);
+            System.out.println("[TIMEOUT] Piece #" + p + " on " + connection);
+            connection.resetHistory();
+            connectionsHandler.removePiece(connection, p);
         }
 
         if (toRemove.size() > 0) {
-            //drop max queue size.
             waitIteration = false;
-            int i = mc.getMaxRequests();
-            i *= .5;
-            if (i < 1) {
-                i = 1;
+            int newSize = connection.getMaxRequests();
+            newSize *= 0.5;
+
+            if (newSize < 1) {
+                newSize = 1;
             }
-            mc.setMaxRequests(i);
-            System.out.println("Dropping max queue for " + mc + " to " + i);
+
+            connection.setMaxRequests(newSize);
+            System.out.println("[CHOKING] Reducing Queue size of " + connection + " to " + newSize);
         }
     }
 
@@ -233,14 +241,8 @@ public class PeerWorker {
     private void close(Torrent t, Iterator<PeerConnection> itor, PeerConnection mc) {
         itor.remove();
         destroyConnection(mc);
-        callCounter = 1;//just set so can recalculate.
+        callCounter = 1;
         t.pm.pieceOrganizer.removePeerMap(mc.getPeerBitmap());
-    }
-
-    private void start(Torrent t, PeerConnection mc) {
-        mc.initializeConnection(t.pm.pieceOrganizer.getMapCopy(), t);
-        connectionsHandler.beginConnection(mc);
-        t.pm.pieceOrganizer.addPeerMap(mc.getPeerBitmap());//adds
     }
 
 }
