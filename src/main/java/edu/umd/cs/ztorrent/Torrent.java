@@ -17,7 +17,13 @@ import java.util.*;
  * Base class. Contains all the information of the torrent
  * @author pzbarcea
  */
-public class Torrent extends MetaTorrent {
+public class Torrent {
+    public final byte[] hashInfo;
+    public final byte[] peerID;
+    public final MetaData meta;
+    public String name;
+    public String status = "";
+
     public static int STANDARD_CACHE_SIZE = 1024 * 1024 * 20;//20MB
     private final Set<PeerConnection> peerList = new HashSet<>();//TODO: keep only peers with valid connections?
     public final PieceManager pm;
@@ -25,7 +31,6 @@ public class Torrent extends MetaTorrent {
     public final int pieceLength;
     public final FileResource[] files;
     public long totalBytes;
-    public final String name;
     public final Bencoder pieceHash;
     private long downloaded;
     private final long uploaded;
@@ -38,9 +43,13 @@ public class Torrent extends MetaTorrent {
     private final File f;
 
 
-    public Torrent(String name, int pieceLength, FileResource[] files,
-                   long totalBytes, byte[] byteStringHashInfo, String urlEncodedHash, Bencoder pieceHash, MetaData md, List<Tracker> trackers, String file) throws IOException {
-        super(byteStringHashInfo, genRandomSessionKey(20).getBytes(StandardCharsets.UTF_8), md);
+    public Torrent(String name, int pieceLength, FileResource[] files, long totalBytes, byte[] byteStringHashInfo, String urlEncodedHash,
+                   Bencoder pieceHash, MetaData md, List<Tracker> trackers, String file) throws IOException {
+
+        this.hashInfo = byteStringHashInfo;
+        this.peerID = genRandomSessionKey(20).getBytes(StandardCharsets.UTF_8);
+        this.meta = md;
+
         this.numFiles = files.length;
         f = new File(file);
         this.pieceLength = pieceLength;
@@ -69,6 +78,10 @@ public class Torrent extends MetaTorrent {
             this.trackers.add(t);
         }
         this.trackers.add(new DHTTracker(hashInfo, peerID));//We're always in DHT!
+    }
+
+    public String getStatus() {
+        return status;
     }
 
     public static String genRandomSessionKey(int length) {

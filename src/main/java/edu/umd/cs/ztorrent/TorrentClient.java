@@ -21,11 +21,11 @@ public class TorrentClient extends AbstractTableModel {
     private static final long serialVersionUID = -143709093895815620L;
     public boolean on = true;
 
-    final Set<Torrent> allTorrents = Collections.synchronizedSet(new HashSet<Torrent>());
-    final Map<Torrent, TorrentWorker> activeTorrents = new ConcurrentHashMap<Torrent, TorrentWorker>();//Seeding or leeching states
-    final Set<Torrent> inactiveTorrents = Collections.synchronizedSet(new HashSet<Torrent>());//Completed or inactive
+    final Set<Torrent> allTorrents = Collections.synchronizedSet(new HashSet<>());
+    final Map<Torrent, TorrentWorker> activeTorrents = new ConcurrentHashMap<>();
+    final Set<Torrent> inactiveTorrents = Collections.synchronizedSet(new HashSet<>());
 
-    final Queue<Torrent> newTorrents = new ConcurrentLinkedQueue<Torrent>();
+    final Queue<Torrent> newTorrents = new ConcurrentLinkedQueue<>();
     TorrentSocket tss;
 
     public TorrentClient() {
@@ -113,12 +113,7 @@ public class TorrentClient extends AbstractTableModel {
 
     public void deleteTorrent(Torrent t) throws IOException {
         setTorrentInactive(t);
-        t.getFile().delete(); // we presume the .deleteFile() is always successful
-    }
-
-    public void deleteTorrentAndData(Torrent t) throws IOException {
-        deleteTorrentData(t);
-        deleteTorrent(t);
+        t.getFile().delete();
     }
 
     public void reActivate(Torrent t) throws NoSuchAlgorithmException, IOException {
@@ -203,8 +198,7 @@ public class TorrentClient extends AbstractTableModel {
 
     @Override
     public Object getValueAt(int arg0, int arg1) {
-        //return percent dl
-        Torrent t = allTorrents.toArray(new Torrent[0])[arg0];// slow
+        Torrent t = allTorrents.toArray(new Torrent[0])[arg0];
         switch (arg1) {
             case 0:
                 return t.name;
@@ -219,7 +213,7 @@ public class TorrentClient extends AbstractTableModel {
                 }
                 return progress;
             case 4:
-                return byteCountToDisplaySize(t.getRecentDownRate() * 1000) + "/s";// (bytes/ms)=kb/s
+                return byteCountToDisplaySize(t.getRecentDownRate() * 1024) + "/s";// (bytes/ms)=kb/s
             case 5:
                 return t.getRecentUpRate();
             case 6:

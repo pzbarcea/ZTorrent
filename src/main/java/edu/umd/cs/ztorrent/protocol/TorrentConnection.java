@@ -95,7 +95,7 @@ public class TorrentConnection {
         return conState;
     }
 
-    public final void doWork(MetaTorrent t) throws IOException {
+    public final void doWork(Torrent t) throws IOException {
         if (conState == ConnectionState.closed || conState == ConnectionState.uninitialized) {
             throw new RuntimeException("Invalid request. Cant do work on closed/uninitialized connections");
         }
