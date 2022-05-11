@@ -146,8 +146,8 @@ public class DHTTracker extends Tracker {
             processResponses();
 
 
-            //http://bittorrent.org/beps/bep_0005.html (DHT protocol explained here, including Kademlia algo)
-            //Search or send requests
+            // http://bittorrent.org/beps/bep_0005.html (DHT protocol explained here, including Kademlia algo)
+            // Search or send requests
             Node closest = null;
             BigInteger i = new BigInteger(1, new byte[]{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1});//large.
             for (Node n : idToNode.values()) {
@@ -162,7 +162,7 @@ public class DHTTracker extends Tracker {
 
             }
 
-            //Limit number of requests (every 3 seconds)
+            // Limit number of requests (every 3 seconds)
             if (closest != null && closest.canTalkToNode()) {
                 closest.lastQuery = nextFromLast(closest.lastQuery);
                 byte[] findNode = get_peers(id, closest.lastQuery, infoHash);
@@ -192,7 +192,7 @@ public class DHTTracker extends Tracker {
             }
             connectionCleaner.clear();
 
-            //Keep closest nodes (right now only top 40 nodes are kept)
+            // Keep closest nodes (right now only top 40 nodes are kept)
             if (idToNode.size() > 40) {
                 List<Node> allNodes = new ArrayList<Node>(idToNode.values());
                 Collections.sort(allNodes, new Comparator<Node>() {
@@ -217,7 +217,7 @@ public class DHTTracker extends Tracker {
                 idToRequestsO.remove(n.nodeId);
             }
 
-            //Clean "active" requests that dropped (requests that are labelled as active but really are dead)
+            // Clean "active" requests that dropped (requests that are labelled as active but really are dead)
             for (ID conId : idToRequestsO.keySet()) {
                 Map<String, Request> rMap = idToRequestsO.get(conId);
                 if (rMap != null) {
@@ -325,9 +325,9 @@ public class DHTTracker extends Tracker {
         return b.toByteArray();
     }
 
-    //From https://www.bittorrent.org/beps/bep_0005.html
-    //A query for peers needs to return a token --
-    //The BitTorrent implementation uses the SHA1 hash of the IP address concatenated
+    // From https://www.bittorrent.org/beps/bep_0005.html
+    // A query for peers needs to return a token --
+    // The BitTorrent implementation uses the SHA1 hash of the IP address concatenated
     // onto a secret that changes every five minutes and tokens up to ten minutes old are accepted.
     byte[] get_peers(ID id, String q, byte[] infoHash) throws UnsupportedEncodingException {
         Bencoder b = msgBase(id, q, false);
@@ -547,14 +547,6 @@ public class DHTTracker extends Tracker {
         idToRequestsO.clear();
         requests.clear();
         responses.clear();
-    }
-
-    public long timeSinceStart() {
-        return System.currentTimeMillis() - startTime;
-    }
-
-    public void setAggrsive() {
-        this.havePeers = false;
     }
 
     @Override

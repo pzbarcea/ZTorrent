@@ -35,6 +35,7 @@ public class PieceManager {
         this.files = files;
 
         indexToPiece = new LinkedHashMap<Long, Piece>(actualChunks + 2, 1, true) {
+
             private static final long serialVersionUID = -1418159831489090492L;
 
             protected boolean removeEldestEntry(Map.Entry<Long, Piece> eldest) {
@@ -60,7 +61,6 @@ public class PieceManager {
 
 
     public Piece getPiece(long pieceIndex) {
-
         if (!pieceOrganizer.hasPiece((int) pieceIndex)) {
             throw new RuntimeException("[ERROR] Piece not yet completed");
         }
