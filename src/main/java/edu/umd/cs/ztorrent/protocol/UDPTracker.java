@@ -33,7 +33,6 @@ public class UDPTracker extends Tracker {
     public UDPTracker(String url) throws UnknownHostException {
         if (url.startsWith("udp")) {
             String[] token = url.split("/");
-            System.out.println(token[2]);
             if (token[2].contains(":")) {
                 token = token[2].split(":");
                 address = InetAddress.getByName(token[0]);
@@ -128,11 +127,9 @@ public class UDPTracker extends Tracker {
                             if (peerPort != 0) {
                                 total++;
                                 t.addPeer(ip, peerPort, null);
-                                System.out.println("Peer: " + ip.getHostAddress() + ":" + port);
+                                System.out.println("[PEER] " + ip.getHostAddress() + ":" + port);
                             }
                         }
-                    } else {
-                        System.err.println("ERROR");
                     }
                 }
             }

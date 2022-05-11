@@ -33,7 +33,7 @@ public class TorrentUI extends JFrame implements ActionListener {
 
         //https://docs.oracle.com/javase/specs/jls/se7/html/jls-14.html#jls-14.20
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
-            System.err.println("Error starting zTorrent GUI: " + ex);
+            System.err.println("[ERROR] Error starting zTorrent GUI: " + ex);
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> client.on = false));
@@ -128,7 +128,7 @@ public class TorrentUI extends JFrame implements ActionListener {
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File file = filePicker.getSelectedFile();
                 //This is where a real application would open the file.
-                System.out.println("Opening Torrent File: " + file.getName());
+                System.out.println("[STATUS] Opening Torrent File: " + file.getName());
                 try {
                     Torrent t = TorrentParser.parseTorrentFile(file.getAbsolutePath());
                     client.addTorrent(t);
@@ -137,21 +137,21 @@ public class TorrentUI extends JFrame implements ActionListener {
                     ex.printStackTrace();
                 }
             } else {
-                System.out.println("Aborted torrent open");
+                System.out.println("[ERROR] Aborted torrent open");
             }
         } else if (e.getSource() == deleteButton) {
-            System.out.println("Deleted " + allTorrents.getSelectedRow());
+            System.out.println("[STATUS] Deleted " + allTorrents.getSelectedRow());
             client.deleteTorrentData(client.getTorrent(allTorrents.getSelectedRow()));
 
         } else if (e.getSource() == pauseButton) {
-            System.out.println("Stopped " + allTorrents.getSelectedRow());
+            System.out.println("[STATUS] Stopped " + allTorrents.getSelectedRow());
             try {
                 client.setTorrentInactive(client.getTorrent(allTorrents.getSelectedRow()));
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
         } else if (e.getSource() == resumeButton) {
-            System.out.println("Resumed " + allTorrents.getSelectedRow());
+            System.out.println("[STATUS] Resumed " + allTorrents.getSelectedRow());
             try {
                 client.reActivate(client.getTorrent(allTorrents.getSelectedRow()));
             } catch (IOException | NoSuchAlgorithmException e1) {

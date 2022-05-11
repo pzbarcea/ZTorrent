@@ -102,7 +102,6 @@ public class HTTPTracker extends Tracker {
                     + torrent.getDownloaded() + "&left=" + torrent.getLeftToDownload()
                     + "&compact=1" + "&port=" + torrent.uPnP_Port + e + " HTTP/1.1\r\nHost: " + url.getHost() + "\r\n\r\n";
 
-            System.out.println(getRequest);
             Socket socket = new Socket();
             socket.setSoTimeout(8 * 1000);
             socket.connect(new InetSocketAddress(url.getHost(), port));
@@ -113,26 +112,25 @@ public class HTTPTracker extends Tracker {
             HTTPResponse response = new HTTPResponse(socket.getInputStream());
             socket.close();
 
-            System.out.println("Response Status: " + response.status);
-            System.out.println("Response length: " + response.contentSize);
-            System.out.println("Actual length: " + response.body.length);
-            System.out.println("ResponseOut:\n " + new String(response.body, StandardCharsets.UTF_8));
-            System.out.println("Unknown:\n " + response.headerMap.get(HeaderType.UNKNOWN));
+            System.out.println("[HTTPRESPONSE] Response Status: " + response.status);
+            System.out.println("[HTTPRESPONSE] Response length: " + response.contentSize);
+            System.out.println("[HTTPRESPONSE] Actual length: " + response.body.length);
+            System.out.println("[HTTPRESPONSE] ResponseOut:\n " + new String(response.body, StandardCharsets.UTF_8));
+            System.out.println("[HTTPRESPONSE] Unknown:\n " + response.headerMap.get(HeaderType.UNKNOWN));
             System.out.println("\n\n");
             if (response.status == 200) {
                 Bencoder b;
                 try {
                     b = new Bencoder(response.body);
                 } catch (Exception ex) {
-                    System.out.println("Tracker Connected. But response Not BENCODED?!");
                     ex.printStackTrace();
                     return;
                 }
 
                 if (b.dictionary.containsKey("failure reason")) {
-                    System.out.println("Tracker Connected. But bencoded response failed with \"" + b.dictionary.get("failure reason").getString());
+                    System.out.println("[ERROR] Bencoding response failure");
                 } else {
-                    System.out.println("Tracker Results: ");
+                    System.out.println("[STATUS] Tracker Results: ");
                     wait = b.dictionary.get("interval").integer * 1000;
                     if (b.dictionary.get("peers").type == BencodeType.String) {
                         byte[] peers = b.dictionary.get("peers").byteString;
@@ -141,7 +139,7 @@ public class HTTPTracker extends Tracker {
                             System.arraycopy(peers, i * 6, addr, 0, 4);
                             InetAddress ip = InetAddress.getByAddress(addr);
                             int port = ((peers[i * 6 + 4] & 0xFF) << 8 | (peers[i * 6 + 5] & 0xFF));
-                            System.out.println("Peer: " + ip.getHostAddress() + ":" + port);
+                            System.out.println("[PEER] " + ip.getHostAddress() + ":" + port);
                             torrent.addPeer(ip, port, null);
                             total++;
                         }
@@ -154,12 +152,12 @@ public class HTTPTracker extends Tracker {
                             torrent.addPeer(ip, port, null);
                         }
                     } else {
-                        System.out.println("Peers is not dictionary or string.");
+                        System.out.println("[WARNING] Peers is not dictionary or string.");
                     }
 
                     if (b.dictionary.containsKey("tracker id")) {
                         id = new String(b.dictionary.get("tracker id").byteString, StandardCharsets.UTF_8);
-                        System.out.println("Trackerid:\"" + id + "\"");
+                        System.out.println("[TRACKER] \"" + id + "\"");
                     }
 
                 }
@@ -167,8 +165,8 @@ public class HTTPTracker extends Tracker {
                 this.e = Event.regular;
 
             } else {
-                System.out.println("Response: " + response.status);
-                System.out.println("ResponseOut:\n " + new String(response.body, StandardCharsets.UTF_8));
+                System.out.println("[HTTPRESPONSE] Response: " + response.status);
+                System.out.println("[HTTPRESPONSE] ResponseOut:\n " + new String(response.body, StandardCharsets.UTF_8));
                 this.workingTracker = false;
             }
 
