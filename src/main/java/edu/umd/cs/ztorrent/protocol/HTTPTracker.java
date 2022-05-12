@@ -91,11 +91,8 @@ public class HTTPTracker extends Tracker {
                 e = "";
             }
 
-            String getRequest = "GET " + url.getPath() + query + "info_hash="
-                    + ParserTorrentFile.urlEncode(torrent.hashInfo) + "&peer_id=" + ParserTorrentFile.urlEncode(torrent.peerID)
-                    + "&uploaded=" + torrent.getUploaded() + "&downloaded="
-                    + torrent.getDownloaded() + "&left=" + torrent.getLeftToDownload()
-                    + "&compact=1" + "&port=" + torrent.uPnP_Port + e + " HTTP/1.1\nHost: " + url.getHost() + "\n\n";
+            String getRequest = "GET " + url.getPath() + query + "info_hash=" + ParserTorrentFile.urlEncode(torrent.hashInfo) + "&peer_id=" + ParserTorrentFile.urlEncode(torrent.peerID) + "&uploaded=" + torrent.getUploaded()
+                    + "&downloaded=" + torrent.getDownloaded() + "&left=" + torrent.getLeftToDownload() + "&compact=1" + "&port=" + torrent.uPnP_Port + e + " HTTP/1.1\nHost: " + url.getHost() + "\n\n";
 
             Socket socket = new Socket();
             socket.setSoTimeout(8 * 1000);

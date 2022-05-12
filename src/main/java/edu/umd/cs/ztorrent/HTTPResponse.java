@@ -86,7 +86,6 @@ public class HTTPResponse {
         }
 
         if (contentSize == -1 && !transferEncoding) {
-            System.out.println("[WARNING] Reading MAX_VALUE bytes");
             contentSize = Integer.MAX_VALUE;
             body = readBody(in, contentSize, false);
         } else if (transferEncoding) {

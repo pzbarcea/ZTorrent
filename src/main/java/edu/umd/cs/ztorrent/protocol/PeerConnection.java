@@ -70,7 +70,7 @@ public class PeerConnection extends TorrentConnection {
                             conState = ConnectionState.closed;
                         }
                     } catch (IOException e) {
-                        System.out.println("[SKIP] Connection refused from: " + ip + ":" + port);
+                        System.out.println("[REFUSED] Connection refused from: " + ip + ":" + port);
                         conState = ConnectionState.closed;
                     }
                 }

@@ -194,7 +194,7 @@ public class DHTTracker extends Tracker {
 
             // Keep closest nodes (right now only top 40 nodes are kept)
             if (idToNode.size() > 40) {
-                List<Node> allNodes = new ArrayList<Node>(idToNode.values());
+                List<Node> allNodes = new ArrayList<>(idToNode.values());
                 Collections.sort(allNodes, new Comparator<Node>() {
                     @Override
                     public int compare(Node o1, Node o2) {
@@ -262,10 +262,10 @@ public class DHTTracker extends Tracker {
     private Bencoder msgBase(ID id, String q, boolean r) throws UnsupportedEncodingException {
         Bencoder b = new Bencoder();
         b.type = BencodeType.Dictionary;
-        b.dictionary = new HashMap<String, Bencoder>();
+        b.dictionary = new HashMap<>();
         Bencoder a = new Bencoder();
         a.type = BencodeType.Dictionary;
-        a.dictionary = new HashMap<String, Bencoder>();
+        a.dictionary = new HashMap<>();
         Bencoder i = new Bencoder();
         i.byteString = id.id;
         i.type = BencodeType.String;
@@ -282,11 +282,6 @@ public class DHTTracker extends Tracker {
         a.dictionary.put("id", i);
 
         return b;
-    }
-
-    byte[] respondPing(ID n, String q) throws UnsupportedEncodingException {
-        Bencoder b = msgBase(id, q, true);
-        return b.toByteArray();
     }
 
     byte[] constructPing(ID id, String q) throws UnsupportedEncodingException {

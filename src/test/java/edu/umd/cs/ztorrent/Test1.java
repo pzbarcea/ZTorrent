@@ -6,19 +6,17 @@ import org.junit.Test;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
 
 public class Test1 {
 
     @Test
-    public void testDHTTracker() throws InterruptedException, NoSuchAlgorithmException, IOException {
+    public void testDHTTracker() throws InterruptedException, IOException {
 
-        byte[] b = hexStringToByteArray("ffffffffffffffffffffffffffffffffffffffff");
-        BigInteger big = new BigInteger(1, b);
-        System.out.println(String.format("%0" + (b.length << 1) + "X", big));
+        byte[] arr = hexStringToByteArray("ffffffffffffffffffffffffffffffffffffffff");
 
-        DHTTracker dht = new DHTTracker(b, Torrent.genRandomSessionKey(20).getBytes(StandardCharsets.UTF_8));
+        System.out.println(String.format("%0" + (arr.length << 1) + "X",  new BigInteger(1, arr)));
 
+        DHTTracker dht = new DHTTracker(arr, Torrent.genRandomSessionKey(20).getBytes(StandardCharsets.UTF_8));
 
         for (int i = 0; i < 200; i++) {
             dht.doWork();

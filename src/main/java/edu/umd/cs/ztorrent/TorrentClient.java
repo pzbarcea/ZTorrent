@@ -22,10 +22,15 @@ public class TorrentClient extends AbstractTableModel {
     TorrentSocket tSocket;
 
     public TorrentClient() {
-        try {
-            tSocket = new TorrentSocket(6881);
-        } catch (IOException e) {
-            e.printStackTrace();
+        for(int i = 6881; i <= 6889; i++){
+            try {
+                tSocket = new TorrentSocket(i);
+                System.out.println("[BIND SUCCESS] Port "+ i + " Bound");
+                break;
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("[BIND ERROR] Port "+ i + " Already in use....");
+            }
         }
     }
 
@@ -205,7 +210,7 @@ public class TorrentClient extends AbstractTableModel {
 
     public Torrent getTorrent(int i) {
         if (i < allTorrents.size()) {
-            System.out.println("[GETTING] Get Piece #" + i + " from " + allTorrents.size() + " number of peers");
+            System.out.println("[GETTING] Get Piece #" + i + " with " + allTorrents.size() + " number of peers");
             return allTorrents.toArray(new Torrent[0])[i];
         }
 
