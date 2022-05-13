@@ -62,7 +62,7 @@ public class PieceOrganizer {
         Collections.sort(rarityList);
     }
 
-    public void setBitMap(byte[] bitmap) {
+    public void setOrganizer(byte[] bitmap) {
         if (bitmap.length != this.pieceToBytes.length) {
             throw new RuntimeException("[ERROR] PieceToByte Arrays are of Mismatched Length");
         }

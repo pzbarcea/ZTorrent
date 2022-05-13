@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -23,41 +22,44 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Implementing DHT, allows us to use "Magnet Links"
  */
 public class DHTTracker extends Tracker {
+    Thread thread;
+    ID id;
+    int total = 0;
+
     Map<ID, Node> idToNode;
     Map<ID, Map<String, Request>> idToRequestsO;
+
     Queue<Packet> requests;
     Queue<Packet> responses;
     DatagramSocket clientSocket;
-    Thread recv;
-    ID id;
-    int total = 0;
+
     private long lastRoot = 0;
     private boolean havePeers = false;
     private byte[] infoHash;
-    private List<Node> connectionCleaner = new ArrayList<Node>(0);
-    private List<String> packetCleaner = new ArrayList<String>(0);
-    private List<TorrentConnection> potentialPeers = new ArrayList<TorrentConnection>();
+    private List<Node> nodesToRemove = new ArrayList<>(0);
+    private List<String> packetCleaner = new ArrayList<>(0);
+    private List<TorrentConnection> potentialPeers = new ArrayList<>();
     private long startTime = System.currentTimeMillis();
 
     public DHTTracker(byte[] infoHash, byte[] PeerID) throws SocketException {
         this.infoHash = infoHash;
         clientSocket = new DatagramSocket();
-        idToNode = new HashMap<ID, Node>();
-        idToRequestsO = new HashMap<ID, Map<String, Request>>();
-        requests = new ConcurrentLinkedQueue<Packet>();
-        responses = new ConcurrentLinkedQueue<Packet>();
+        idToNode = new HashMap<>();
+        idToRequestsO = new HashMap<>();
+        requests = new ConcurrentLinkedQueue<>();
+        responses = new ConcurrentLinkedQueue<>();
         id = new ID(PeerID);
-        recv = new Thread() {
-            DatagramPacket dp = new DatagramPacket(new byte[65000], 65000);
-            boolean on = true;
+        thread = new Thread() {
+            boolean running = true;
+            DatagramPacket myPacket = new DatagramPacket(new byte[65000], 65000);
 
             @Override
             public void run() {
-                while (on) {
+                while (running) {
                     try {
-                        clientSocket.receive(dp);
-                        byte[] d = new byte[dp.getLength()];
-                        System.arraycopy(dp.getData(), dp.getOffset(), d, 0, dp.getLength());
+                        clientSocket.receive(myPacket);
+                        byte[] d = new byte[myPacket.getLength()];
+                        System.arraycopy(myPacket.getData(), myPacket.getOffset(), d, 0, myPacket.getLength());
                         Bencoder b = new Bencoder(d);
                         ID i = null;
                         if (b.dictionary.containsKey("r") && b.dictionary.get("r").dictionary.containsKey("id")) {
@@ -69,10 +71,10 @@ public class DHTTracker extends Tracker {
                             return;
                         }
 
-                        Node n = new Node(i, dp.getPort(), dp.getAddress());
+                        Node n = new Node(i, myPacket.getPort(), myPacket.getAddress());
                         String s = b.dictionary.get("y").getString();
                         if (s.equals("e")) {
-                            System.out.println("[ERROR] Invalid dictionary get");
+                            System.out.println("[ERROR] Invalid dictionary");
                             return;
                         } else if (s.equals("r")) {
                             System.out.println("[RESPONSE] Response from " + n);
@@ -91,40 +93,40 @@ public class DHTTracker extends Tracker {
                         System.out.println("[ERROR] RuntimeException DHTTracker");
                     } catch (InterruptedException e) {
                         e.printStackTrace();
-                        on = false;
+                        running = false;
                     }
 
                 }
             }
         };
-        recv.start();
+        thread.start();
 
     }
 
-    private byte[] getEightClosest(final byte[] target) {
+    private byte[] getClosest(final byte[] target) {
         List<Node> nodes = new ArrayList<Node>();
         for (Node node : idToNode.values()) {
             nodes.add(node);
         }
-        Collections.sort(nodes, new Comparator<Node>() {
-            @Override
-            //The smaller one will be closer
-            public int compare(Node o1, Node o2) {
-                BigInteger a = kademlia(o1.nodeId.id, target);
-                BigInteger b = kademlia(o2.nodeId.id, target);
-                return a.compareTo(b);
-            }
+        //The smaller one will be closer
+        Collections.sort(nodes, (o1, o2) -> {
+            BigInteger a = kademliaAlgorithm(o1.nodeId.id, target);
+            BigInteger b = kademliaAlgorithm(o2.nodeId.id, target);
+            return a.compareTo(b);
         });
         int size = nodes.size() >= 8 ? 8 * 26 : nodes.size() * 26;
-        byte[] b = new byte[size];
+
+        byte[] bytes = new byte[size];
+
         for (int i = 0; (i < 8 && i < nodes.size()); i++) {
             Node n0 = nodes.get(i);
-            System.arraycopy(n0.nodeId.id, 0, b, i * 26, 20);
-            System.arraycopy(n0.ip.getAddress(), 0, b, i * 26 + 20, 4);
-            b[i * 26 + 20 + 4] = (byte) ((n0.port >> 8) & 0xFF);
-            b[i * 26 + 20 + 5] = (byte) (n0.port & 0xFF);
+            System.arraycopy(n0.nodeId.id, 0, bytes, i * 26, 20);
+            System.arraycopy(n0.ip.getAddress(), 0, bytes, i * 26 + 20, 4);
+            bytes[i * 26 + 20 + 4] = (byte) ((n0.port >> 8) & 0xFF);
+            bytes[i * 26 + 20 + 5] = (byte) (n0.port & 0xFF);
         }
-        return b;
+
+        return bytes;
     }
 
     @Override
@@ -148,89 +150,101 @@ public class DHTTracker extends Tracker {
 
             // http://bittorrent.org/beps/bep_0005.html (DHT protocol explained here, including Kademlia algo)
             // Search or send requests
-            Node closest = null;
+            Node nearestNode = null;
             BigInteger i = new BigInteger(1, new byte[]{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1});//large.
             for (Node n : idToNode.values()) {
                 if (!n.canTalkToNode()) {
                     continue;
                 }
-                BigInteger diff = kademlia(infoHash, n.nodeId.id);
+                BigInteger diff = kademliaAlgorithm(infoHash, n.nodeId.id);
                 if (diff.compareTo(i) <= 0) {
-                    closest = n;
+                    nearestNode = n;
                     i = diff;
                 }
 
             }
 
             // Limit number of requests (every 3 seconds)
-            if (closest != null && closest.canTalkToNode()) {
-                closest.lastQuery = nextFromLast(closest.lastQuery);
-                byte[] findNode = get_peers(id, closest.lastQuery, infoHash);
-                System.out.println("[STATUS] Asking: " + closest);
-                DatagramPacket dp0 = new DatagramPacket(findNode, findNode.length, closest.ip, closest.port);
-                clientSocket.send(dp0);
-                closest.timeSinceLastSent = System.currentTimeMillis();
-                Map<String, Request> rMap = idToRequestsO.get(closest.nodeId);
-                if (rMap == null) {
-                    rMap = new HashMap<String, Request>();
+            if (nearestNode != null && nearestNode.canTalkToNode()) {
+                nearestNode.lastQuery = nextFromLast(nearestNode.lastQuery);
+
+                byte[] findNode = get_peers(id, nearestNode.lastQuery, infoHash);
+                System.out.println("[CONTACTING] Requesting peers from: " + nearestNode);
+
+                DatagramPacket packet = new DatagramPacket(findNode, findNode.length, nearestNode.ip, nearestNode.port);
+                clientSocket.send(packet);
+
+                nearestNode.timeSinceLastSent = System.currentTimeMillis();
+                Map<String, Request> requestMap = idToRequestsO.get(nearestNode.nodeId);
+
+
+                if (requestMap == null) {
+                    requestMap = new HashMap<>();
                 }
-                rMap.put(closest.lastQuery, new Request(RType.get_peers));
-                idToRequestsO.put(closest.nodeId, rMap);
-                closest.drops++;
+
+                requestMap.put(nearestNode.lastQuery, new Request(RequestType.get_peers));
+
+                idToRequestsO.put(nearestNode.nodeId, requestMap);
+
+                nearestNode.drops++;
             }
 
-            connectionCleaner.clear();
+            nodesToRemove.clear();
             for (Node n : idToNode.values()) {
                 if (n.drops > 7 || System.currentTimeMillis() - n.timeSinceLastRecv > 15 * 60 * 1000) {
-                    connectionCleaner.add(n);
+                    nodesToRemove.add(n);
                 }
             }
-            for (Node n : connectionCleaner) {
-                System.out.println("[STATUS] Dropping: " + n.toString());
+            for (Node n : nodesToRemove) {
+                System.out.println("[CLEANING] Cleaning Node: " + n.toString());
                 idToNode.remove(n.nodeId);
                 idToRequestsO.remove(n.nodeId);
             }
-            connectionCleaner.clear();
+            nodesToRemove.clear();
 
             // Keep closest nodes (right now only top 40 nodes are kept)
             if (idToNode.size() > 40) {
                 List<Node> allNodes = new ArrayList<>(idToNode.values());
-                Collections.sort(allNodes, new Comparator<Node>() {
-                    @Override
-                    public int compare(Node o1, Node o2) {
-                        BigInteger a = kademlia(o1.nodeId.id, infoHash);
-                        BigInteger b = kademlia(o2.nodeId.id, infoHash);
-                        return a.compareTo(b);
-                    }
+                Collections.sort(allNodes, (o1, o2) -> {
+                    BigInteger a = kademliaAlgorithm(o1.nodeId.id, infoHash);
+                    BigInteger b = kademliaAlgorithm(o2.nodeId.id, infoHash);
+                    return a.compareTo(b);
                 });
                 for (int z = 40; z < allNodes.size(); z++) {
-                    connectionCleaner.add(allNodes.get(z));
+                    nodesToRemove.add(allNodes.get(z));
                 }
             }
 
-            for (Node n : connectionCleaner) {
+            for (Node n : nodesToRemove) {
+                //If n gave us client list, then it is still useful to us and don't drop it (yet)
                 if (n.gaveClients) {
                     continue;
                 }
-                System.out.println("[STATUS] Dropping: " + n + " < top 40.");
+
+                System.out.println("[CLEANING] Cleaning node: " + n);
+
                 idToNode.remove(n.nodeId);
                 idToRequestsO.remove(n.nodeId);
             }
 
             // Clean "active" requests that dropped (requests that are labelled as active but really are dead)
             for (ID conId : idToRequestsO.keySet()) {
-                Map<String, Request> rMap = idToRequestsO.get(conId);
-                if (rMap != null) {
+                Map<String, Request> requestMap = idToRequestsO.get(conId);
+                if (requestMap != null) {
+
                     packetCleaner.clear();
-                    for (String s : rMap.keySet()) {
-                        //If we have exceeded 30 seconds timeout, then we drop the request
-                        if (System.currentTimeMillis() - rMap.get(s).timeCreated > 30 * 1000) {
-                            System.out.println("[STATUS] Dropping Request " + s + " on connection " + conId.toString());
-                            packetCleaner.add(s);
+
+                    for (String str : requestMap.keySet()) {
+                        //If we have exceeded 1 minute timeout, then we drop the request
+                        if (System.currentTimeMillis() - requestMap.get(str).timeCreated > 60 * 1000) {
+                            System.out.println("[REQUEST TIMEOUT] Request " + str + " to peer " + conId.toString() + " timed out");
+                            packetCleaner.add(str);
                         }
                     }
+
+
                     for (String s : packetCleaner) {
-                        rMap.remove(s);
+                        requestMap.remove(s);
                     }
                 }
             }
@@ -241,9 +255,9 @@ public class DHTTracker extends Tracker {
 
     }
 
-    BigInteger kademlia(byte[] a, byte[] b) {
+    BigInteger kademliaAlgorithm(byte[] a, byte[] b) {
         if (a.length != b.length) {
-            throw new RuntimeException("[ERROR] Got arrays of differing length");
+            throw new RuntimeException("[ERROR] Cannot Compare Different Sized Byte Arrays");
         }
         byte[] c = new byte[a.length];
         for (int i = 0; i < a.length; i++) {
@@ -252,13 +266,6 @@ public class DHTTracker extends Tracker {
         return new BigInteger(1, c);
     }
 
-    /**
-     * @param id
-     * @param q
-     * @param r  - Boolean set to true if message is a request
-     * @return
-     * @throws UnsupportedEncodingException
-     */
     private Bencoder msgBase(ID id, String q, boolean r) throws UnsupportedEncodingException {
         Bencoder b = new Bencoder();
         b.type = BencodeType.Dictionary;
@@ -361,9 +368,11 @@ public class DHTTracker extends Tracker {
 
     private void placeNodes(byte[] nodes) throws UnknownHostException {
         if (nodes.length % 26 != 0) {
-            throw new RuntimeException("Nodes dont match");
+            throw new RuntimeException("[MISMATCH] Got Nodes of differing Length");
         }
+
         int count = 0;
+
         for (int i = 0; i < nodes.length; i += 26) {
             ID id = new ID(Arrays.copyOfRange(nodes, i, i + 20));
             InetAddress ip = InetAddress.getByAddress(Arrays.copyOfRange(nodes, i + 20, i + 24));
@@ -374,7 +383,7 @@ public class DHTTracker extends Tracker {
                 count++;
             }
         }
-        System.out.println("[STATUS] Added " + count + " nodes");
+        System.out.println("[ADDED NODES] Nodes Added: " + count);
     }
 
     private void getPeers(byte[] peers) throws UnknownHostException {
@@ -406,7 +415,7 @@ public class DHTTracker extends Tracker {
     }
 
     @Override
-    protected long getWaitMS() {
+    protected long getDelayMS() {
         if (havePeers) {
             return 20000;
         }
@@ -421,15 +430,9 @@ public class DHTTracker extends Tracker {
         potentialPeers.clear();
     }
 
-    public List<TorrentConnection> connections() {
-        List<TorrentConnection> mcs = potentialPeers;
-        potentialPeers = new ArrayList<TorrentConnection>();
-        return mcs;
-    }
-
     @Override
     public void close(Torrent t) {
-        recv.stop();
+        thread.stop();
     }
 
     private void processResponses() throws IOException {
@@ -441,15 +444,14 @@ public class DHTTracker extends Tracker {
                 actual.recved = true;
                 Map<String, Request> rMap = idToRequestsO.get(actual.nodeId);
                 String s = p.b.dictionary.get("t").getString();
-                Request rt = rMap.remove(s);
+                Request request = rMap.remove(s);
                 actual.drops = 0;
-                if (rt == null) {
-                    System.out.println("[WARNING] Got response, but no matching request");
+                if (request == null) {
                     continue;
                 }
-                if (rt.rt == RType.ping) {
+                if (request.rt == RequestType.ping) {
                     actual.timeSinceLastRecv = System.currentTimeMillis();
-                } else if (rt.rt == RType.get_peers) {
+                } else if (request.rt == RequestType.get_peers) {
                     Bencoder r = p.b.dictionary.get("r");
                     if (r.dictionary.containsKey("values")) {
                         actual.gaveClients = true;
@@ -466,18 +468,18 @@ public class DHTTracker extends Tracker {
                     if (r.dictionary.containsKey("token")) {
                         actual.lastToken = r.dictionary.get("token").byteString;
                     }
-                } else if (rt.rt == RType.find_node) {
+                } else if (request.rt == RequestType.find_node) {
                     actual.recved = true;
                     Bencoder nodes = p.b.dictionary.get("nodes");
                     placeNodes(nodes.byteString);
-                } else if (rt.rt == RType.announce_peer) {
+                } else if (request.rt == RequestType.announce_peer) {
                     actual.recved = true;
                     actual.announcedInto = true;
                 }
 
             } else {
                 if (!idToNode.containsKey(p.n.nodeId)) {
-                    System.out.println("[STATUS] Got new node");
+                    System.out.println("[NEW NODE]");
                     idToNode.put(p.n.nodeId, p.n);
                 } else {
                     System.out.println("[ERROR] Invalid response (unsupported tracker)");
@@ -505,33 +507,33 @@ public class DHTTracker extends Tracker {
                 Map<String, Bencoder> args = p.b.dictionary.get("a").dictionary;
                 String t = p.b.dictionary.get("t").getString();
 
-                byte[] d;
+                byte[] payload;
                 if (s.equals("ping")) {
-                    d = constructPing(id, t);
+                    payload = constructPing(id, t);
                 } else if (s.equals("find_nodes")) {
                     if (!args.containsKey("target")) {
                         continue;
                     }
                     byte[] target = args.get("target").byteString;
 
-                    byte[] nodes = getEightClosest(target);
-                    d = constructNodeResponse(id, t, nodes);
+                    byte[] nodes = getClosest(target);
+                    payload = constructNodeResponse(id, t, nodes);
                 } else if (s.equals("get_peers")) {
                     if (!args.containsKey("info_hash")) {
                         continue;
                     }
                     byte[] target = args.get("info_hash").byteString;
-                    byte[] nodes = getEightClosest(target);
-                    d = constructPeersResponseN(id, t, nodes, new byte[]{65, 65, 65, 65});
+                    byte[] nodes = getClosest(target);
+                    payload = constructPeersResponseN(id, t, nodes, new byte[]{65, 65, 65, 65});
 
                 } else if (s.equals("announce_peer")) {
-                    d = constructAnnounceResponse(id, t);
+                    payload = constructAnnounceResponse(id, t);
                 } else {
-                    d = constructPing(id, t);
+                    payload = constructPing(id, t);
                 }
 
-                DatagramPacket dp0 = new DatagramPacket(d, d.length, n.ip, n.port);
-                clientSocket.send(dp0);
+                DatagramPacket packet = new DatagramPacket(payload, payload.length, n.ip, n.port);
+                clientSocket.send(packet);
             }
 
         }
@@ -546,7 +548,7 @@ public class DHTTracker extends Tracker {
 
     @Override
     public String toString() {
-        return "DHT-" + id.toString();
+        return "DHTTracker:" + id.toString();
     }
 
     @Override
@@ -554,7 +556,9 @@ public class DHTTracker extends Tracker {
         return total;
     }
 
-    private enum RType {
+    //https://www.bittorrent.org/beps/bep_0005.html
+    // Different requests types
+    private enum RequestType {
         ping, get_peers, find_node, announce_peer
     }
 
@@ -570,10 +574,10 @@ public class DHTTracker extends Tracker {
     }
 
     private static class Request {
-        RType rt;
+        RequestType rt;
         long timeCreated = System.currentTimeMillis();
 
-        public Request(RType rt) {
+        public Request(RequestType rt) {
             this.rt = rt;
         }
     }

@@ -12,8 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class TorrentClient extends AbstractTableModel {
-    private static long serialVersionUID = -143709093895815620L;
-    public boolean on = true;
+    public boolean keepRunning = true;
 
     Set<Torrent> allTorrents = Collections.synchronizedSet(new HashSet<>());
     Set<Torrent> inactiveTorrents = Collections.synchronizedSet(new HashSet<>());
@@ -21,6 +20,17 @@ public class TorrentClient extends AbstractTableModel {
     Queue<Torrent> newTorrents = new ConcurrentLinkedQueue<>();
     TorrentSocket tSocket;
 
+
+    /**
+     * TorrentClient is the main class that handles an instance of zTorrent
+     * It will handle adding and removing torrents
+     * It will handle pausing and restarting torrents
+     * It keeps TorrentWorkers threads for each torrent, allowing it to download and upload multiple torrents at a time
+     * (a very important task for a useful torrent application)
+     *
+     * Finally, it will connect on ports 6881-6889, as these are the common ports for torrent connections (with port
+     * 6969 being used for the tracker/announce)
+     */
     public TorrentClient() {
         for(int i = 6881; i <= 6889; i++){
             try {
@@ -35,7 +45,7 @@ public class TorrentClient extends AbstractTableModel {
     }
 
     public void mainLoop() throws IOException, InterruptedException {
-        while (on) {
+        while (keepRunning) {
             for (TorrentWorker tt : activeTorrents.values()) {
                 tt.work();
             }
@@ -120,7 +130,7 @@ public class TorrentClient extends AbstractTableModel {
 
     @Override
     public String getColumnName(int column) {
-        String name = "??";
+        String name = "";
         switch (column) {
             case 0:
                 name = "Name";
@@ -210,7 +220,7 @@ public class TorrentClient extends AbstractTableModel {
 
     public Torrent getTorrent(int i) {
         if (i < allTorrents.size()) {
-            System.out.println("[GETTING] Get Piece #" + i + " with " + allTorrents.size() + " number of peers");
+            System.out.println("[REQUESTING] Requesting Piece #" + i + " from " + allTorrents.size() + " number of peers");
             return allTorrents.toArray(new Torrent[0])[i];
         }
 

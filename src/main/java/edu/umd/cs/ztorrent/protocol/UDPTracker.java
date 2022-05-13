@@ -158,7 +158,7 @@ public class UDPTracker extends Tracker {
 
 
     @Override
-    protected long getWaitMS() {
+    protected long getDelayMS() {
         return 1000;
     }
 

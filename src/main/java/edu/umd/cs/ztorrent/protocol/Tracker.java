@@ -16,12 +16,12 @@ public abstract class Tracker {
         return System.currentTimeMillis() - time;
     }
 
-    protected abstract long getWaitMS();
+    protected abstract long getDelayMS();
 
     protected abstract void work();
 
     public void doWork() {
-        if (getTimeSinceWork() > getWaitMS() && workingTracker) {
+        if (getTimeSinceWork() > getDelayMS() && workingTracker) {
             work();
             updateTimer();
         }

@@ -3,7 +3,7 @@ package edu.umd.cs.ztorrent;
 import edu.umd.cs.ztorrent.message.MessageRequest;
 import edu.umd.cs.ztorrent.message.MessageResponse;
 import edu.umd.cs.ztorrent.protocol.PeerConnection;
-import edu.umd.cs.ztorrent.protocol.PeerConnection.ConnectionState;
+import edu.umd.cs.ztorrent.protocol.PeerConnection.ConnectionStatus;
 
 import java.util.*;
 
@@ -16,7 +16,7 @@ import java.util.*;
 public class ConnectionsHandler {
 
     //Maps the specific connection to its connection status (the pieces it has queued, plus all the other piece requests it has queued)
-    private Map<PeerConnection, ConnectionStatus> clientToPieceSet = new HashMap<>();
+    private Map<PeerConnection, edu.umd.cs.ztorrent.ConnectionStatus> clientToPieceSet = new HashMap<>();
 
     //Maps a piece to all the clients that have requested it. Useful because we need to know who to transfer a piece to
     private Map<Piece, List<PeerConnection>> pieceToClients = new HashMap<>();
@@ -51,7 +51,7 @@ public class ConnectionsHandler {
             throw new RuntimeException("[ERROR] Trying to reinstate an already established connection");
         }
 
-        clientToPieceSet.put(connection, new ConnectionStatus());
+        clientToPieceSet.put(connection, new edu.umd.cs.ztorrent.ConnectionStatus());
     }
 
     /**
@@ -83,7 +83,7 @@ public class ConnectionsHandler {
      */
     public void addPieces(int maxPieces, PeerConnection connection) {
         Iterator<Piece> iter = currentQueue.iterator();
-        ConnectionStatus status = clientToPieceSet.get(connection);
+        edu.umd.cs.ztorrent.ConnectionStatus status = clientToPieceSet.get(connection);
         while (iter.hasNext()) {
             Piece p = iter.next();
             if (status.queuedPieces.size() + 1 > maxPieces) {
@@ -228,7 +228,7 @@ public class ConnectionsHandler {
         List<PeerConnection> connectionList = pieceToClients.get(toRemove);
         if (connectionList != null) {
             for (PeerConnection mc : connectionList) {
-                ConnectionStatus cw = clientToPieceSet.get(mc);
+                edu.umd.cs.ztorrent.ConnectionStatus cw = clientToPieceSet.get(mc);
                 cw.queuedPieces.remove(toRemove);
                 cw.requestsToSend.removeIf(r -> r.index == toRemove.pieceIndex);
                 mc.cancelPiece(toRemove);
@@ -263,10 +263,10 @@ public class ConnectionsHandler {
         }
 
         //Remove the piece from where it appears associated to this connection, specifically
-        ConnectionStatus cw = clientToPieceSet.get(connection);
+        edu.umd.cs.ztorrent.ConnectionStatus cw = clientToPieceSet.get(connection);
         cw.queuedPieces.remove(p);
         cw.requestsToSend.removeIf(r -> r.index == p.pieceIndex);
-        if (connection.getConnectionState() == ConnectionState.connected) {
+        if (connection.getConnectionState() == ConnectionStatus.connected) {
             connection.cancelPiece(p);
         }
     }

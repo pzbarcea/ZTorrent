@@ -2,7 +2,7 @@ package edu.umd.cs.ztorrent;
 
 import edu.umd.cs.ztorrent.message.MessageRequest;
 import edu.umd.cs.ztorrent.protocol.PeerConnection;
-import edu.umd.cs.ztorrent.protocol.PeerConnection.ConnectionState;
+import edu.umd.cs.ztorrent.protocol.PeerConnection.ConnectionStatus;
 
 import java.io.IOException;
 import java.util.*;
@@ -31,10 +31,10 @@ public class PeerWorker {
     //TODO: What if we made this bigger? 50 seems to be fine
     private int maxQueueSize = 50;
 
-    private void destroyConnection(PeerConnection mc) {
-        connectionsHandler.destroyConnection(mc);
+    private void destroyConnection(PeerConnection connection) {
+        connectionsHandler.destroyConnection(connection);
         try {
-            mc.tearDown();
+            connection.tearDown();
         } catch (IOException e) {
             System.out.println("[ERROR] Could not tear down connection. Got IOException on socket close.");
         }
@@ -59,15 +59,15 @@ public class PeerWorker {
         while (iterator.hasNext()) {
             PeerConnection connection = iterator.next();
 
-            if (connection.getConnectionState() == ConnectionState.uninitialized) {
+            if (connection.getConnectionState() == ConnectionStatus.uninitialized) {
                 start(torrent, connection);
-            } else if (connection.getConnectionState() == ConnectionState.closed) {
+            } else if (connection.getConnectionState() == ConnectionStatus.closed) {
                 close(torrent, iterator, connection);
             } else {
                 process(torrent, connection);
             }
 
-            if (connection.getConnectionState() == ConnectionState.connected) {
+            if (connection.getConnectionState() == ConnectionStatus.connected) {
                 //Add a new connection
                 connectionCounter++;
 
@@ -107,7 +107,7 @@ public class PeerWorker {
                     while (requestIterator.hasNext()) {
                         MessageRequest request = requestIterator.next();
                         if (connection.getMaxRequests() >= connection.activeRequests() + 1) {
-                            System.out.println("[SENDING] Request for piece #" + request.index + " to " + connection);
+                            System.out.println("[SENDING] Request for piece #" + request.index + " to peer:" + connection);
                             try {
                                 request.timeSent = System.currentTimeMillis();
                                 connection.pushRequest(request);

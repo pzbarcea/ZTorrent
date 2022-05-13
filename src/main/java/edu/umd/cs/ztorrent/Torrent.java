@@ -13,13 +13,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 public class Torrent {
-    public byte[] hashInfo;
-    public byte[] peerID;
-    public TorrentInfo meta;
+    public int torrentPort = 5555;
+    public TorrentInfo info;
     public String name;
     public String status = "";
-
-    public static int STANDARD_CACHE_SIZE = 1024 * 1024 * 20;
     private Set<PeerConnection> peerList = new HashSet<>();
     public PieceManager pm;
     public int numFiles;
@@ -34,8 +31,9 @@ public class Torrent {
     private long recentUpRate;
     private List<Tracker> trackers;
     private long left;
-    public int uPnP_Port = 1010;
     private File f;
+    public byte[] hashInfo;
+    public byte[] peerID;
 
 
     public Torrent(String name, int pieceLength, FileResource[] files, long totalBytes, byte[] byteStringHashInfo, String urlEncodedHash,
@@ -43,7 +41,7 @@ public class Torrent {
 
         this.hashInfo = byteStringHashInfo;
         this.peerID = genRandomSessionKey(20).getBytes(StandardCharsets.UTF_8);
-        this.meta = md;
+        this.info = md;
 
         this.numFiles = files.length;
         f = new File(file);
@@ -56,7 +54,7 @@ public class Torrent {
         left = totalBytes;
         this.pieceHash = pieceHash;
         try {
-            pm = new PieceManager(files, STANDARD_CACHE_SIZE, pieceLength, totalBytes, pieceHash);
+            pm = new PieceManager(files, 1024 * 1024 * 20, pieceLength, totalBytes, pieceHash);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             throw new RuntimeException("IO-Problems on piecemanager init.");

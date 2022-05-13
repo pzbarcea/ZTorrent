@@ -36,7 +36,7 @@ public class TorrentUI extends JFrame implements ActionListener {
             System.err.println("[ERROR] Error starting zTorrent GUI: " + ex);
         }
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> client.on = false));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> client.keepRunning = false));
 
         addButton = new JButton("Add");
         resumeButton = new JButton("Resume");
@@ -137,21 +137,21 @@ public class TorrentUI extends JFrame implements ActionListener {
                     ex.printStackTrace();
                 }
             } else {
-                System.out.println("[ERROR] Aborted torrent open");
+                System.out.println("[OPERATION CANCELLED] Aborted torrent open");
             }
         } else if (e.getSource() == deleteButton) {
-            System.out.println("[STATUS] Deleted " + allTorrents.getSelectedRow());
+            System.out.println("[STATUS] Deleted Torrent #" + allTorrents.getSelectedRow());
             client.deleteTorrentData(client.getTorrent(allTorrents.getSelectedRow()));
 
         } else if (e.getSource() == pauseButton) {
-            System.out.println("[STATUS] Stopped " + allTorrents.getSelectedRow());
+            System.out.println("[STATUS] Stopped Torrent #" + allTorrents.getSelectedRow());
             try {
                 client.setTorrentInactive(client.getTorrent(allTorrents.getSelectedRow()));
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
         } else if (e.getSource() == resumeButton) {
-            System.out.println("[STATUS] Resumed " + allTorrents.getSelectedRow());
+            System.out.println("[STATUS] Resumed Torrent #" + allTorrents.getSelectedRow());
             try {
                 client.reActivate(client.getTorrent(allTorrents.getSelectedRow()));
             } catch (IOException | NoSuchAlgorithmException e1) {

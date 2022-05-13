@@ -16,7 +16,7 @@ public class PeerConnection extends TorrentConnection {
     private final Set<MessageRequest> ourRequests;
     private int historySize = 0;
     private List<MessageResponse> peerSentBlocks;
-    private long have = 0;
+    private long completed = 0;
     private final MessageParser mp;
     private long download;
     private long upload;
@@ -31,7 +31,7 @@ public class PeerConnection extends TorrentConnection {
         ourRequests = new HashSet<>();
         peerSentBlocks = new ArrayList<>();
         recvHandShake = false;
-        conState = ConnectionState.uninitialized;
+        connectionStatus = ConnectionStatus.uninitialized;
     }
 
     public PeerConnection(Socket s, HandShake hs) {
@@ -45,11 +45,11 @@ public class PeerConnection extends TorrentConnection {
 
     public void initializeConnection(byte[] announcedMap, Torrent t) {
         peerPieceOrganizer = new PieceOrganizer(t.totalBytes, t.pieceLength);
-        torrentInfo = t.meta;
-        if (conState != ConnectionState.uninitialized) {
+        torrentInfo = t.info;
+        if (connectionStatus != ConnectionStatus.uninitialized) {
             throw new RuntimeException("[ERROR] Currently Uninitialized");
         }
-        conState = ConnectionState.pending;
+        connectionStatus = ConnectionStatus.waiting;
         if (sock == null) {
             sock = new Socket();
 
@@ -65,13 +65,14 @@ public class PeerConnection extends TorrentConnection {
                         sockOut = sock.getOutputStream();
                         sockIn = sock.getInputStream();
                         if (sock.isConnected()) {
-                            conState = ConnectionState.connected;
+                            connectionStatus = ConnectionStatus.connected;
                         } else {
-                            conState = ConnectionState.closed;
+                            connectionStatus = ConnectionStatus.closed;
                         }
                     } catch (IOException e) {
                         System.out.println("[REFUSED] Connection refused from: " + ip + ":" + port);
-                        conState = ConnectionState.closed;
+                        e.printStackTrace();
+                        connectionStatus = ConnectionStatus.closed;
                     }
                 }
             }.start();
@@ -83,20 +84,20 @@ public class PeerConnection extends TorrentConnection {
                 e.printStackTrace();
             }
 
-            conState = ConnectionState.connected;
+            connectionStatus = ConnectionStatus.connected;
             sentHandShake = true;
             try {
                 mp.sendHandShake(sockOut, t.getInfoHash(), t.getPeerID());
                 mp.bitfield(sockOut, announcedMap);
             } catch (IOException io) {
-                conState = ConnectionState.closed;
+                connectionStatus = ConnectionStatus.closed;
             }
         } else {
-            throw new RuntimeException("[WARNING] Connection state: UNKNOWN");
+            throw new RuntimeException("[ERROR] Connection state: UNKNOWN");
         }
 
         if (announcedMap == null || announcedMap.length != peerPieceOrganizer.getLength()) {
-            throw new RuntimeException("[WARNING] Invalid 'announced' bitmap. Either NULL or incorrect length!");
+            throw new RuntimeException("[WARNING] BAD peerorganizer - from announce");
         }
         this.announcedMap = announcedMap;
     }
@@ -111,7 +112,7 @@ public class PeerConnection extends TorrentConnection {
     }
 
     public boolean pushRequest(MessageRequest r) {
-        if (conState != ConnectionState.connected) {
+        if (connectionStatus != ConnectionStatus.connected) {
             throw new RuntimeException("[ERROR] Cannot send if not connected");
         } else if (peer_choking) {
             throw new RuntimeException("[ERROR] Cannot send to choked connection");
@@ -128,13 +129,13 @@ public class PeerConnection extends TorrentConnection {
             maintenance += 17;
             mp.request(sockOut, r.index, r.begin, r.len);
         } catch (IOException e) {
-            conState = ConnectionState.closed;
+            connectionStatus = ConnectionStatus.closed;
         }
         return true;
     }
 
     public void cancelPiece(Piece p) {
-        if (conState != ConnectionState.connected) {
+        if (connectionStatus != ConnectionStatus.connected) {
             throw new RuntimeException("[ERROR] Cant send request if not connected");
         } else if (peer_choking) {
             return;
@@ -150,14 +151,14 @@ public class PeerConnection extends TorrentConnection {
                 }
             }
         } catch (IOException e) {
-            conState = ConnectionState.closed;
+            connectionStatus = ConnectionStatus.closed;
         }
     }
 
     public void pushRequestResponse(MessageRequest r, byte[] block) {
         if (!peerRequests.remove(r)) {
             throw new RuntimeException("[ERROR] Unrequested Block");
-        } else if (conState != ConnectionState.connected) {
+        } else if (connectionStatus != ConnectionStatus.connected) {
             throw new RuntimeException("[ERROR] Invalid Connection");
         } else if (peer_choking) {
             throw new RuntimeException("[ERROR] Peer Choking");
@@ -167,12 +168,12 @@ public class PeerConnection extends TorrentConnection {
             upload += block.length;
             mp.piece(sockOut, r.index, r.begin, block);
         } catch (IOException e) {
-            conState = ConnectionState.closed;
+            connectionStatus = ConnectionStatus.closed;
         }
     }
 
     public void pushHave(int index) {
-        if (conState != ConnectionState.connected) {
+        if (connectionStatus != ConnectionStatus.connected) {
             throw new RuntimeException("[ERROR] Trying to send on unconnected");
         } else if (!peer_interested) {
             throw new RuntimeException("[ERROR] Trying to send to uninterested peer");
@@ -181,7 +182,7 @@ public class PeerConnection extends TorrentConnection {
             maintenance += 10;
             mp.have(sockOut, index);
         } catch (IOException e) {
-            conState = ConnectionState.closed;
+            connectionStatus = ConnectionStatus.closed;
         }
     }
 
@@ -207,7 +208,7 @@ public class PeerConnection extends TorrentConnection {
     }
 
     public void setPreConnectionPeerID(byte[] peerID) {
-        if (conState == ConnectionState.uninitialized) {
+        if (connectionStatus == ConnectionStatus.uninitialized) {
             this.peerID = peerID;
         } else {
             throw new RuntimeException("Invalid Use error!");
@@ -231,8 +232,8 @@ public class PeerConnection extends TorrentConnection {
     }
 
     public long haveSinceLastCall() {
-        long i = have;
-        have = 0;
+        long i = completed;
+        completed = 0;
         return i;
     }
 
@@ -248,32 +249,32 @@ public class PeerConnection extends TorrentConnection {
     protected void doDataIn(PeerMessage pm) {
         if (pm.type == MessageType.CHOKE) {
             this.peer_choking = true;
-            System.out.println("[STATUS] " + this + " has choked us");
+            System.out.println("[CHOKED] " + this + " has choked us");
             ourRequests.clear();
         } else if (pm.type == MessageType.UNCHOKE) {
-            System.out.println("[STATUS] " + this + " has unchoked us");
+            System.out.println("[UNCHOKED] " + this + " has unchoked us");
             this.peer_choking = false;
         } else if (pm.type == MessageType.INTERESTED) {
-            System.out.println("[STATUS] " + this + " is interested");
+            System.out.println("[INTERESTED] " + this + " is interested");
             this.peer_interested = true;
         } else if (pm.type == MessageType.NOT_INTERESTED) {
-            System.out.println("[STATUS] " + this + " is NOT interested");
+            System.out.println("[DISINTERESTED] " + this + " is NOT interested");
             this.peer_interested = false;
         } else if (pm.type == MessageType.HAVE) {
-            System.out.println("[STATUS] " + this + " has " + pm.piece);
+            System.out.println("[PIECE NOTIFY] " + this + " has Piece #" + pm.piece);
             if (!peerPieceOrganizer.hasPiece((int) pm.piece)) {
                 peerPieceOrganizer.addPieceComplete(pm.piece);
-                have++;
+                completed++;
             }
 
         } else if (pm.type == MessageType.BIT_FILED) {
-            System.out.println("[STATUS] Got PieceOrganizer from " + this);
+            System.out.println("[STATUS] Received PieceOrganizer from " + this);
             if (peerPieceOrganizer.getCompletedPieces() == 0) {
-                peerPieceOrganizer.setBitMap(pm.bitfield);
-                have = peerPieceOrganizer.getCompletedPieces();
-                System.out.println("[STATUS] Has " + have + " of " + peerPieceOrganizer.getNumberOfPieces());
+                peerPieceOrganizer.setOrganizer(pm.bytes);
+                completed = peerPieceOrganizer.getCompletedPieces();
+                System.out.println("[UPDATE] Completed " + completed + " of " + peerPieceOrganizer.getNumberOfPieces());
             } else {
-                peerPieceOrganizer.setBitMap(pm.bitfield);
+                peerPieceOrganizer.setOrganizer(pm.bytes);
             }
 
         } else if (pm.type == MessageType.REQUEST) {
@@ -285,14 +286,14 @@ public class PeerConnection extends TorrentConnection {
         } else if (pm.type == MessageType.CANCEL) {
             peerRequests.remove(new MessageRequest(pm.index, pm.begin, pm.length));
         } else if (pm.type == MessageType.PIECE) {
-            System.out.println("[RECEIVED] Got piece #" + pm.index + " from " + this);
+            System.out.println("[RECEIVED] Piece #" + pm.index + " from peer:" + this);
             MessageRequest r = new MessageRequest(pm.index, pm.begin, pm.block.length);
             MessageResponse rs = new MessageResponse(pm.index, pm.begin, pm.block);
             if (ourRequests.remove(r)) {
                 historySize++;
                 download += pm.block.length;
             } else {
-                System.out.println("[STATUS] Received Piece #" + pm.index + " without request");
+                System.out.println("[RECV NO REQUEST] Received Piece #" + pm.index);
             }
             peerSentBlocks.add(rs);
         } else if (pm.type == MessageType.EXTENSION) {
@@ -309,9 +310,9 @@ public class PeerConnection extends TorrentConnection {
         return false;
     }
 
-    public enum ConnectionState {
+    public enum ConnectionStatus {
         uninitialized,
-        pending,
+        waiting,
         connected,
         closed
     }

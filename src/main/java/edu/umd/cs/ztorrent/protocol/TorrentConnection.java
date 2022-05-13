@@ -6,7 +6,7 @@ import edu.umd.cs.ztorrent.message.MessageParser.HandShake;
 import edu.umd.cs.ztorrent.message.PeerMessage;
 import edu.umd.cs.ztorrent.message.MessageRequest;
 import edu.umd.cs.ztorrent.message.MessageType;
-import edu.umd.cs.ztorrent.protocol.PeerConnection.ConnectionState;
+import edu.umd.cs.ztorrent.protocol.PeerConnection.ConnectionStatus;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,10 +28,10 @@ public class TorrentConnection {
     public byte[] peerID;
     public byte[] version;
     public byte[] infoHash;
-    public ConnectionState conState;
+    public ConnectionStatus connectionStatus;
     public boolean recvHandShake;
     public boolean sentHandShake;
-    public MessageParser mp;
+    public MessageParser messageParser;
     public OutputStream sockOut;
     public InputStream sockIn;
     public Socket sock;
@@ -52,17 +52,17 @@ public class TorrentConnection {
     public TorrentConnection(InetAddress ip, int port) {
         this.ip = ip;
         this.port = port;
-        mp = new MessageParser();
+        messageParser = new MessageParser();
         recvHandShake = false;
         sentHandShake = false;
-        conState = ConnectionState.uninitialized;
+        connectionStatus = ConnectionStatus.uninitialized;
         maintenance = 0;
     }
 
     public void blindInitialize(TorrentInfo md) {
         this.torrentInfo = md;
         isMetaConnection = true;
-        conState = ConnectionState.pending;
+        connectionStatus = ConnectionStatus.waiting;
         sock = new Socket();
         new Thread() {
             @Override
@@ -76,47 +76,47 @@ public class TorrentConnection {
                     sockOut = sock.getOutputStream();
                     sockIn = sock.getInputStream();
                     if (sock.isConnected()) {
-                        conState = ConnectionState.connected;
+                        connectionStatus = ConnectionStatus.connected;
                     } else {
-                        conState = ConnectionState.closed;
+                        connectionStatus = ConnectionStatus.closed;
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
-                    conState = ConnectionState.closed;
+                    connectionStatus = ConnectionStatus.closed;
                 }
             }
         }.start();
     }
 
 
-    public ConnectionState getConnectionState() {
-        return conState;
+    public ConnectionStatus getConnectionState() {
+        return connectionStatus;
     }
 
     public final void doWork(Torrent t) throws IOException {
-        if (conState == ConnectionState.closed || conState == ConnectionState.uninitialized) {
-            throw new RuntimeException("Invalid request. Cant do work on closed/uninitialized connections");
+        if (connectionStatus == ConnectionStatus.closed || connectionStatus == ConnectionStatus.uninitialized) {
+            throw new RuntimeException("[ERROR] Connection CLOSED  or UNINITIALIZED");
         }
 
-        if (conState == ConnectionState.pending) {
+        if (connectionStatus == ConnectionStatus.waiting) {
             return;
         }
-        if (conState == ConnectionState.connected && sock.isClosed()) {
-            conState = ConnectionState.closed;
+        if (connectionStatus == ConnectionStatus.connected && sock.isClosed()) {
+            connectionStatus = ConnectionStatus.closed;
         }
         try {
             if (!sentHandShake) {
                 sentHandShake = true;
-                mp.sendHandShake(sockOut, t.hashInfo, t.peerID);
-                System.out.println("[STATUS] Sent hand shake");
+                messageParser.sendHandShake(sockOut, t.hashInfo, t.peerID);
+                System.out.println("[HANDSHAKE] Handshake SENT");
             }
 
             if (!recvHandShake) {
 
-                HandShake hs = mp.readHandShake(sockIn);
+                HandShake hs = messageParser.readHandShake(sockIn);
                 if (hs != null) {
                     if (peerID != null && !Arrays.equals(hs.peerID, peerID)) {
-                        System.out.println("[WARNING] Pre-connection peer ID mismatch");
+                        System.out.println("[MISMATCH] Peer ID mismatch");
                     }
 
                     infoHash = hs.hashInfo;
@@ -125,12 +125,12 @@ public class TorrentConnection {
 
 
                     if (!Arrays.equals(hs.hashInfo, t.hashInfo)) {
-                        System.out.println("[WARNING] Info hash doesn't match");
-                        conState = ConnectionState.closed;
+                        System.out.println("[MISMATCH] Info hash doesn't match");
+                        connectionStatus = ConnectionStatus.closed;
                         sock.close();
                         return;
                     } else {
-                        conState = ConnectionState.connected;
+                        connectionStatus = ConnectionStatus.connected;
 
                     }
 
@@ -139,21 +139,22 @@ public class TorrentConnection {
                     }
 
                     if (!isMetaConnection) {
-                        mp.bitfield(sockOut, announcedMap);
+                        messageParser.bitfield(sockOut, announcedMap);
                     }
                     recvHandShake = true;
-                    System.out.println("[STATIS] Got handshake");
+                    System.out.println("[HANDSHAKE] Handshake RECEIVED");
                 }
             } else {
-                mp.parseMessages(sockIn);
-                while (mp.hasMessage()) {
-                    PeerMessage pm = mp.getNext();
+                messageParser.parseMessages(sockIn);
+                while (messageParser.hasMessage()) {
+                    PeerMessage pm = messageParser.getNext();
                     doDataIn(pm);
                 }
 
             }
         } catch (Exception e) {
-            conState = ConnectionState.closed;
+
+            connectionStatus = ConnectionStatus.closed;
             e.printStackTrace();
         }
     }
@@ -164,8 +165,8 @@ public class TorrentConnection {
             if (id == 0) {
                 Bencoder b = new Bencoder(msg);
                 Bencoder m = b.dictionary.get("m");
-                extensions = new HashMap<String, Integer>();
-                revExtensions = new HashMap<Integer, String>();
+                extensions = new HashMap<>();
+                revExtensions = new HashMap<>();
                 for (String s : m.dictionary.keySet()) {
                     extensions.put(s, (int) (long) m.dictionary.get(s).integer);
                     revExtensions.put((int) (long) m.dictionary.get(s).integer, s);
@@ -204,10 +205,10 @@ public class TorrentConnection {
                         if (torrentInfo.isComplete()) {
                             byte[] p = torrentInfo.getPiece(piece);
                             maintenance += p.length;
-                            mp.extension(sockOut, TorrentHelper.pushPiece(ourExtension, piece, p));
+                            messageParser.extension(sockOut, TorrentHelper.pushPiece(ourExtension, piece, p));
                         } else {
                             maintenance += 20;
-                            mp.extension(sockOut, TorrentHelper.rejectPiece(ourExtension, piece));
+                            messageParser.extension(sockOut, TorrentHelper.rejectPiece(ourExtension, piece));
                         }
                     //Represents a response
                     } else if (i == 1) {
@@ -217,7 +218,7 @@ public class TorrentConnection {
                         connectionSupportsMetaMeta = false;
                     }
                 } else {
-                    System.out.println("[WARNING] Unsupported protocol message: " + e);
+                    System.out.println("[ERROR] Protocol UNSUPPORTED: " + e);
                 }
             }
         } catch (Exception e) {
@@ -230,15 +231,15 @@ public class TorrentConnection {
     protected void doDataIn(PeerMessage pm) {
         if (pm.type == MessageType.CHOKE) {
             this.peer_choking = true;
-            System.out.println("[STATUS]" + this + " choked us.");
+            System.out.println("[CHOKED]" + this + " choked us.");
         } else if (pm.type == MessageType.UNCHOKE) {
-            System.out.println("[STATUS]" + this + " unchoked us.");
+            System.out.println("[UNCHOKED]" + this + " unchoked us.");
             this.peer_choking = false;
         } else if (pm.type == MessageType.INTERESTED) {
-            System.out.println("[STATUS]" + this + " interested in us.");
+            System.out.println("[INTERESTED]" + this + " interested in us.");
             this.peer_interested = true;
         } else if (pm.type == MessageType.NOT_INTERESTED) {
-            System.out.println("[STATUS]" + this + " not interested in us.");
+            System.out.println("[DISINTERESTED]" + this + " not interested in us.");
             this.peer_interested = false;
         } else if (pm.type == MessageType.EXTENSION) {
             doExtension(pm.extensionID, pm.extension);
@@ -275,50 +276,50 @@ public class TorrentConnection {
     }
 
     public void setAmChoking(boolean t) {
-        if (conState != ConnectionState.connected) {
-            throw new RuntimeException("Can only send choke state on 'connected' connections");
+        if (connectionStatus != ConnectionStatus.connected) {
+            throw new RuntimeException("[ERROR] only established connection can send CHOKE message");
         }
         try {
             if (am_choking != t) {
                 if (t) {
-                    mp.choke(sockOut);
+                    messageParser.choke(sockOut);
                     if (peerRequests != null)
                         peerRequests.clear();
                 } else {
-                    mp.unchoke(sockOut);
+                    messageParser.unchoke(sockOut);
                 }
                 am_choking = t;
                 maintenance += 5;
             }
         } catch (IOException e) {
-            conState = ConnectionState.closed;
+            connectionStatus = ConnectionStatus.closed;
         }
     }
 
     public void setAmInterested(boolean t) {
-        if (conState != ConnectionState.connected) {
-            throw new RuntimeException("Can only send choke on 'connected' connections");
+        if (connectionStatus != ConnectionStatus.connected) {
+            throw new RuntimeException("[ERROR] only established connection can send INTERESTED message");
         }
         try {
 
             if (am_interested != t) {
                 if (t) {
-                    mp.interested(sockOut);
+                    messageParser.interested(sockOut);
 
                 } else {
-                    mp.not_interested(sockOut);
+                    messageParser.not_interested(sockOut);
                 }
                 maintenance += 5;
                 am_interested = t;
             }
         } catch (IOException e) {
-            conState = ConnectionState.closed;
+            connectionStatus = ConnectionStatus.closed;
         }
     }
 
     public void tearDown() throws IOException {
         sock.close();
-        conState = ConnectionState.closed;
+        connectionStatus = ConnectionStatus.closed;
     }
 
     @Override

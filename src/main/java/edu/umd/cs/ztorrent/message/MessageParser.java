@@ -190,7 +190,7 @@ public class MessageParser {
                 return PM;
             case 5:
                 PM = new PeerMessage(MessageType.BIT_FILED);
-                PM.bitfield = Arrays.copyOfRange(buffer2, 1, buffer2.length);
+                PM.bytes = Arrays.copyOfRange(buffer2, 1, buffer2.length);
                 return PM;
             case 6:
                 PM = new PeerMessage(MessageType.REQUEST);

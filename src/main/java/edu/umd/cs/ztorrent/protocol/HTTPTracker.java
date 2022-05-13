@@ -1,7 +1,6 @@
 package edu.umd.cs.ztorrent.protocol;
 
 import edu.umd.cs.ztorrent.*;
-import edu.umd.cs.ztorrent.HTTPResponse.HeaderType;
 
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
@@ -12,20 +11,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class HTTPTracker extends Tracker {
-    public enum Event {started, stopped, completed, regular}
+    Torrent torrent;
+    int port;
+    String peerID;
 
     URL url;
-    int port;
-    InetAddress address;
-    String id;
     Event e;
-    long wait;
-    Torrent t;
     int total = 0;
+    long delay;
+
 
     public HTTPTracker(String urlString) {
         try {
-            wait = 1000;
+            delay = 1000;
             e = Event.started;
             url = new URL(urlString);
             port = url.getPort();
@@ -40,18 +38,18 @@ public class HTTPTracker extends Tracker {
 
     @Override
     public void initialize(Torrent t) {
-        this.t = t;
+        this.torrent = t;
         process(t, Event.started);
     }
 
     @Override
     public void work() {
-        process(t, e);
+        process(torrent, e);
     }
 
     @Override
-    protected long getWaitMS() {
-        return wait;
+    protected long getDelayMS() {
+        return delay;
     }
 
     @Override
@@ -85,14 +83,14 @@ public class HTTPTracker extends Tracker {
                 e = "&event=stopped";
             } else if (event == Event.completed) {
                 e = "&event=completed";
-            } else if (id != null) {
-                e = "" + id;
+            } else if (peerID != null) {
+                e = "" + peerID;
             } else {
                 e = "";
             }
 
             String getRequest = "GET " + url.getPath() + query + "info_hash=" + ParserTorrentFile.urlEncode(torrent.hashInfo) + "&peer_id=" + ParserTorrentFile.urlEncode(torrent.peerID) + "&uploaded=" + torrent.getUploaded()
-                    + "&downloaded=" + torrent.getDownloaded() + "&left=" + torrent.getLeftToDownload() + "&compact=1" + "&port=" + torrent.uPnP_Port + e + " HTTP/1.1\nHost: " + url.getHost() + "\n\n";
+                    + "&downloaded=" + torrent.getDownloaded() + "&left=" + torrent.getLeftToDownload() + "&compact=1" + "&port=" + torrent.torrentPort + e + " HTTP/1.1\nHost: " + url.getHost() + "\n\n";
 
             Socket socket = new Socket();
             socket.setSoTimeout(8 * 1000);
@@ -105,10 +103,7 @@ public class HTTPTracker extends Tracker {
             socket.close();
 
             System.out.println("[HTTPRESPONSE] Response Status: " + response.status);
-            System.out.println("[HTTPRESPONSE] Response length: " + response.contentSize);
-            System.out.println("[HTTPRESPONSE] Actual length: " + response.body.length);
-            System.out.println("[HTTPRESPONSE] ResponseOut:\n " + new String(response.body, StandardCharsets.UTF_8));
-            System.out.println("[HTTPRESPONSE] Unknown:\n " + response.headerMap.get(HeaderType.UNKNOWN));
+            System.out.println("[HTTPRESPONSE] Response Body:\n " + new String(response.body, StandardCharsets.UTF_8));
             System.out.println("\n\n");
             if (response.status == 200) {
                 Bencoder b;
@@ -122,8 +117,8 @@ public class HTTPTracker extends Tracker {
                 if (b.dictionary.containsKey("failure reason")) {
                     System.out.println("[ERROR] Bencoding response failure");
                 } else {
-                    System.out.println("[STATUS] Tracker Results: ");
-                    wait = b.dictionary.get("interval").integer * 1000;
+                    System.out.println("[TRACKER] Tracker Results: ");
+                    delay = b.dictionary.get("interval").integer * 1000;
                     if (b.dictionary.get("peers").type == BencodeType.String) {
                         byte[] peers = b.dictionary.get("peers").byteString;
                         for (int i = 0; i < peers.length / 6; i++) {
@@ -144,12 +139,12 @@ public class HTTPTracker extends Tracker {
                             torrent.addPeer(ip, port, null);
                         }
                     } else {
-                        System.out.println("[WARNING] Peers is not dictionary or string.");
+                        System.out.println("[UNKNOWN PEER] Peers is not dictionary or string.");
                     }
 
                     if (b.dictionary.containsKey("tracker id")) {
-                        id = new String(b.dictionary.get("tracker id").byteString, StandardCharsets.UTF_8);
-                        System.out.println("[TRACKER] \"" + id + "\"");
+                        peerID = new String(b.dictionary.get("tracker id").byteString, StandardCharsets.UTF_8);
+                        System.out.println("[TRACKER] \"" + peerID + "\"");
                     }
 
                 }
@@ -158,7 +153,7 @@ public class HTTPTracker extends Tracker {
 
             } else {
                 System.out.println("[HTTPRESPONSE] Response: " + response.status);
-                System.out.println("[HTTPRESPONSE] ResponseOut:\n " + new String(response.body, StandardCharsets.UTF_8));
+                System.out.println("[HTTPRESPONSE] Response Body:\n " + new String(response.body, StandardCharsets.UTF_8));
                 this.workingTracker = false;
             }
 
@@ -179,4 +174,5 @@ public class HTTPTracker extends Tracker {
     }
 
 
+    public enum Event {started, stopped, completed, regular}
 }
